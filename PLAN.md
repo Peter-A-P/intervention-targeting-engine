@@ -24,8 +24,8 @@ The numbers a stranger can check, in one results table:
 | PEHE and ATE error | IHDP, ACIC | The only way to show an estimator is correct rather than self-consistent |
 | Rosenbaum bound Gamma and E-value at which the targeting conclusion breaks | Hillstrom, Criteo, Lenta | Unmeasured confounding quantified, not assumed away |
 
-Six estimators, five datasets, five seeds each, one table. The definition of done requires
-five estimators; the sixth (causal forest) is the stretch.
+Seven estimators, five datasets, five seeds each, one table. The definition of done requires
+five estimators plus Dragonnet; the causal forest is the stretch.
 
 ## 2. Scope and boundaries
 
@@ -51,7 +51,7 @@ In scope:
 - One worked case: fraud-review capacity allocation on public data, with a simulated
   review intervention, declared as semi-synthetic.
 - A static budget-slider demo: precomputed rankings, JavaScript slider, the intervention
-  list re-ranks live, hosted on GitHub Pages at targeting.peterparker.ca.
+  list re-ranks live, hosted on Azure Static Web Apps at targeting.peterparker.ca.
 
 Out of scope, on purpose:
 
