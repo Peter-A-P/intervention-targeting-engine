@@ -36,6 +36,10 @@ In scope:
 - Meta-learners S, T, X, DR and R on LightGBM base learners, plus a causal forest
   (EconML `CausalForestDML`). Own thin implementations of S, T and X so the mechanics are
   visible; EconML and CausalML wrapped for DR, R and the forest.
+- **Dragonnet in PyTorch** as a neural CATE estimator behind the same protocol: the
+  portfolio's example of a neural network on a classical prediction problem. Compared on
+  the ground-truth sets like every other estimator; the write-up says where it earns its
+  complexity and where the tree-based learners win.
 - Evaluation: Qini, AUUC, uplift at k, policy value with an inverse-propensity and a
   doubly robust estimator on held-out data, bootstrap intervals, random and
   outcome-ranking baselines.
@@ -53,8 +57,8 @@ Out of scope, on purpose:
 
 - Instrumental variables, regression discontinuity, difference in differences. Different
   identification strategies, different project.
-- Deep-learning CATE models (TARNet, CEVAE, Dragonnet). Noted in the "where each
-  estimator breaks" write-up as a comparison from the literature, not implemented.
+- Other deep-learning CATE models (TARNet, CEVAE). Dragonnet is in; the rest are noted
+  in the "where each estimator breaks" write-up as comparisons from the literature.
 - Continuous or multi-valued treatments.
 - Online or bandit-style allocation.
 - A server. The demo is static by design (CA$25 budget, Rule B satisfied by a URL).
@@ -141,12 +145,13 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 | 3 | Sep 21 - 27 | DR and R learners via EconML/CausalML wrappers; IHDP and ACIC loaders; PEHE and ATE error; calibration plot | Ground-truth metrics for five estimators |
 | 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | `itx benchmark --all` runs end to end on a laptop overnight |
 | 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset | Policy value table with both baselines |
-| 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | Sensitivity section with numbers; write-up drafted |
-| 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; GitHub Pages at targeting.peterparker.ca | Demo live, slider re-ranks |
+| 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; Dragonnet in PyTorch; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | Sensitivity section with numbers; Dragonnet in the table; write-up drafted |
+| 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; Azure Static Web Apps at targeting.peterparker.ca | Demo live, slider re-ranks |
 | 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | Definition of done all checked |
 
 Slack: week 6's causal forest and week 7's cost-aware policy are the first things to
-drop if behind. Neither is in the definition of done.
+drop if behind. Neither is in the definition of done. Dragonnet stays: it is the
+portfolio's neural-network placement and is cheap on these dataset sizes.
 
 ## 7. Demo
 
@@ -157,8 +162,10 @@ moves the cutoff. Shows: who is in the treated set, the realised policy value at
 budget vs random, and the uplift-at-k curve with the cutoff marked. No backend, no
 personal data (public datasets only, identifiers replaced by row numbers).
 
-Hosting: GitHub Pages from the `demo/` build, CNAME `targeting.peterparker.ca`. DNS is a
-one-line change on the domain already registered for Overload.
+Hosting: Azure Static Web Apps free tier from the `demo/` build, custom domain
+`targeting.peterparker.ca`. This is the portfolio's Azure hosting example; GitHub Pages
+is the fallback if the free tier changes. DNS is a one-line change on the domain already
+registered for Overload.
 
 ## 8. Risks
 
@@ -189,6 +196,7 @@ Whichever produces the clearest evidence gets `docs/rejected.md`:
 Mirrors the portfolio's definition for this project:
 
 - [ ] Five estimators benchmarked on five datasets, one results table in the README
+- [ ] Dragonnet (PyTorch) in the same table, with a stated verdict on where it earned its complexity
 - [ ] Qini and AUUC reported with bootstrap intervals, never as a bare number
 - [ ] Policy value at budget reported against random and outcome-ranking baselines
 - [ ] PEHE and ATE error on the ground-truth sets
