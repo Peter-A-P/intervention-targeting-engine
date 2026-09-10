@@ -95,12 +95,12 @@ five meta-learners, a neural estimator and, if it makes the schedule, a causal f
 sit behind one interface and appear in one table. The meta-learners are recipes that build
 an effect estimate out of ordinary prediction models, differing in how they handle the
 missing half of the data and in how they behave when the treated group is much smaller
-than the untreated one. The neural estimator is there deliberately, as a test of whether
-the extra machinery earns its keep on problems this size, with a stated verdict either
-way. All of them sit on the same LightGBM base learner, so differences in the table are
-differences between the methods rather than differences between their engines.
-`docs/estimators.md` says where each one breaks, which is usually the more useful half of
-a comparison.
+than the untreated one. The neural estimator is Dragonnet, written in PyTorch, and it is
+there deliberately, as a test of whether the extra machinery earns its keep on problems
+this size, with a stated verdict either way. All of them sit on the same LightGBM base
+learner, so differences in the table are differences between the methods rather than
+differences between their engines. `docs/estimators.md` says where each one breaks, which
+is usually the more useful half of a comparison.
 
 **The trap this is built around.** The standard score for this kind of model is the Qini
 coefficient, drawn as a curve: sort everyone by predicted effect, walk down the list, and
