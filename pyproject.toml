@@ -1,0 +1,130 @@
+[build-system]
+requires = ["hatchling>=1.25,<2.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "itx"
+version = "0.1.0.dev0"
+description = "Intervention Targeting Engine: uplift modelling and budget-constrained targeting with honest evaluation"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+license = "MIT"
+authors = [{ name = "Peter Parker" }]
+keywords = ["uplift", "causal-inference", "cate", "targeting", "policy-learning"]
+
+# Every pin is a major-version ceiling: these libraries break API across majors and the
+# results table has to reproduce years from now. The floor is the oldest version whose
+# API this code actually uses.
+dependencies = [
+  "polars>=1.9,<2.0",       # the data layer everywhere; 1.x API is stable, 0.x was not
+  "numpy>=2.1,<3.0",        # arrays at the estimator boundary; 2.x for the new promotion rules
+  "scipy>=1.14,<2.0",       # bootstrap and sensitivity distributions
+  "lightgbm>=4.5,<5.0",     # the single base learner, so estimator differences are estimator differences
+  "scikit-learn>=1.6,<2.0", # LightGBM's sklearn API needs it; 1.6 is the floor EconML 0.17 sets
+  "pandas>=2.2,<3.0",       # library boundary only (LightGBM categoricals); never the internal format
+  "typer>=0.15,<1.0",       # the itx CLI; pre-1.0 so the ceiling is the next minor-as-major
+  "matplotlib>=3.9,<4.0",   # Qini and calibration curves written to disk, no interactive backend
+]
+
+[project.optional-dependencies]
+# Arrives with the weeks that need it (PLAN.md section 6): EconML and CausalML in week 3,
+# PyTorch for Dragonnet in week 6. Kept out of the default install so a clean-environment
+# rerun of the Hillstrom and IHDP benchmarks stays a small download.
+learners = [
+  "econml>=0.17,<0.18",     # DR-learner and CausalForestDML. 0.17 is the first release that
+                            # accepts numpy 2 and scikit-learn 1.6; 0.15 pinned numpy<2 and
+                            # would have held the whole project on numpy 1.
+  "causalml>=0.17,<0.18",   # R-learner. Same numpy 2 story, and it builds from Cython sources
+                            # on Windows, which is the week 3 risk to watch.
+]
+neural = [
+  "torch>=2.5,<3.0",        # Dragonnet, CPU only
+]
+
+[project.scripts]
+itx = "itx.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/Peter-A-P/intervention-targeting-engine"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3,<9.0",
+  "pytest-cov>=6.0,<8.0",
+  "mypy>=1.13,<2.0",
+  "ruff>=0.8,<1.0",
+  "pandas-stubs>=2.2,<3.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/itx"]
+
+[tool.ruff]
+line-length = 96
+target-version = "py313"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+  "E", "W",   # pycodestyle
+  "F",        # pyflakes
+  "I",        # import sorting
+  "N",        # pep8-naming
+  "UP",       # pyupgrade
+  "B",        # bugbear
+  "A",        # builtin shadowing
+  "C4",       # comprehensions
+  "PT",       # pytest style
+  "SIM",      # simplify
+  "PTH",      # pathlib over os.path
+  "RUF",      # ruff-specific
+  "ANN",      # every signature annotated; the typed-throughout bar
+  "D",        # docstrings
+]
+ignore = [
+  "D107",     # __init__ docstring; the class docstring covers it
+  "D203",     # incompatible with D211
+  "D213",     # incompatible with D212
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Test names are the documentation here: "test_an_over_regularised_s_learner_warns_instead
+# _of_returning_a_silent_zero" says more than a docstring would, and annotating every
+# fixture argument adds noise without adding a check that mypy is not already making.
+"tests/*" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "D100", "D101", "D102", "D103"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unreachable = true
+disallow_any_unimported = true
+plugins = []
+files = ["src", "tests"]
+# The test files have no __init__.py, so without this mypy names them "test_bench" rather
+# than "tests.test_bench" and the per-module override below never matches.
+mypy_path = "src"
+explicit_package_bases = true
+
+[[tool.mypy.overrides]]
+# Tests keep every other strict check, including the one that catches an import of a name
+# a module does not actually export. What they drop is the requirement to annotate each
+# test function and each pytest fixture argument: the annotation would be `-> None` and
+# the fixture's own declared type, neither of which can be wrong in a way that matters.
+module = ["tests.*"]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+[[tool.mypy.overrides]]
+# No type stubs published, and vendoring stubs for them would rot faster than it helps.
+module = ["lightgbm.*", "matplotlib.*", "sklearn.*", "econml.*", "causalml.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+markers = [
+  "slow: needs a real dataset download or a full-size fit; skipped unless --run-slow",
+]

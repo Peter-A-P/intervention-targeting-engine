@@ -1,0 +1,92 @@
+name: CI
+
+# Two jobs, because they answer different questions. "checks" asks whether the code is
+# correct and typed, and runs on synthetic data in under a minute. "benchmark" asks
+# whether the thing still produces its numbers, which needs a real download and a real
+# fit. Criteo is not here: it is 297 MB and 13.9M rows, and PLAN.md section 4 puts it on a
+# nightly or on-demand run rather than on every push.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_FROZEN: "1"
+
+jobs:
+  checks:
+    name: ruff, mypy, tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python 3.13 and the project
+        run: uv sync --all-groups
+
+      - name: ruff (lint)
+        run: uv run ruff check .
+
+      - name: ruff (format)
+        run: uv run ruff format --check .
+
+      - name: mypy --strict
+        run: uv run mypy
+
+      - name: pytest
+        run: uv run pytest -q
+
+  benchmark:
+    name: Hillstrom and IHDP benchmarks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python 3.13 and the project
+        run: uv sync --all-groups
+
+      # Keyed on the committed checksums: if a digest changes the cache is a miss and the
+      # file is downloaded and verified again, which is the point of committing them.
+      - name: Cache the raw downloads
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-${{ hashFiles('src/itx/data/checksums.sha256') }}
+
+      - name: Pull and verify the small datasets
+        run: uv run itx data pull hillstrom ihdp-train ihdp-test
+
+      - name: Tests that need real data
+        run: uv run pytest -q --run-slow
+
+      - name: Hillstrom benchmark
+        run: uv run itx benchmark --dataset hillstrom
+
+      - name: IHDP benchmark
+        run: uv run itx benchmark --dataset ihdp
+
+      - name: Keep the results and the figures
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            results/
+            docs/figures/
+          if-no-files-found: error

@@ -1,0 +1,25 @@
+# SHA-256 of every raw file this package downloads. The raw files are never committed
+# (PLAN.md section 3); these digests are, so a download can be verified independently:
+#
+#     cd data/raw && sha256sum -c ../../src/itx/data/checksums.sha256
+#
+# hillstrom.csv
+#   http://www.minethatdata.com/Kevin_Hillstrom_MineThatData_E-MailAnalytics_DataMiningChallenge_2008.03.20.csv
+#   3,964,977 bytes. No formal licence stated; published for public use, attributed to
+#   MineThatData. Recorded 2026-09-10.
+#
+# criteo-research-uplift-v2.1.csv.gz
+#   http://go.criteo.net/criteo-research-uplift-v2.1.csv.gz
+#   311,422,618 bytes. CC BY-NC-SA 4.0; terms accepted by Peter Parker 2026-09-10.
+#
+# ihdp_npci_1-100.train.npz / ihdp_npci_1-100.test.npz
+#   https://www.fredjo.com/files/ihdp_npci_1-100.train.npz
+#   https://www.fredjo.com/files/ihdp_npci_1-100.test.npz
+#   16,129,570 and 1,801,570 bytes. The standard IHDP benchmark file used by CFRNet,
+#   CEVAE and Dragonnet: 747 units (672 + 75) x 100 replicates, 25 covariates, with the
+#   simulated response surfaces mu0 and mu1. Recorded 2026-09-10.
+#
+0e5893329d8b93cefecc571777672028290ab69865718020c78c7284f291aece  hillstrom.csv
+2716e1bf0fd157a93b5bf86924d9088419dfbac2022c6cd90030220634f616dc  criteo-research-uplift-v2.1.csv.gz
+750697c71b4f8d7a3aafff771b56a4ac4cd83ec649bf69afb04f8a5aee41a240  ihdp_npci_1-100.train.npz
+a70a8acbcc4e8deb677cc9bf9e9dabeb17caaa37cdbb1d7ba06be7ffb929c41c  ihdp_npci_1-100.test.npz

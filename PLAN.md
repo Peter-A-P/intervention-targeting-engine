@@ -1,6 +1,7 @@
 # Plan: Intervention Targeting Engine
 
-**Written:** 2026-09-06. **Status:** plan only, nothing built.
+**Written:** 2026-09-06. **Status:** week 1 built (2026-09-10). Changes to this plan since
+it was written are listed in section 11, each with the reason and the week it happened.
 **Build window:** 8 weeks, 2026-09-07 to 2026-11-01, evenings and weekends, alongside the
 setup of the drift runs in the release-gate repository during September.
 
@@ -31,8 +32,9 @@ five estimators plus Dragonnet; the causal forest is the stretch.
 
 In scope:
 
-- One common `UpliftEstimator` protocol: `fit(X, treatment, outcome)`, `predict_uplift(X)`,
-  `policy(X, budget)`; every estimator implements it, every metric consumes it.
+- One common `UpliftEstimator` protocol: `fit(data)`, `predict_uplift(X)`,
+  `policy(X, budget)`; every estimator implements it, every metric consumes it. `fit` takes
+  an `UpliftDataset` rather than three loose arguments (change 1, section 11).
 - Meta-learners S, T, X, DR and R on LightGBM base learners, plus a causal forest
   (EconML `CausalForestDML`). Own thin implementations of S, T and X so the mechanics are
   visible; EconML and CausalML wrapped for DR, R and the forest.
@@ -67,10 +69,10 @@ Out of scope, on purpose:
 
 | Dataset | Size | Treatment | Outcome | Ground truth | Access and terms |
 |---|---|---|---|---|---|
-| Hillstrom MineThatData | ~64k | Email campaign (3 arms; use womens-email vs none) | Visit, conversion, spend | No | Public download; check the site's terms |
-| Criteo-UPLIFT v2 | 13.9M rows, 12 features | Ad exposure | Visit, conversion | No | Criteo research licence; download through the official page |
+| Hillstrom MineThatData | ~64k | Email campaign (3 arms; use womens-email vs none) | Visit, conversion, spend | No | Public download; no formal licence, attributed to MineThatData. **Loader built, week 1** |
+| Criteo-UPLIFT v2 | 13.9M rows, 12 features | Ad exposure | Visit, conversion | No | CC BY-NC-SA 4.0, downloaded through the official page. Downloaded and checksummed week 1; loader in week 4 |
 | Lenta | ~687k | SMS campaign | Purchase | No | Ships with `scikit-uplift`; check licence in the package |
-| IHDP | 747 units, 100 replicates | Home visits (semi-synthetic) | Cognitive score | Yes, simulated | Public via the CEVAE and Dragonnet repositories |
+| IHDP | 747 units, 100 replicates | Home visits (semi-synthetic) | Cognitive score | Yes, simulated | The `ihdp_npci_1-100` benchmark archives the CEVAE and Dragonnet papers use, from fredjo.com. **Loader built, week 1** |
 | ACIC 2016 | 4,802 units, 77 settings | Simulated | Simulated | Yes | Public via the `aciccomp2016` R package or mirrored CSVs |
 
 Rules for data in this repository:
@@ -112,7 +114,7 @@ Rules for data in this repository:
 ## 5. Package design
 
 ```
-itx/
+src/itx/        (src layout, change 2 in section 11)
   data/         loaders, checksums, splits, dataset cards
   estimators/   protocol, s_learner, t_learner, x_learner, dr_learner, r_learner, causal_forest
   policy/       rank_and_cut, cost_aware, policy_value (ipw, dr)
@@ -140,7 +142,7 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 
 | Week | Dates | Build | Done when |
 |---|---|---|---|
-| 1 | Sep 7 - 13 | Repo scaffold (`uv`, `ruff`, `mypy --strict`, `pytest`, CI); data loaders with checksums for Hillstrom and IHDP; `UpliftEstimator` protocol; S-learner end to end on Hillstrom | CI green; first Qini curve plotted |
+| 1 | Sep 7 - 13 | Repo scaffold (`uv`, `ruff`, `mypy --strict`, `pytest`, CI); data loaders with checksums for Hillstrom and IHDP; `UpliftEstimator` protocol; S-learner end to end on Hillstrom | **Done 2026-09-10.** Ruff, `mypy --strict` and 161 tests green (152 of them needing no download); Qini curves plotted for both datasets; results table generated into the README; ahead of plan: PEHE and ATE error (week 3) landed early because the IHDP loader is untestable without them |
 | 2 | Sep 14 - 20 | T and X learners; metrics module (Qini, AUUC, uplift at k, bootstrap); random and outcome-ranking baselines; synthetic-data tests | Three estimators, one table, intervals on Hillstrom |
 | 3 | Sep 21 - 27 | DR and R learners via EconML/CausalML wrappers; IHDP and ACIC loaders; PEHE and ATE error; calibration plot | Ground-truth metrics for five estimators |
 | 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | `itx benchmark --all` runs end to end on a laptop overnight |
@@ -207,3 +209,53 @@ Mirrors the portfolio's definition for this project:
 - [ ] One rejected approach documented with evidence
 - [ ] Clean-environment rerun reproduces the table
 - [ ] Repository public, v0.1.0 tagged
+
+---
+
+## 11. Changes to this plan
+
+The rule in `CLAUDE.md`: do not deviate silently, and change the plan in the same commit as
+the code, with the reason. Each entry says what moved and why.
+
+**1. The estimator protocol takes a dataset, not three arguments** (week 1). Section 2 said
+`fit(X, treatment, outcome)`. It is `fit(data: UpliftDataset)`. Which feature columns hold
+integer category codes has to travel with the matrix, and with three loose arguments every
+estimator re-derives that from the dtypes and the LightGBM calls drift apart. The container
+also validates lengths and the binary treatment at construction, so a mismatched array
+fails at the loader rather than halfway through a benchmark.
+
+**2. The package sits under `src/`** (week 1). Section 5 drew `itx/` at the repository
+root. A src layout means the tests import the installed package rather than the working
+directory, which is what the definition of done's "clean-environment rerun reproduces the
+table" actually requires; with a flat layout a test can pass against files that were never
+installed.
+
+**3. The LightGBM boundary is numpy, not pandas** (week 1). Section 5 says Polars for data
+and pandas only at library boundaries. The boundary turned out not to need pandas:
+`DataFrame.to_pandas()` requires pyarrow, and passing a numeric numpy matrix with an
+explicit list of categorical column positions is both lighter and safer, because category
+codes cannot shift when a level is missing from a prediction batch. Pandas is no longer a
+direct dependency. The rule is unchanged; nothing crosses into pandas at all.
+
+**4. IHDP comes from the `ihdp_npci_1-100` archives** (week 1). Section 3 said "public via
+the CEVAE and Dragonnet repositories". Those repositories carry per-replicate CSVs and the
+set is incomplete: replicate 100 is missing from both. The two `.npz` archives at
+fredjo.com hold all 100 replicates of all 747 units and are the files those papers actually
+benchmark on, so the numbers here are comparable with the literature. Both are checksummed.
+
+**5. `min_child_samples` moves into the tuning grid** (week 1). Not a change of plan so
+much as the first thing the plan's own protocol caught. A single fixed value cannot serve a
+747-unit dataset and a 64,000-unit one: at 100 the S-learner on IHDP never splits on the
+treatment at all and returns exactly zero uplift with a PEHE identical to predicting
+nothing, silently. The default is now LightGBM's own 20, the estimator base class warns on
+a degenerate fit, and the parameter is in the week 2 validation grid. Evidence in
+`docs/estimators.md`.
+
+**6. Ground-truth metrics arrived in week 1 rather than week 3.** PEHE and absolute ATE
+error are twenty lines and the IHDP loader cannot be checked without them. The rest of week
+3 is unchanged.
+
+**7. The reported random baseline is the 200-ranking average only.** Section 4 already
+specified this; noting it because a single `random` estimator also exists and is
+deliberately kept out of the default benchmark set. One random draw sitting next to a
+fitted model in the same table invites the reader to read the gap between them as a result.

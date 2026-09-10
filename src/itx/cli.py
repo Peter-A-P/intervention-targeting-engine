@@ -1,0 +1,166 @@
+"""The ``itx`` command line: pull data, run the benchmark, build the demo.
+
+Everything in the results table has to come out of one command a stranger can run
+(PLAN.md section 4), so the CLI is the interface the project is judged on, not a
+convenience wrapper around a notebook.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import Annotated
+
+import typer
+
+from itx import __version__
+
+app = typer.Typer(
+    name="itx",
+    help="Intervention Targeting Engine: uplift modelling with honest evaluation.",
+    no_args_is_help=True,
+    add_completion=False,
+)
+data_app = typer.Typer(help="Download and verify the raw datasets.", no_args_is_help=True)
+app.add_typer(data_app, name="data")
+
+DEFAULT_RESULTS_DIR = Path("results")
+DEFAULT_FIGURE_DIR = Path("docs/figures")
+DEFAULT_README = Path("README.md")
+
+
+@app.callback(invoke_without_command=True)
+def main(
+    version: Annotated[
+        bool, typer.Option("--version", help="Print the version and exit.")
+    ] = False,
+) -> None:
+    """Intervention Targeting Engine."""
+    if version:
+        typer.echo(__version__)
+        raise typer.Exit
+
+
+@data_app.command("pull")
+def data_pull(
+    keys: Annotated[
+        list[str] | None,
+        typer.Argument(help="Sources to fetch; all of them if omitted."),
+    ] = None,
+    force: Annotated[bool, typer.Option(help="Re-download even when cached.")] = False,
+) -> None:
+    """Download raw files and verify them against the committed checksums."""
+    from itx.data.download import disk_usage, fetch, human_bytes
+    from itx.data.registry import SOURCES
+
+    wanted = keys if keys else list(SOURCES)
+    for key in wanted:
+        fetch(key, force=force)
+    typer.echo(f"cached data: {human_bytes(disk_usage())}")
+
+
+@data_app.command("list")
+def data_list() -> None:
+    """Show every registered source, where it comes from and whether it is cached."""
+    from itx.data.download import human_bytes
+    from itx.data.registry import SOURCES, data_dir
+
+    directory = data_dir()
+    typer.echo(f"data directory: {directory}")
+    for key, spec in SOURCES.items():
+        path = directory / spec.filename
+        state = f"cached, {human_bytes(path.stat().st_size)}" if path.exists() else "not cached"
+        typer.echo(f"  {key:<14} {state:<20} {spec.licence}")
+
+
+@data_app.command("verify")
+def data_verify() -> None:
+    """Re-hash every cached file and compare it with the committed checksum."""
+    from itx.data.download import sha256_of
+    from itx.data.registry import SOURCES, data_dir
+
+    directory = data_dir()
+    failures = 0
+    for key, spec in SOURCES.items():
+        path = directory / spec.filename
+        if not path.exists():
+            typer.echo(f"  {key:<14} not cached")
+            continue
+        actual = sha256_of(path)
+        if actual == spec.expected_sha256:
+            typer.echo(f"  {key:<14} ok")
+        else:
+            failures += 1
+            typer.echo(f"  {key:<14} MISMATCH: {actual}")
+    if failures:
+        raise typer.Exit(code=1)
+
+
+@app.command("benchmark")
+def benchmark(
+    dataset: Annotated[str, typer.Option(help="Dataset key to run.")] = "hillstrom",
+    estimators: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated estimator keys; the default set if omitted."),
+    ] = None,
+    seeds: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated split seeds; the committed five if omitted."),
+    ] = None,
+    resamples: Annotated[int, typer.Option(help="Bootstrap resamples per row.")] = 1_000,
+    results_dir: Annotated[
+        Path, typer.Option(help="Where the per-seed JSON goes.")
+    ] = DEFAULT_RESULTS_DIR,
+    figure_dir: Annotated[
+        Path, typer.Option(help="Where the Qini figure goes.")
+    ] = DEFAULT_FIGURE_DIR,
+    plot: Annotated[bool, typer.Option(help="Write the Qini curve figure.")] = True,
+    readme: Annotated[
+        Path, typer.Option(help="Markdown file whose results block is regenerated.")
+    ] = DEFAULT_README,
+) -> None:
+    """Fit, evaluate and report one dataset, with intervals and both baselines."""
+    from itx.bench.plots import plot_qini_curves
+    from itx.bench.runner import DATASETS, run
+    from itx.bench.seeds import SEEDS
+    from itx.bench.table import to_markdown, update_markdown_file, write_json
+    from itx.data.splits import stratified_split
+
+    estimator_keys = [e.strip() for e in estimators.split(",")] if estimators else None
+    seed_values = [int(s) for s in seeds.split(",")] if seeds else list(SEEDS)
+
+    rows = run(
+        dataset,
+        estimators=estimator_keys,
+        seeds=seed_values,
+        n_resamples=resamples,
+    )
+    table = to_markdown(rows)
+    typer.echo("")
+    typer.echo(table)
+
+    json_path = results_dir / f"{dataset}.json"
+    write_json(rows, json_path)
+    typer.echo(f"per-seed results: {json_path}")
+
+    if update_markdown_file(readme, dataset, table):
+        typer.echo(f"results block updated: {readme}")
+
+    if plot:
+        first_seed = seed_values[0]
+        split = stratified_split(DATASETS[dataset](), first_seed)
+        figure_path = figure_dir / f"qini-{dataset}.png"
+        plot_qini_curves(
+            [row for row in rows if row.seed == first_seed], split.test, figure_path
+        )
+        typer.echo(f"figure: {figure_path}")
+
+
+@app.command("demo")
+def demo() -> None:
+    """Build the static budget-slider demo. Arrives in week 7 (PLAN.md section 6)."""
+    typer.echo("not built yet: the demo is week 7. See PLAN.md section 7.")
+    raise typer.Exit(code=1)
+
+
+if __name__ == "__main__":  # pragma: no cover
+    app()
