@@ -6,9 +6,13 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
-**Status: week 3 of 8.** Five estimators of the seven are benchmarked, on three datasets of
-the five. The numbers below are real and reproducible; the table is not finished. Build
-plan: [PLAN.md](PLAN.md).
+**Status: week 4 of 8.** Loaders for all five datasets, and five estimators of the seven
+benchmarked on three of them. Lenta and Criteo have their loaders, their dataset cards and
+their findings below, but not yet their results tables: the first attempt at running them
+showed the tuning protocol did not scale to datasets this size, and the fix, along with the
+measurement showing it costs nothing, landed in the same commit as this sentence
+([docs/estimators.md](docs/estimators.md), PLAN.md change 30). The numbers below are real and
+reproducible; the table is not finished. Build plan: [PLAN.md](PLAN.md).
 
 ## Results
 
@@ -167,6 +171,57 @@ one that gets them right, and then forecasts half the return. The S-learner's ca
 slope of 1.53 is the only one whose interval excludes 1: its predictions are too compressed,
 and realised uplift varies half as much again as it says.
 
+### Lenta, 687,029 grocery customers, randomised SMS campaign
+
+194 columns, no data dictionary, missing values in 150 of them, and a 0.75-point lift on a
+10.3% base rate. It is the messiest dataset here and the closest in shape to a real customer
+table.
+
+<!-- itx:table:lenta -->
+_Not generated yet. The loader, the card and the leak finding below are done; the results table is week 5, after the tuning cap of PLAN.md change 30 made a run affordable._
+<!-- itx:end:lenta -->
+
+Two of its columns never reach the model, and finding that out is the interesting part.
+`response_sms` and `response_viber` sit in the feature block with names that could plausibly
+mean "responded to an earlier campaign". Nothing in the documentation says either way. In a
+randomised trial the answer is checkable: a pre-treatment covariate has the same mean in both
+arms, so anything that does not is not pre-treatment.
+
+| Column | Standardised difference between arms |
+|---|---|
+| `response_sms` | **0.198** |
+| `response_viber` | **0.068** |
+| worst of the other 192 | 0.025 |
+| median of the other 192 | 0.011 |
+
+Eighteen times the median, in the only two columns whose names suggest they were recorded
+after the campaign went out. They are responses to the campaign's own delivery channels, so
+they are consequences of the treatment, and an estimator handed `response_sms` would have
+been told part of the answer. Both are dropped. The check is a permanent part of the package
+rather than a script that was run once: [`itx.metrics.balance`](src/itx/metrics/balance.py),
+and it runs against every dataset.
+
+### Criteo-UPLIFT, 13.98M randomised ad impressions
+
+The volume test. Twelve anonymous features, a 4.7% visit rate, arms split 85/15, and enough
+rows that nothing here is small-sample noise.
+
+<!-- itx:table:criteo -->
+_Not generated yet. The loader, the card and the subsample checks below are done; the results table is week 5, after the tuning cap of PLAN.md change 30 made a run affordable._
+<!-- itx:end:criteo -->
+
+The table is the committed 10% stratified subsample, 1,397,958 rows. Stratifying on the arm
+crossed with both outcomes holds every cell at exactly a tenth of itself, so the subsample's
+treated share is 0.8500005 against the full file's 0.8500001 and its visit rate is 0.046991
+against 0.046992. The reason for subsampling is wall-clock time rather than memory, and
+PLAN.md change 23 records that the plan originally said otherwise and was wrong.
+
+Criteo's `exposure` column is dropped for the same reason Lenta's two are, in a more obvious
+form: it records whether an ad was actually shown, and it is zero for every one of the
+2,096,937 control rows, because a control user cannot be shown an ad that was never served.
+It is a consequence of the treatment. Criteo published it deliberately, for a
+noncompliance question this project does not ask.
+
 ## What this does not do
 
 - It does not identify effects without an experiment or a credible ignorability
@@ -174,9 +229,17 @@ and realised uplift varies half as much again as it says.
   the targeting decision flips; it does not remove the assumption.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
-- Not yet built, in schedule order: the Criteo and Lenta loaders; realised policy value
-  under a budget; Rosenbaum bounds and E-values; Dragonnet; the budget-slider demo. Nothing
-  above is a placeholder for them: the numbers reported are the numbers measured.
+- Not yet built, in schedule order: realised policy value under a budget; Rosenbaum
+  bounds and E-values; Dragonnet; the budget-slider demo. Nothing above is a placeholder
+  for them: the numbers reported are the numbers measured.
+- **Lenta has no licence.** Not from the publisher, not in the package that distributes it.
+  This repository downloads it and redistributes nothing, but nobody reading this is being
+  told their own use of that dataset is permitted. See
+  [docs/data/lenta.md](docs/data/lenta.md).
+- **The Criteo table is a 10% subsample**, 1,397,958 of 13,979,592 rows, drawn once with a
+  committed seed and stratified so the arm and event rates are preserved exactly. The full
+  file is fitted once for the headline number and the two are labelled differently
+  throughout. The reason is wall-clock time, not memory: see PLAN.md change 23.
 
 ## Install and run
 
@@ -184,10 +247,23 @@ Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
 uv sync --extra learners      # create the environment; the extra adds EconML and CausalML
-uv run itx data pull          # download the raw datasets and verify their checksums
+uv run itx data pull          # download every dataset and verify its checksum (about 460 MB)
 uv run itx benchmark --dataset hillstrom
 uv run itx benchmark --dataset ihdp
 uv run itx benchmark --dataset acic
+uv run itx benchmark --dataset lenta
+uv run itx benchmark --dataset criteo     # the committed 10% subsample
+```
+
+`itx data pull hillstrom ihdp-train ihdp-test acic-x acic-zymu-1` fetches only the small
+sets, about 20 MB, which is enough for the first three benchmarks. Criteo is 297 MB and
+Lenta is 138 MB.
+
+Or run the whole table in one command, which is what PLAN.md section 4 asks for and takes a
+few hours on a laptop:
+
+```bash
+uv run itx benchmark --all
 ```
 
 The DR and R learners come from EconML and CausalML, which is why they sit behind an extra:
@@ -206,6 +282,15 @@ when only the presentation has changed:
 ```bash
 uv run itx report  --dataset hillstrom   # redraw the table from results/, no fitting at all
 uv run itx figures --dataset hillstrom   # redraw the figures, refitting only the first seed
+```
+
+A third checks that a rerun still produces the committed numbers, which is what CI asserts
+after each scheduled benchmark. It is not a file diff: the results file records how long
+each fit took, and wall-clock time never reproduces, so a diff would fail every run for a
+reason that has nothing to do with the numbers.
+
+```bash
+uv run itx compare committed.json results/hillstrom.json
 ``` Raw data is never committed; the SHA-256 of every download is, in
 [`src/itx/data/checksums.sha256`](src/itx/data/checksums.sha256), so a download can be
 verified without running any of this code:
@@ -336,8 +421,9 @@ because the decision is what the budget holder is actually buying.
 - [PLAN.md](PLAN.md): scope, evaluation protocol, package design, week-by-week schedule.
 - [docs/estimators.md](docs/estimators.md): where each estimator breaks, with evidence.
 - [docs/data/hillstrom.md](docs/data/hillstrom.md),
-  [docs/data/ihdp.md](docs/data/ihdp.md), [docs/data/acic.md](docs/data/acic.md): one card
-  per dataset, with source, licence, treatment definition, quirks and split seeds.
+  [docs/data/ihdp.md](docs/data/ihdp.md), [docs/data/acic.md](docs/data/acic.md),
+  [docs/data/criteo.md](docs/data/criteo.md), [docs/data/lenta.md](docs/data/lenta.md): one
+  card per dataset, with source, licence, treatment definition, quirks and split seeds.
 
 ## Part of a portfolio
 

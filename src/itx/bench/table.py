@@ -250,6 +250,115 @@ def read_json(path: Path) -> list[BenchmarkRow]:
     return rows
 
 
+def compare_results(
+    baseline: Sequence[BenchmarkRow],
+    current: Sequence[BenchmarkRow],
+    *,
+    tolerance: float = 0.0,
+) -> list[str]:
+    """Describe every way two runs disagree, ignoring how long the fits took.
+
+    The obvious way to assert that a committed results file still matches a fresh run is
+    ``git diff --exit-code`` on the file. That does not work here, and shipping it in CI was
+    a mistake: :func:`write_json` records ``fit_seconds``, which is wall-clock and never
+    reproduces, so the check would have failed on every scheduled run for a reason that has
+    nothing to do with the numbers (PLAN.md change 28).
+
+    Comparing the rows instead fixes that and gives a better failure message than a diff.
+    A moved metric is reported as the metric that moved and by how much, which is the
+    question a reader of a failing build actually has.
+
+    Args:
+        baseline: The committed rows.
+        current: The rows a fresh run produced.
+        tolerance: Absolute difference tolerated per number. Zero by default: the
+            benchmark is seeded throughout and is meant to reproduce exactly, so a
+            tolerance is something to reach for once a platform has been shown to need it,
+            with the reason recorded.
+
+    Returns:
+        One line per disagreement, empty when the two runs agree.
+    """
+    differences: list[str] = []
+    left = {(row.estimator, row.seed): row for row in baseline}
+    right = {(row.estimator, row.seed): row for row in current}
+
+    for estimator, seed in sorted(left.keys() - right.keys()):
+        differences.append(f"{estimator} seed {seed}: committed, missing from the run")
+    for estimator, seed in sorted(right.keys() - left.keys()):
+        differences.append(f"{estimator} seed {seed}: produced by the run, not committed")
+
+    for key in sorted(left.keys() & right.keys()):
+        differences.extend(_compare_row(left[key], right[key], tolerance=tolerance))
+    return differences
+
+
+def _compare_row(
+    baseline: BenchmarkRow, current: BenchmarkRow, *, tolerance: float
+) -> list[str]:
+    """Every disagreement between two rows for the same estimator and seed."""
+    label = f"{baseline.estimator} seed {baseline.seed}"
+    differences: list[str] = []
+
+    if baseline.n_test != current.n_test:
+        differences.append(
+            f"{label}: test split has {current.n_test} rows, committed {baseline.n_test}"
+        )
+
+    left_selection = _selection_label(baseline.selection)
+    right_selection = _selection_label(current.selection)
+    if left_selection != right_selection:
+        differences.append(f"{label}: selected {right_selection}, committed {left_selection}")
+
+    for metric in sorted(set(baseline.metrics) | set(current.metrics)):
+        if metric not in baseline.metrics:
+            differences.append(f"{label}: {metric} is new")
+            continue
+        if metric not in current.metrics:
+            differences.append(f"{label}: {metric} is gone")
+            continue
+        differences.extend(
+            _compare_estimate(
+                label, metric, baseline.metrics[metric], current.metrics[metric], tolerance
+            )
+        )
+    return differences
+
+
+def _compare_estimate(
+    label: str, metric: str, baseline: Estimate, current: Estimate, tolerance: float
+) -> list[str]:
+    """Disagreements between two estimates of the same metric."""
+    differences = []
+    for part, was, now in (
+        ("", baseline.value, current.value),
+        (" low", baseline.low, current.low),
+        (" high", baseline.high, current.high),
+    ):
+        if _moved(was, now, tolerance):
+            differences.append(f"{label}: {metric}{part} is {now:.6g}, committed {was:.6g}")
+    return differences
+
+
+def _moved(was: float, now: float, tolerance: float) -> bool:
+    """True when two numbers disagree by more than the tolerance, NaN counting as equal."""
+    if np.isnan(was) and np.isnan(now):
+        return False
+    if np.isnan(was) or np.isnan(now):
+        return True
+    return abs(was - now) > tolerance
+
+
+def _selection_label(selection: Selection | None) -> str:
+    """A short, comparable description of a chosen configuration."""
+    if selection is None:
+        return "no tuning"
+    return (
+        f"min_child_samples={selection.config.min_child_samples}, "
+        f"num_leaves={selection.config.num_leaves}"
+    )
+
+
 MARKER_START = "<!-- itx:table:{name} -->"
 MARKER_END = "<!-- itx:end:{name} -->"
 

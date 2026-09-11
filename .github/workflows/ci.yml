@@ -5,13 +5,15 @@ name: CI
 #   checks     is the code correct and typed? Synthetic data, about a minute.
 #   benchmark  do the small datasets still produce their numbers? A real download and a
 #              real fit, a few minutes.
-#   hillstrom  the same for the 42,693-row set. Selecting from an eight-candidate grid for
-#              five estimators over five seeds is around twenty minutes, most of it in the
-#              DR and R learners' cross-fitting, so it runs on a schedule and on demand
-#              rather than on every push.
+#   hillstrom  the twenty-minute reproduction check: rerun the benchmark and assert the
+#              committed numbers come back. Weekly and on demand rather than on every push.
 #
-# Criteo is in none of them: 297 MB and 13.9M rows, and PLAN.md section 4 puts it on the
-# same nightly-or-on-demand footing.
+# Lenta and Criteo are deliberately not reproduced here (PLAN.md change 31). A GitHub runner
+# has four cores against the twelve this was built on, and a hard six-hour job limit; Criteo
+# alone ran four hours locally. Their CI job loads them and checks the pipeline instead: row
+# counts, arm balance, and that no post-treatment column reached the feature matrix. That is
+# the question CI can afford to ask. Whether the numbers still reproduce is asked locally,
+# against the committed results, with 'itx compare'.
 
 on:
   push:
@@ -102,9 +104,68 @@ jobs:
           if-no-files-found: error
 
   hillstrom:
-    name: Hillstrom benchmark
+    name: Hillstrom reproduction
     # The long one. Every push would spend twenty minutes re-proving a number that only
     # moves when the estimators or the protocol move.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DATASET: hillstrom
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python 3.13 and the project
+        run: uv sync --all-groups --extra learners
+
+      - name: Cache the raw downloads
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-${{ env.DATASET }}-${{ hashFiles('src/itx/data/checksums.sha256') }}
+
+      - name: Pull and verify the dataset
+        run: uv run itx data pull ${{ env.DATASET }}
+
+      # Kept before the run overwrites it, so the comparison below has something to compare
+      # against. Outside the working tree so it cannot be picked up as a result.
+      - name: Keep the committed results
+        run: cp results/${{ env.DATASET }}.json "${RUNNER_TEMP}/committed.json"
+
+      - name: Benchmark
+        run: uv run itx benchmark --dataset ${{ env.DATASET }}
+
+      # The committed numbers have to match what a rerun produces. Not a file diff: the
+      # results file records fit_seconds, which is wall-clock and never reproduces, so a
+      # diff would fail every run for a reason that has nothing to do with the numbers
+      # (PLAN.md change 28). 'itx compare' ignores timings and names what moved.
+      - name: The committed numbers still match a fresh run
+        run: uv run itx compare "${RUNNER_TEMP}/committed.json" results/${{ env.DATASET }}.json
+
+      - name: The committed table still matches a fresh run
+        run: git diff --exit-code -- README.md
+
+      - name: Keep the results and the figures
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.DATASET }}-results
+          path: |
+            results/
+            docs/figures/
+          if-no-files-found: error
+
+  large-datasets:
+    name: Lenta and Criteo pipeline
+    # Not a reproduction check: see the header and PLAN.md change 31. This loads both large
+    # datasets and asserts the properties that would break silently if the source files
+    # changed or a loader regressed, which is what CI can afford on a four-core runner.
+    # 435 MB of downloads, so it is scheduled rather than on every push.
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -124,25 +185,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data/raw
-          key: raw-${{ hashFiles('src/itx/data/checksums.sha256') }}
+          key: raw-large-${{ hashFiles('src/itx/data/checksums.sha256') }}
 
-      - name: Pull and verify Hillstrom
-        run: uv run itx data pull hillstrom
+      - name: Pull and verify Criteo and Lenta
+        run: uv run itx data pull criteo lenta
 
-      - name: Hillstrom benchmark
-        run: uv run itx benchmark --dataset hillstrom
-
-      # The committed table has to match what a rerun produces. If this step reports a
-      # difference, either the numbers moved or the README was edited by hand, and both are
-      # things the project wants to hear about rather than discover later.
-      - name: The committed results table still matches a fresh run
-        run: git diff --exit-code -- README.md results/hillstrom.json
-
-      - name: Keep the results and the figures
-        uses: actions/upload-artifact@v4
-        with:
-          name: hillstrom-results
-          path: |
-            results/
-            docs/figures/
-          if-no-files-found: error
+      # Row counts, the published arm and outcome rates, the stratified subsample matching
+      # the full file, gender coding, missingness left alone, and that neither dataset's
+      # post-treatment columns reached the feature matrix.
+      - name: The loaders still produce the datasets the cards describe
+        run: uv run pytest tests/test_large_datasets.py -q --run-slow

@@ -102,6 +102,33 @@ def fetch_all(keys: Iterable[str], *, force: bool = False, quiet: bool = False) 
     return [fetch(key, force=force, quiet=quiet) for key in keys]
 
 
+def require_rows(name: str, actual: int, expected: int) -> None:
+    """Fail unless a loaded file has the row count the loader was written against.
+
+    The committed SHA-256 already catches a changed file, so this is a second line rather
+    than the first one. It exists because the digest is only checked at download time: a
+    cache directory populated by hand, or an ``ITX_DATA_DIR`` pointed somewhere else, gets
+    past it, and the failure that follows is a results table that is quietly about
+    different data.
+
+    Args:
+        name: Dataset name, for the message.
+        actual: Rows read.
+        expected: Rows the loader expects.
+
+    Raises:
+        ValueError: If the counts differ.
+    """
+    if actual == expected:
+        return
+    msg = (
+        f"{name}: expected {expected:,} rows, read {actual:,}. The file is truncated, has "
+        f"been re-released, or is not the file this loader was written against; run "
+        f"'itx data verify' before trusting any number from it."
+    )
+    raise ValueError(msg)
+
+
 def checksum_line(spec: Source, path: Path) -> str:
     """The ``sha256sum`` line to paste into the committed checksum file.
 

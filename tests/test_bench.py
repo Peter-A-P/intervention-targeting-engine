@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import inspect
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
 import pytest
 from typer.testing import CliRunner
 
+from itx import cli
 from itx.bench.grid import (
     GRID,
     MIN_CHILD_SAMPLES,
@@ -21,17 +23,21 @@ from itx.bench.grid import (
 )
 from itx.bench.plots import plot_qini_curves
 from itx.bench.runner import (
+    BENCHMARK_DATASETS,
     DATASETS,
     DEFAULT_ESTIMATORS,
     ESTIMATORS,
     UNTUNED,
+    _duration,
     evaluate,
     random_reference_row,
     refit_seed,
+    resamples_for,
     run,
 )
 from itx.bench.seeds import SEEDS, TIE_SEED, bootstrap_seed_for
 from itx.bench.table import (
+    compare_results,
     read_json,
     selected_configurations,
     summarise,
@@ -622,3 +628,233 @@ class TestFigureStyle:
         finally:
             plt.style.use("default")
         assert first == second
+
+
+class TestCompareResults:
+    """The CI reproducibility check. It has to ignore timings and notice everything else."""
+
+    def test_a_run_reproduces_itself(self, rows):
+        assert compare_results(rows, rows) == []
+
+    def test_a_different_fit_time_is_not_a_difference(self, rows):
+        # The whole reason this exists rather than 'git diff': fit_seconds is wall-clock
+        # and never reproduces, so a file diff would fail on every scheduled run.
+        slower = [replace(row, fit_seconds=row.fit_seconds + 99.0) for row in rows]
+        assert compare_results(rows, slower) == []
+
+    def test_a_moved_metric_is_reported_with_both_numbers(self, rows):
+        metric = next(iter(rows[0].metrics))
+        moved = dict(rows[0].metrics)
+        moved[metric] = replace(moved[metric], value=moved[metric].value + 0.5)
+        current = [replace(rows[0], metrics=moved), *rows[1:]]
+
+        differences = compare_results(rows, current)
+        assert len(differences) == 1
+        assert metric in differences[0]
+        assert rows[0].estimator in differences[0]
+        assert f"seed {rows[0].seed}" in differences[0]
+
+    def test_a_moved_interval_is_reported_even_when_the_value_holds(self, rows):
+        metric = next(iter(rows[0].metrics))
+        moved = dict(rows[0].metrics)
+        moved[metric] = replace(moved[metric], low=moved[metric].low - 0.5)
+        current = [replace(rows[0], metrics=moved), *rows[1:]]
+
+        differences = compare_results(rows, current)
+        assert [f"{metric} low" in line for line in differences].count(True) == 1
+
+    def test_a_tolerance_lets_a_small_move_through(self, rows):
+        metric = next(iter(rows[0].metrics))
+        moved = dict(rows[0].metrics)
+        moved[metric] = replace(moved[metric], value=moved[metric].value + 1e-9)
+        current = [replace(rows[0], metrics=moved), *rows[1:]]
+
+        assert compare_results(rows, current) != []
+        assert compare_results(rows, current, tolerance=1e-6) == []
+
+    def test_a_missing_row_is_reported(self, rows):
+        differences = compare_results(rows, rows[1:])
+        assert len(differences) == 1
+        assert "missing from the run" in differences[0]
+
+    def test_an_extra_row_is_reported(self, rows):
+        differences = compare_results(rows[1:], rows)
+        assert len(differences) == 1
+        assert "not committed" in differences[0]
+
+    def test_a_changed_selection_is_reported(self, rows):
+        chosen = Selection(config=DEFAULT_CONFIG.with_(num_leaves=99), score=0.5, scores=())
+        current = [replace(rows[0], selection=chosen), *rows[1:]]
+        differences = compare_results(rows, current)
+        assert any("num_leaves=99" in line for line in differences)
+
+    def test_a_changed_test_split_size_is_reported(self, rows):
+        current = [replace(rows[0], n_test=rows[0].n_test + 1), *rows[1:]]
+        assert any("test split has" in line for line in compare_results(rows, current))
+
+    def test_two_nans_agree_rather_than_differing(self, rows):
+        # A calibration slope can legitimately be NaN, and NaN != NaN would otherwise make
+        # every such row a permanent CI failure.
+        metric = next(iter(rows[0].metrics))
+        blank = dict(rows[0].metrics)
+        blank[metric] = replace(blank[metric], value=float("nan"))
+        current = [replace(rows[0], metrics=blank), *rows[1:]]
+        assert compare_results(current, current) == []
+        assert compare_results(rows, current) != []
+
+
+class TestCompareCommand:
+    def test_it_reports_success_on_a_file_against_itself(self, tmp_path, rows):
+        path = tmp_path / "a.json"
+        write_json(rows, path)
+        result = runner.invoke(app, ["compare", str(path), str(path)])
+        assert result.exit_code == 0
+        assert "reproduces" in result.stdout
+
+    def test_it_exits_nonzero_and_names_what_moved(self, tmp_path, rows):
+        baseline = tmp_path / "a.json"
+        current = tmp_path / "b.json"
+        write_json(rows, baseline)
+
+        metric = next(iter(rows[0].metrics))
+        moved = dict(rows[0].metrics)
+        moved[metric] = replace(moved[metric], value=moved[metric].value + 0.5)
+        write_json([replace(rows[0], metrics=moved), *rows[1:]], current)
+
+        result = runner.invoke(app, ["compare", str(baseline), str(current)])
+        assert result.exit_code == 1
+        assert metric in result.stdout
+
+    def test_a_missing_file_is_its_own_exit_code(self, tmp_path, rows):
+        path = tmp_path / "a.json"
+        write_json(rows, path)
+        result = runner.invoke(app, ["compare", str(path), str(tmp_path / "nope.json")])
+        assert result.exit_code == 2
+
+
+class TestBenchmarkSweep:
+    """``itx benchmark --all``, the command PLAN.md section 4 says the table comes out of."""
+
+    def test_every_swept_dataset_is_a_real_one(self):
+        for name in BENCHMARK_DATASETS:
+            assert name in DATASETS
+
+    def test_the_sweep_is_the_five_real_datasets(self):
+        assert set(BENCHMARK_DATASETS) == {"hillstrom", "ihdp", "acic", "lenta", "criteo"}
+
+    def test_synthetic_data_is_not_swept(self):
+        # A results table on data this package invented would be a table about this
+        # package. The generators exist to make tests fail meaningfully, not to be reported.
+        assert not any(name.startswith("synthetic") for name in BENCHMARK_DATASETS)
+
+    def test_the_full_criteo_fit_is_not_swept(self):
+        # It is the headline single fit, run deliberately, not folded into a sweep.
+        assert "criteo-full" not in BENCHMARK_DATASETS
+
+    def test_the_cheapest_datasets_come_first(self):
+        # So a sweep that is going to fail on a missing download fails in the first minute
+        # rather than the third hour.
+        assert BENCHMARK_DATASETS.index("ihdp") < BENCHMARK_DATASETS.index("hillstrom")
+        assert BENCHMARK_DATASETS.index("hillstrom") < BENCHMARK_DATASETS.index("criteo")
+
+    def test_the_protocol_resample_counts(self):
+        # PLAN.md section 4: 1,000 on the small sets, 200 on the Criteo subsample.
+        assert resamples_for("criteo") == 200
+        assert resamples_for("criteo-full") == 200
+        assert resamples_for("hillstrom") == 1_000
+        assert resamples_for("ihdp") == 1_000
+
+    def test_all_runs_every_dataset_once_and_ignores_dataset(self, monkeypatch):
+        seen = []
+        monkeypatch.setattr(cli, "_benchmark_one", lambda name, **_: seen.append(name))
+        result = runner.invoke(app, ["benchmark", "--all", "--dataset", "hillstrom"])
+        assert result.exit_code == 0
+        assert seen == list(BENCHMARK_DATASETS)
+
+    def test_without_all_only_the_named_dataset_runs(self, monkeypatch):
+        seen = []
+        monkeypatch.setattr(cli, "_benchmark_one", lambda name, **_: seen.append(name))
+        result = runner.invoke(app, ["benchmark", "--dataset", "ihdp"])
+        assert result.exit_code == 0
+        assert seen == ["ihdp"]
+
+    def test_an_explicit_resample_count_overrides_the_protocol(self, monkeypatch):
+        seen = {}
+        monkeypatch.setattr(
+            cli, "_benchmark_one", lambda name, **kw: seen.update({name: kw["resamples"]})
+        )
+        runner.invoke(app, ["benchmark", "--dataset", "criteo", "--resamples", "7"])
+        assert seen == {"criteo": 7}
+
+    def test_omitting_it_leaves_the_protocol_to_decide(self, monkeypatch):
+        seen = {}
+        monkeypatch.setattr(
+            cli, "_benchmark_one", lambda name, **kw: seen.update({name: kw["resamples"]})
+        )
+        runner.invoke(app, ["benchmark", "--dataset", "criteo"])
+        assert seen == {"criteo": None}
+
+
+class TestProgress:
+    """A run that says nothing for hours cannot be told apart from a hung one."""
+
+    def test_silent_by_default(self, binary_data, monkeypatch):
+        # The tests want quiet; only the CLI passes a printer.
+        monkeypatch.setattr("itx.bench.runner.DATASETS", {"probe": lambda: binary_data})
+        captured = []
+        monkeypatch.setattr("builtins.print", lambda *a, **k: captured.append(a))
+        run("probe", estimators=["s-learner"], seeds=(11,), n_resamples=10, tune=False)
+        assert captured == []
+
+    def test_it_reports_the_shape_then_one_line_per_fit_then_the_total(
+        self, binary_data, monkeypatch
+    ):
+        monkeypatch.setattr("itx.bench.runner.DATASETS", {"probe": lambda: binary_data})
+        lines: list[str] = []
+        run(
+            "probe",
+            estimators=["s-learner", "outcome-ranking"],
+            seeds=(11, 23),
+            n_resamples=10,
+            tune=False,
+            progress=lines.append,
+        )
+        assert lines[0].startswith("probe: ")
+        assert "2 estimators over 2 seeds, 4 fits" in lines[0]
+        assert len(lines) == 6
+        assert lines[1].startswith("  [1/4] seed 11 s-learner:")
+        assert lines[4].startswith("  [4/4] seed 23 outcome-ranking:")
+        assert lines[-1].startswith("probe: finished in ")
+
+    def test_one_seed_is_not_called_seeds(self, binary_data, monkeypatch):
+        monkeypatch.setattr("itx.bench.runner.DATASETS", {"probe": lambda: binary_data})
+        lines: list[str] = []
+        run(
+            "probe",
+            estimators=["s-learner"],
+            seeds=(11,),
+            n_resamples=10,
+            tune=False,
+            progress=lines.append,
+        )
+        assert "over 1 seed," in lines[0]
+
+
+class TestDuration:
+    """Elapsed times are for a person reading a log, so they are not all in seconds."""
+
+    @pytest.mark.parametrize(
+        ("seconds", "expected"),
+        [
+            (0.0, "0.0s"),
+            (4.25, "4.2s"),
+            (59.9, "59.9s"),
+            (60.0, "1m00s"),
+            (135.0, "2m15s"),
+            (3599.0, "59m59s"),
+            (3600.0, "1h00m"),
+            (9061.0, "2h31m"),
+        ],
+    )
+    def test_it_formats(self, seconds, expected):
+        assert _duration(seconds) == expected

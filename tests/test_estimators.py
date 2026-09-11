@@ -8,6 +8,8 @@ size of the effect passes a Qini comparison and fails here.
 
 from __future__ import annotations
 
+import warnings
+
 import numpy as np
 import polars as pl
 import pytest
@@ -654,3 +656,82 @@ class TestSklearnBridge:
         plain = LightGBMRegressor(seed=0).fit(x, y).predict(x)
         declared = LightGBMRegressor(seed=0, categorical=(0,)).fit(x, y).predict(x)
         assert not np.allclose(plain, declared)
+
+
+class TestMissingValues:
+    """Every estimator has to survive a feature matrix with holes in it.
+
+    Lenta has missing values in 150 of its 191 columns, and imputing them would put a
+    modelling choice made in a loader into every estimator's input. LightGBM routes NaN
+    down its own branch at every split, so nothing needs imputing, but only five of the six
+    estimators here get to use that: EconML validates its inputs with scikit-learn's
+    finiteness check before any model runs, so the DR-learner refused the matrix outright
+    until it was told not to (PLAN.md change 29). This is the test that would have caught
+    it, and the one that catches it coming back.
+    """
+
+    @pytest.fixture(scope="class")
+    def holey(self):
+        """A randomised dataset with a true effect of 0.5 and a quarter of its cells gone."""
+        rng = np.random.default_rng(0)
+        n = 6_000
+        columns = {}
+        for index in range(4):
+            values = rng.normal(size=n)
+            values[rng.random(n) < 0.25] = np.nan
+            columns[f"x{index}"] = values
+        treatment = rng.binomial(1, 0.5, n).astype(np.int64)
+        return UpliftDataset(
+            name="holey",
+            features=pl.DataFrame(columns),
+            treatment=treatment,
+            outcome=(rng.normal(size=n) + 0.5 * treatment).astype(np.float64),
+        )
+
+    def test_the_fixture_really_does_have_holes(self, holey):
+        assert np.isnan(holey.features.to_numpy()).any()
+
+    @pytest.mark.parametrize("estimator_class", EFFECT_ESTIMATORS)
+    def test_every_estimator_recovers_the_effect_through_the_holes(
+        self, estimator_class, holey
+    ):
+        estimator = estimator_class(DEFAULT_CONFIG.with_(n_estimators=100), seed=0)
+        estimator.fit(holey)
+        predicted = estimator.predict_uplift(holey.features)
+        assert np.isfinite(predicted).all()
+        assert predicted.mean() == pytest.approx(0.5, abs=0.1)
+
+    def test_no_warning_escapes_the_dr_learner(self, holey):
+        # EconML warns on every fold and again on every effect() call. It is filtered at
+        # the call site, narrowly; a warning leaking out here means the filter has drifted
+        # away from the call, or that EconML has something new to say and is being muffled.
+        estimator = DRLearner(DEFAULT_CONFIG.with_(n_estimators=100), seed=0)
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            estimator.fit(holey)
+            estimator.predict_uplift(holey.features)
+
+
+@pytest.mark.parametrize("estimator_class", [SLearner, TLearner, XLearner])
+def test_the_thread_count_does_not_change_the_answer(estimator_class, binary_data):
+    """A result must not depend on how many cores the machine running it happened to have.
+
+    ``deterministic`` and ``force_row_wise`` are set in ``BaseLearnerConfig`` for exactly
+    this reason, and without them LightGBM's histogram construction can accumulate floating
+    point sums in a thread-dependent order. This is the test that says the setting is doing
+    its job, and it is why raising ``n_jobs`` from 4 to 8 (PLAN.md change 24) left every
+    committed results table untouched and moved only ``fit_seconds``.
+
+    Only the three hand-written learners are checked. The DR and R learners run inside
+    EconML and CausalML, whose own parallelism this package does not control, so the
+    guarantee here would be a claim about someone else's code.
+    """
+    split = stratified_split(binary_data, 11)
+    predictions = []
+    for jobs in (1, 4, 8):
+        estimator = estimator_class(DEFAULT_CONFIG.with_(n_jobs=jobs), seed=0)
+        estimator.fit(split.train)
+        predictions.append(estimator.predict_uplift(split.test.features))
+
+    assert np.array_equal(predictions[0], predictions[1])
+    assert np.array_equal(predictions[0], predictions[2])

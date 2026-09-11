@@ -28,8 +28,10 @@ from itx.bench.seeds import (
     bootstrap_seed_for,
 )
 from itx.data.acic import load_acic
+from itx.data.criteo import load_criteo
 from itx.data.hillstrom import load_hillstrom
 from itx.data.ihdp import load_ihdp
+from itx.data.lenta import load_lenta
 from itx.data.splits import stratified_split
 from itx.data.synthetic import (
     binary_outcome,
@@ -61,17 +63,53 @@ if TYPE_CHECKING:
 #: Budgets the table reports uplift at, as shares of the population (PLAN.md section 1).
 BUDGETS: tuple[float, ...] = (0.1, 0.2, 0.3)
 
-#: Loaders the CLI can name. Datasets that ship replicates load replicate 0 here; the
-#: averaging over replicates arrives with the ground-truth metrics in week 3.
+#: Bootstrap resamples per dataset. PLAN.md section 4 asks for 1,000 on the small sets and
+#: 200 on the Criteo subsample, and the reason is the cost of a resample rather than the
+#: quality of one: a percentile interval from 200 draws is coarser at the tails, and on
+#: 279,592 test rows the interval is narrow enough that the coarseness does not show. Kept
+#: here rather than as a flag a caller remembers to pass, so that ``--all`` reproduces the
+#: protocol without anyone typing it.
+RESAMPLES: dict[str, int] = {"criteo": 200, "criteo-full": 200}
+
+
+def resamples_for(dataset: str) -> int:
+    """Bootstrap resamples the protocol asks for on a dataset.
+
+    Args:
+        dataset: A key of :data:`DATASETS`.
+
+    Returns:
+        The committed resample count, defaulting to 1,000.
+    """
+    return RESAMPLES.get(dataset, DEFAULT_RESAMPLES)
+
+
+#: Loaders the CLI can name. Datasets that ship replicates load replicate 0 here.
+#:
+#: ``criteo`` is the committed 10% stratified subsample and is what the results table
+#: reports; ``criteo-full`` is all 13.9M rows and is the headline single fit. They are two
+#: entries rather than one flag because a results table has to say which one produced it,
+#: and a dataset name is where that belongs (PLAN.md section 3, change 23).
 DATASETS: dict[str, Callable[[], UpliftDataset]] = {
     "hillstrom": load_hillstrom,
     "ihdp": lambda: load_ihdp(0),
     "acic": lambda: load_acic(0),
+    "criteo": load_criteo,
+    "criteo-full": lambda: load_criteo(fraction=1.0),
+    "lenta": load_lenta,
     "synthetic-binary": binary_outcome,
     "synthetic-heterogeneous": heterogeneous_effect,
     "synthetic-complex": complex_effect,
     "synthetic-confounded": confounded,
 }
+
+#: What ``itx benchmark --all`` runs, in increasing order of cost, so that a run which is
+#: going to fail on a missing download or a changed checksum fails in the first minute
+#: rather than the third hour. The synthetic generators are not here: they exist to make
+#: tests fail meaningfully, and a table of results on data this package invented would be
+#: a table about this package rather than about the world. ``criteo-full`` is not here
+#: either: it is the headline single fit and is run deliberately, not as part of a sweep.
+BENCHMARK_DATASETS: tuple[str, ...] = ("ihdp", "acic", "hillstrom", "lenta", "criteo")
 
 #: Estimators the CLI can name. Each is built from a base-learner configuration and a
 #: seed, so the same factory serves both the tuning loop and the final fit.
@@ -254,6 +292,7 @@ def run(
     n_resamples: int = DEFAULT_RESAMPLES,
     include_random_reference: bool = True,
     tune: bool = True,
+    progress: Callable[[str], None] | None = None,
 ) -> list[BenchmarkRow]:
     """Run one dataset across estimators and seeds.
 
@@ -267,6 +306,12 @@ def run(
         tune: Select each estimator's configuration on the validation split from the
             committed grid. Turning it off uses the default configuration everywhere,
             which is faster and is what the fast tests do.
+        progress: Called with one line per finished estimator. None stays silent, which
+            is what the tests want. The CLI passes a printer, because on Criteo and Lenta
+            this function runs for hours and a process that says nothing for hours is
+            indistinguishable from a hung one. That is not hypothetical: the first Criteo
+            run was started with no idea whether it was thirty minutes from finishing or
+            three hours, and there was no way to find out from outside.
 
     Returns:
         Every row, in dataset-then-seed-then-estimator order.
@@ -283,29 +328,59 @@ def run(
         msg = f"unknown estimators {sorted(unknown)}; known: {', '.join(sorted(ESTIMATORS))}"
         raise KeyError(msg)
 
+    started = time.perf_counter()
     data = DATASETS[dataset]()
+    total = len(seeds) * len(names)
+    if progress is not None:
+        seed_word = "seed" if len(seeds) == 1 else "seeds"
+        progress(
+            f"{dataset}: {data.n_units:,} rows, {len(data.feature_names)} features, "
+            f"{len(names)} estimators over {len(seeds)} {seed_word}, {total} fits"
+        )
+
     rows: list[BenchmarkRow] = []
+    done = 0
     for seed in seeds:
         split = stratified_split(data, seed)
         for name in names:
+            step = time.perf_counter()
             factory = ESTIMATORS[name]
             selection = (
                 select_config(factory, split, seed=seed)
                 if tune and name not in UNTUNED
                 else default_selection()
             )
-            rows.append(
-                evaluate(
-                    factory(selection.config, seed),
-                    split,
-                    budgets=budgets,
-                    n_resamples=n_resamples,
-                    selection=selection,
-                )
+            row = evaluate(
+                factory(selection.config, seed),
+                split,
+                budgets=budgets,
+                n_resamples=n_resamples,
+                selection=selection,
             )
+            rows.append(row)
+            done += 1
+            if progress is not None:
+                progress(
+                    f"  [{done}/{total}] seed {seed} {name}: "
+                    f"{_duration(time.perf_counter() - step)}, "
+                    f"elapsed {_duration(time.perf_counter() - started)}"
+                )
         if include_random_reference:
             rows.append(random_reference_row(split, budgets=budgets))
+    if progress is not None:
+        progress(f"{dataset}: finished in {_duration(time.perf_counter() - started)}")
     return rows
+
+
+def _duration(seconds: float) -> str:
+    """Format an elapsed time the way a person reading a log wants to read it."""
+    if seconds < 60:
+        return f"{seconds:.1f}s"
+    minutes, remainder = divmod(int(seconds), 60)
+    if minutes < 60:
+        return f"{minutes}m{remainder:02d}s"
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours}h{minutes:02d}m"
 
 
 def refit_seed(

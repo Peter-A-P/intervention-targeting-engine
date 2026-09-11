@@ -7,12 +7,16 @@ convenience wrapper around a notebook.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
-from typing import Annotated
+from typing import TYPE_CHECKING, Annotated
 
 import typer
 
 from itx import __version__
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 app = typer.Typer(
     name="itx",
@@ -26,6 +30,21 @@ app.add_typer(data_app, name="data")
 DEFAULT_RESULTS_DIR = Path("results")
 DEFAULT_FIGURE_DIR = Path("docs/figures")
 DEFAULT_README = Path("README.md")
+
+
+def _printer() -> Callable[[str], None]:
+    """A progress line printer that survives being redirected to a file.
+
+    Python block-buffers stdout when it is not a terminal, so a benchmark redirected to a
+    log writes nothing at all until it exits. That is exactly the run where the progress
+    matters, so every line is flushed as it is written.
+    """
+
+    def say(line: str) -> None:
+        typer.echo(line)
+        sys.stdout.flush()
+
+    return say
 
 
 @app.callback(invoke_without_command=True)
@@ -98,6 +117,13 @@ def data_verify() -> None:
 @app.command("benchmark")
 def benchmark(
     dataset: Annotated[str, typer.Option(help="Dataset key to run.")] = "hillstrom",
+    run_all: Annotated[
+        bool,
+        typer.Option(
+            "--all",
+            help="Run every benchmark dataset in turn, cheapest first. Ignores --dataset.",
+        ),
+    ] = False,
     estimators: Annotated[
         str | None,
         typer.Option(help="Comma-separated estimator keys; the default set if omitted."),
@@ -106,7 +132,12 @@ def benchmark(
         str | None,
         typer.Option(help="Comma-separated split seeds; the committed five if omitted."),
     ] = None,
-    resamples: Annotated[int, typer.Option(help="Bootstrap resamples per row.")] = 1_000,
+    resamples: Annotated[
+        int | None,
+        typer.Option(
+            help="Bootstrap resamples per row; the dataset's protocol value if omitted."
+        ),
+    ] = None,
     results_dir: Annotated[
         Path, typer.Option(help="Where the per-seed JSON goes.")
     ] = DEFAULT_RESULTS_DIR,
@@ -121,10 +152,50 @@ def benchmark(
         Path, typer.Option(help="Markdown file whose results block is regenerated.")
     ] = DEFAULT_README,
 ) -> None:
-    """Fit, evaluate and report one dataset, with intervals and both baselines."""
-    from itx.bench.plots import plot_calibration, plot_qini_curves
-    from itx.bench.runner import DATASETS, run
+    """Fit, evaluate and report, with intervals and both baselines.
+
+    One dataset by default, or every benchmark dataset with ``--all``, which is the command
+    PLAN.md section 4 says the whole results table comes out of.
+    """
+    from itx.bench.runner import BENCHMARK_DATASETS
     from itx.bench.seeds import SEEDS
+
+    estimator_keys = [e.strip() for e in estimators.split(",")] if estimators else None
+    seed_values = [int(s) for s in seeds.split(",")] if seeds else list(SEEDS)
+    wanted = list(BENCHMARK_DATASETS) if run_all else [dataset]
+
+    for index, name in enumerate(wanted):
+        if len(wanted) > 1:
+            typer.echo("")
+            typer.echo(f"=== {name} ({index + 1} of {len(wanted)}) ===")
+        _benchmark_one(
+            name,
+            estimator_keys=estimator_keys,
+            seed_values=seed_values,
+            resamples=resamples,
+            results_dir=results_dir,
+            figure_dir=figure_dir,
+            plot=plot,
+            tune=tune,
+            readme=readme,
+        )
+
+
+def _benchmark_one(
+    dataset: str,
+    *,
+    estimator_keys: list[str] | None,
+    seed_values: list[int],
+    resamples: int | None,
+    results_dir: Path,
+    figure_dir: Path,
+    plot: bool,
+    tune: bool,
+    readme: Path,
+) -> None:
+    """Run one dataset: fit, evaluate, then write the JSON, the table and the figures."""
+    from itx.bench.plots import plot_calibration, plot_qini_curves
+    from itx.bench.runner import DATASETS, resamples_for, run
     from itx.bench.table import (
         selected_configurations,
         to_markdown,
@@ -133,15 +204,13 @@ def benchmark(
     )
     from itx.data.splits import stratified_split
 
-    estimator_keys = [e.strip() for e in estimators.split(",")] if estimators else None
-    seed_values = [int(s) for s in seeds.split(",")] if seeds else list(SEEDS)
-
     rows = run(
         dataset,
         estimators=estimator_keys,
         seeds=seed_values,
-        n_resamples=resamples,
+        n_resamples=resamples if resamples is not None else resamples_for(dataset),
         tune=tune,
+        progress=_printer(),
     )
     table = to_markdown(rows)
     chosen = selected_configurations(rows)
@@ -205,6 +274,38 @@ def report(
     typer.echo(table)
     if update_markdown_file(readme, dataset, table):
         typer.echo(f"results block updated: {readme}")
+
+
+@app.command("compare")
+def compare(
+    baseline: Annotated[Path, typer.Argument(help="A results file from a previous run.")],
+    current: Annotated[Path, typer.Argument(help="A results file from a fresh run.")],
+    tolerance: Annotated[
+        float, typer.Option(help="Absolute difference tolerated per number.")
+    ] = 0.0,
+) -> None:
+    """Check that a fresh run reproduces a committed one, and say what moved if it did not.
+
+    This is what CI asserts after re-running a benchmark. It is not a file diff: the
+    results file records ``fit_seconds``, which is wall-clock and never reproduces, so a
+    diff would fail on every run for a reason that has nothing to do with the numbers.
+    """
+    from itx.bench.table import compare_results, read_json
+
+    for path in (baseline, current):
+        if not path.is_file():
+            typer.echo(f"no results at {path}")
+            raise typer.Exit(code=2)
+
+    differences = compare_results(read_json(baseline), read_json(current), tolerance=tolerance)
+    if not differences:
+        typer.echo(f"{current} reproduces {baseline}")
+        return
+
+    typer.echo(f"{len(differences)} difference(s) between {baseline} and {current}:")
+    for line in differences:
+        typer.echo(f"  {line}")
+    raise typer.Exit(code=1)
 
 
 @app.command("figures")

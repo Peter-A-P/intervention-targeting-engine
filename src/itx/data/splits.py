@@ -64,6 +64,46 @@ def stratified_split(
     )
 
 
+def stratified_subsample(dataset: UpliftDataset, n_rows: int, *, seed: int) -> UpliftDataset:
+    """Take at most ``n_rows`` rows, keeping the arm and outcome mix of the whole.
+
+    Stratified on the same key as :func:`stratified_split`, treatment crossed with the
+    outcome when the outcome is binary, so a rare treated-and-responded cell keeps its
+    share rather than being thinned by luck.
+
+    Args:
+        dataset: The dataset to thin.
+        n_rows: Maximum rows to keep.
+        seed: Seed for the draw. The same seed always gives the same rows.
+
+    Returns:
+        The subset, or the dataset itself when it already has ``n_rows`` or fewer. Rows
+        come back in their original order.
+
+    Raises:
+        ValueError: If ``n_rows`` is not positive.
+    """
+    if n_rows <= 0:
+        msg = f"n_rows must be positive, got {n_rows}"
+        raise ValueError(msg)
+    if dataset.n_units <= n_rows:
+        return dataset
+
+    share = n_rows / dataset.n_units
+    strata = _strata(dataset)
+    rng = np.random.default_rng(seed)
+    kept: list[IntArray] = []
+    for value in np.unique(strata):
+        members = np.flatnonzero(strata == value)
+        take = round(members.size * share)
+        if take == 0:
+            continue
+        kept.append(rng.permutation(members)[:take])
+    if not kept:
+        return dataset
+    return dataset.take(np.sort(np.concatenate(kept)))
+
+
 def _strata(dataset: UpliftDataset) -> IntArray:
     """Stratum label per row: treatment arm, crossed with the outcome when it is binary."""
     if dataset.outcome_is_binary:

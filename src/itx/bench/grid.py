@@ -76,6 +76,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from itx.bench.seeds import TIE_SEED
+from itx.data.splits import stratified_subsample
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig
 from itx.metrics.qini import qini_coefficient
 
@@ -109,6 +110,31 @@ type EstimatorFactory = Callable[[BaseLearnerConfig, int], BaseUpliftEstimator]
 #: A candidate needs room for at least this many leaves to be worth trying, so its leaf
 #: size may not exceed the training rows divided by this.
 MIN_LEAVES_AFFORDABLE = 4
+
+#: Most training rows the grid search fits a candidate on. The winner is then fitted on the
+#: whole training split, so this caps selection, not the model that gets reported.
+#:
+#: It is here because of an arithmetic error rather than a principle. Selection runs nine
+#: fits per estimator per seed, eight candidates and the winner, so it is about 89% of a
+#: benchmark's cost, and on the week 4 datasets that stopped being affordable: Lenta's
+#: 412,217 training rows extrapolated to somewhere between nineteen and thirty-two hours
+#: for one dataset, against about twenty minutes for Hillstrom. A protocol nobody can rerun
+#: is not a protocol, and one that costs a day per estimator change stops anyone from
+#: changing an estimator.
+#:
+#: The reason it is safe is not the one it was proposed with. The proposal was that selection
+#: is a coarse decision whose ranking stabilises early; measuring it refuted that, since a
+#: comparable reduction changes nearly every selection. What makes it safe is that the change
+#: costs nothing: fitting both the capped and the uncapped choice on the full training split
+#: and scoring both on test moves the Qini by -0.00015 on average, and the capped choice wins
+#: 9 times in 20. The candidates are near-ties, so the selection was never load-bearing.
+#: `docs/estimators.md` carries the tables and the withdrawn prediction.
+#:
+#: 50,000 is chosen so that it does not bind on any dataset whose full run is affordable:
+#: Hillstrom trains on 25,615 rows, ACIC on 2,881, IHDP on 448. That is deliberate, because
+#: it makes those three a control, and only Lenta and Criteo are capped at all
+#: (PLAN.md change 30).
+TUNING_ROWS_CAP = 50_000
 
 
 def applicable_grid(
@@ -170,6 +196,7 @@ def select_config(
     seed: int,
     grid: Sequence[BaseLearnerConfig] = GRID,
     tie_seed: int = TIE_SEED,
+    rows_cap: int = TUNING_ROWS_CAP,
 ) -> Selection:
     """Choose a configuration by fitting each candidate on train and scoring on validation.
 
@@ -180,6 +207,8 @@ def select_config(
         seed: Seed for the candidate fits.
         grid: Candidate configurations.
         tie_seed: Seed for tie-breaking inside the scoring ranking.
+        rows_cap: Most training rows any candidate is fitted on. See
+            :data:`TUNING_ROWS_CAP`.
 
     Returns:
         The winning configuration and every candidate's score.
@@ -190,13 +219,16 @@ def select_config(
     if not grid:
         msg = "cannot select from an empty grid"
         raise ValueError(msg)
+    # Computed from the full training split, not the capped one: what a candidate has to
+    # be able to fit is the data the winner will finally be fitted on.
     grid = applicable_grid(split.train.n_units, grid)
+    train = stratified_subsample(split.train, rows_cap, seed=seed)
 
     validation = split.validation
     scores: list[float] = []
     for config in grid:
         estimator = factory(config, seed)
-        estimator.fit(split.train)
+        estimator.fit(train)
         predictions = estimator.predict_uplift(validation.features)
         scores.append(
             qini_coefficient(

@@ -102,6 +102,16 @@ SOURCES: dict[str, Source] = {
         licence="CC BY-NC-SA 4.0 (Criteo research licence)",
         note="297 MB compressed, 13.9M rows. See docs/data/criteo.md.",
     ),
+    "lenta": Source(
+        key="lenta",
+        filename="lenta_dataset.csv.gz",
+        url="https://sklift.s3.eu-west-2.amazonaws.com/lenta_dataset.csv.gz",
+        licence=(
+            "None stated. Not by the publisher, not in scikit-uplift's code or docs. "
+            "Downloaded at run time and redistributed nowhere; see docs/data/lenta.md"
+        ),
+        note="138 MB compressed, 687,029 rows, 194 columns. See docs/data/lenta.md.",
+    ),
     "ihdp-train": Source(
         key="ihdp-train",
         filename="ihdp_npci_1-100.train.npz",

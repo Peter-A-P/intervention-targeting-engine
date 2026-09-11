@@ -282,6 +282,37 @@ worse than a constant, and at 200 it was 0.40.
 (0.1765, 0.3085), and a calibration slope of 1.01, the closest to honest in the table. Given
 enough data it is doing exactly what it promises.
 
+**Where it breaks for a reason that is not statistical at all: it refuses missing values.**
+This is the only estimator of the six that will not accept a feature matrix containing NaN.
+It is not a degradation, it is a `ValueError` before any model runs, and on Lenta, which has
+missing values in 150 of its 191 columns, it is the difference between a results row and a
+blank one.
+
+The cause is worth naming precisely, because it is not a flaw in the DR-learner as a method.
+EconML validates its inputs with scikit-learn's finiteness check at the top of `fit`, and
+again inside every `effect` call. LightGBM handles NaN natively, routing it down a learned
+branch at each split, and the S, T and X learners here use that without being asked, as does
+CausalML's R-learner. But the check runs before EconML ever hands the matrix to the model it
+was configured with, so LightGBM's capability never gets a chance to matter.
+
+`allow_missing=True` turns the check off, and EconML then warns, per fold and per prediction:
+
+> Input contains NaN. Causal identification strategy can be erroneous in the presence of
+> missing values.
+
+That warning is correct and is not boilerplate. If whether a covariate is observed depends on
+the treatment, or on something that also drives the outcome, then the missingness pattern is
+itself a confounder and no amount of doubly robust machinery repairs it. On Lenta it does not
+bite, and the reason is the same property that made the leak in that dataset findable: the
+assignment is randomised, so it is independent of the covariates and of their missingness
+pattern by construction. On an observational dataset with missing values this warning would
+need a real answer rather than a filter, and this repository does not currently have one.
+
+The general lesson is the one that made this worth a section: **a wrapped estimator inherits
+its library's input contract, not only its statistics.** Everything in this file up to here
+compares methods. This is a place where the comparison was nearly decided by a validation
+call, which is a thing worth knowing before choosing a library rather than after.
+
 ---
 
 ## R-learner
@@ -456,7 +487,7 @@ missing values.
 
 ## Tuning, and what the grid selection is worth
 
-Every estimator gets the same six-candidate grid over `min_child_samples` and `num_leaves`,
+Every estimator gets the same eight-candidate grid over `min_child_samples` and `num_leaves`,
 selected on the validation split by Qini, never on test. `itx/bench/grid.py` sets out why
 selecting on a metric this repository calls a poor referee is defensible: inside selection
 every candidate is the same model class, so nothing can win by being a different kind of
@@ -486,6 +517,64 @@ way rather than quietly suppressed, because the alternative, presenting per-seed
 though it had found something, is the kind of thing this repository exists to argue against.
 The consequence for reading the IHDP table is that the differences between estimators there
 should be read against both the bootstrap interval and this instability.
+
+**And on Hillstrom it chooses less consistently than the paragraph above claims.** That
+paragraph was written in week 2 from the modal configuration per estimator, which is a weak
+way to look at stability, and week 4 measured it properly while pricing something else.
+
+The something else was a protocol change. Selection is nine fits per estimator per seed,
+eight candidates and the winner, so it is about 89% of a benchmark's cost, and on Lenta's
+412,217 training rows that extrapolated to between nineteen and thirty-two hours for one
+dataset. So candidates are now fitted on at most 50,000 rows and only the winner sees the
+whole training split (PLAN.md change 30). The justification offered for that was that
+selection is a coarse decision: ranking eight settings of leaf size and tree width should
+stabilise long before accuracy does.
+
+**That justification was wrong, and the measurement says so.** Forcing comparable reductions
+on the two datasets where both sides can be run:
+
+| Dataset | Training rows | Reduction | Selections identical |
+|---|---|---|---|
+| ACIC 2016 | 2,881 | 5.8x | 1 of 25 |
+| ACIC 2016 | 2,881 | 8.2x | 1 of 25 |
+| Hillstrom | 25,615 | 5.1x | 5 of 25 |
+| Hillstrom | 25,615 | 8.5x | 1 of 25 |
+| Hillstrom | 25,615 | 17.1x | 4 of 25 |
+
+Twenty-five selections is five estimators over five seeds. Capping changes nearly all of
+them. Nothing about the choice is stable.
+
+**What the cap costs, though, is nothing measurable**, and that is the number that decides
+whether it survives. Taking the twenty Hillstrom disagreements at 5.1x, fitting *both*
+configurations on the full training split and scoring both on the held-out test split:
+
+| | Change in test Qini |
+|---|---|
+| mean | -0.00015 |
+| median | -0.00016 |
+| worst case | -0.00078 |
+| best case | +0.00049 |
+| capped choice better | 9 of 20 |
+| capped choice worse | 11 of 20 |
+
+Against a Hillstrom test Qini that runs 0.0028 to 0.0041 with 95% intervals roughly 0.004
+wide, a mean of -0.00015 and a nine-to-eleven split is a coin flip inside the noise.
+
+So the cap is defensible, but not for the reason it was introduced with. The selection is
+not stable and does not become stable with more data; it is choosing among configurations
+that are near-ties on the test split, and any perturbation reshuffles a choice that was
+never load-bearing. That is a fact about this grid on this data, not about capping.
+
+Two things follow, and both are uncomfortable enough to be worth stating. The first is that
+the "Selected on the validation split from the committed grid" block under each README table
+is largely reporting noise: it is an honest record of what the code did, and it should not be
+read as a finding about which settings suit which estimator. The second is that the tuning
+step buys very little here at all. Week 2 already measured the S-learner's Hillstrom Qini
+moving from 0.0040 untuned to 0.0042 tuned. A reader entitled to ask why the project spends
+89% of its compute on selection would be asking a fair question, and the answer for now is
+that the protocol in PLAN.md section 4 commits to it and changing what is measured mid-build
+is worse than paying for it. Whether the grid earns its place is a question for week 8, and
+`docs/rejected.md` is where it will be answered either way.
 
 ---
 

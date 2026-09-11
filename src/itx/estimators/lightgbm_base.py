@@ -48,7 +48,11 @@ class BaseLearnerConfig:
         subsample_freq: How often to resample rows.
         colsample_bytree: Column subsampling fraction.
         reg_lambda: L2 penalty on leaf weights.
-        n_jobs: Threads. Left at 4 so a laptop stays usable and timings are comparable.
+        n_jobs: Threads. Eight, on a twelve-core laptop, leaving room for the machine to
+            stay usable. It is not a modelling parameter and does not move a result:
+            ``deterministic`` and ``force_row_wise`` below exist so that the same fit gives
+            the same answer whatever the thread count. It does move ``fit_seconds``, so
+            timings recorded before change 24 in PLAN.md are not comparable with later ones.
     """
 
     n_estimators: int = 400
@@ -60,7 +64,7 @@ class BaseLearnerConfig:
     subsample_freq: int = 1
     colsample_bytree: float = 0.8
     reg_lambda: float = 1.0
-    n_jobs: int = 4
+    n_jobs: int = 8
 
     def with_(self, **changes: Any) -> BaseLearnerConfig:  # noqa: ANN401
         """Return a copy with some settings replaced, for the validation grid.

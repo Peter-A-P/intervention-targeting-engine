@@ -71,8 +71,8 @@ Out of scope, on purpose:
 | Dataset | Size | Treatment | Outcome | Ground truth | Access and terms |
 |---|---|---|---|---|---|
 | Hillstrom MineThatData | ~64k | Email campaign (3 arms; use womens-email vs none) | Visit, conversion, spend | No | Public download; no formal licence, attributed to MineThatData. **Loader built, week 1** |
-| Criteo-UPLIFT v2 | 13.9M rows, 12 features | Ad exposure | Visit, conversion | No | CC BY-NC-SA 4.0, downloaded through the official page. Downloaded and checksummed week 1; loader in week 4 |
-| Lenta | ~687k | SMS campaign | Purchase | No | Ships with `scikit-uplift`; check licence in the package |
+| Criteo-UPLIFT v2.1 | 13.9M rows, 12 features | Ad campaign assignment | Visit, conversion | No | CC BY-NC-SA 4.0, downloaded through the official page. **Loader built, week 4**, with a committed 10% stratified subsample (change 23) |
+| Lenta | 687,029 | SMS campaign | Store visit (`response_att`) | No | **No licence stated anywhere** (change 25). **Loader built, week 4**; downloaded from the bucket `scikit-uplift` reads |
 | IHDP | 747 units, 100 replicates | Home visits (semi-synthetic) | Cognitive score | Yes, simulated | The `ihdp_npci_1-100` benchmark archives the CEVAE and Dragonnet papers use, from fredjo.com. **Loader built, week 1** |
 | ACIC 2016 | 4,802 units, 10 settings | Simulated | Simulated | Yes | CDLA-Sharing-1.0, from the causallib CSV mirror. **Loader built, week 3** (change 13) |
 
@@ -83,8 +83,9 @@ Rules for data in this repository:
 - Every dataset gets a card in `docs/data/`: source, licence, treatment definition,
   known quirks, the exact split seeds.
 - Criteo is the only one that needs care on a laptop: Polars lazy scan, categorical
-  encoding, and a fixed 10% stratified subsample for the bootstrap and the demo, with the
-  full 13.9M used once for the headline fit. Memory budget: 8 GB.
+  encoding, and a fixed 10% stratified subsample for the benchmark, the bootstrap and the
+  demo, with the full 13.9M used once for the headline fit. The constraint is wall-clock
+  time, not memory; the 8 GB budget written here at plan time was wrong (change 23).
 - The fraud worked case uses IEEE-CIS Fraud Detection features with a simulated "sent to
   manual review" treatment whose effect is generated from a known function of the
   features. The README says so in the first sentence of that section. Its purpose is to
@@ -376,3 +377,122 @@ runs the Hillstrom and IHDP benchmarks on every push. Hillstrom now takes around
 minutes, most of it in the DR and R learners' cross-fitting, so it moved to a weekly schedule
 and manual dispatch, where it also asserts that the committed table still matches a fresh run.
 IHDP and ACIC stay on every push, along with the tests that need real data.
+
+**23. The Criteo memory budget was wrong, and the reason for subsampling changed** (week 4).
+Section 3 said "Memory budget: 8 GB", written before any code existed and repeated in a
+week 3 status note without being checked. The machine this is built on has 63.7 GB and 12
+cores, and Criteo is smaller than the line implies: 13,979,592 rows by 16 columns is about
+1.7 GB held as float64, and the 297 MB download is compressed text. Memory was never going
+to be the binding constraint. Time is: five estimators, an eight-candidate grid and five
+seeds over 8.4M training rows, with the DR and R learners cross-fitting on top, is hours
+where Hillstrom's 25,615 rows is twenty minutes. The 10% subsample survives with its
+justification restated, which is the honest outcome: the decision was right and the stated
+reason for it was not.
+
+**24. `n_jobs` raised from 4 to 8** (week 4). The 4 was a guess made on the first day and
+never revisited, on a machine with 12 cores. Fit timings recorded before this change are not
+comparable with those after it, which is the whole cost, and `deterministic` plus
+`force_row_wise` are already on precisely so that the numbers do not move with the thread
+count.
+
+**25. Lenta has no licence, and it ships anyway with that said out loud** (week 4). Section 3
+said "check licence in the package". The check was done: there is no licence statement on the
+publisher's bucket, in `sklift/datasets/datasets.py`, or on the `fetch_lenta` documentation
+page. The loader ships because this repository downloads at run time and redistributes
+nothing, which is what scikit-uplift does and what every other loader here does, but the
+dataset card leads with the gap rather than burying it, and no reader is told their own use
+is licensed. It is the only one of the five in that position. If this turns out to block the
+repository going public in week 8, dropping Lenta costs one dataset and no finding.
+
+**26. A covariate-balance diagnostic, `itx.metrics.balance`** (week 4). Not in section 5. It
+exists because Lenta ships 194 undocumented columns and two of them, `response_sms` and
+`response_viber`, are responses to the campaign rather than covariates. Nothing in the
+documentation says so and the names do not settle it. The standardised mean difference
+between arms does: 0.198 and 0.068 against a median of 0.011 over the other 192 columns, in a
+trial where the worst ordinary column is 0.025. Both are dropped from the feature matrix. The
+check is a module rather than a script that was run once, so it runs against every dataset,
+and it is the same defect Criteo's `exposure` has in a more obvious form. A leak detector
+that costs two means and two standard deviations is worth having permanently.
+
+**27. Criteo and Lenta are separate dataset keys, and `criteo-full` is one of them** (week 4).
+Section 5 implies one loader per dataset. Criteo has two entries, `criteo` for the committed
+10% subsample and `criteo-full` for all 13.9M rows, rather than one loader with a fraction
+flag, because a results table has to record which of the two produced it and a dataset name
+is where that belongs. The subsample is cached as Parquet under the gitignored data
+directory: it is reproducible from a committed seed and a committed fraction, so committing
+it would only be committing data.
+
+**28. The CI reproducibility check is `itx compare`, not `git diff`** (week 4). Change 22
+added a step asserting that the committed Hillstrom results still match a fresh run, and
+wrote it as `git diff --exit-code -- README.md results/hillstrom.json`. That was wrong and
+would have failed on every scheduled run: the results file records `fit_seconds`, which is
+wall-clock and cannot reproduce. It had not fired yet because the job is weekly and week 3
+ended before the first Monday. The README diff stays, because the rendered table carries no
+timings. The JSON comparison moved to a new command that ignores timings and reports which
+metric moved and by how much, which is a better failure message than a diff anyway. The job
+also became a matrix over Hillstrom, Lenta and the Criteo subsample.
+
+**29. The DR-learner had to be told to accept missing values** (week 4). Lenta has missing
+values in 150 of its 191 feature columns, and the loader leaves them missing on purpose:
+LightGBM routes NaN down its own branch at every split, and an imputation rule chosen in a
+loader would put one modelling decision into every estimator's input. Five of the six
+estimators handle that without being asked. EconML's DR-learner does not, because EconML
+validates its inputs with scikit-learn's finiteness check before any model sees them, so
+LightGBM's NaN handling never gets a chance to run. It is a hard failure, not a degradation,
+and it would have left a blank row in the Lenta table. ``allow_missing=True`` turns the check
+off; EconML then warns, per fold and per prediction, that missingness can break causal
+identification. The warning is right in general and does not apply to a randomised design,
+where assignment is independent of the covariates and of their missingness pattern by
+construction, so it is filtered at the call site with that argument written next to it. The
+episode is itself a section 2 finding and belongs in `docs/estimators.md`: a wrapped
+estimator inherits its library's input contract, not only its statistics.
+
+**30. Hyperparameter selection is capped at 50,000 training rows** (week 4). Section 4 says
+hyperparameters are tuned on validation with a small fixed grid. It does not say what the
+candidates are fitted on, and the implementation used the whole training split, which turned
+out not to scale. Selection is nine fits per estimator per seed, eight candidates and the
+winner, so it is about 89% of a benchmark. On Hillstrom's 25,615 training rows that is twenty
+minutes. On Lenta's 412,217 it is not: the run reached three fits of thirty in 1h25m and
+extrapolated to between nineteen and thirty-two hours, and a parallel Criteo run passed four
+hours without finishing. Both were stopped. A protocol that costs a day per dataset cannot be
+rerun, and one that cannot be rerun is not a protocol.
+
+Candidates are now fitted on at most 50,000 rows, stratified on arm crossed with outcome. The
+winner is still fitted on every training row, so what gets reported is unchanged in kind: the
+cap applies to choosing a configuration, not to the model whose numbers appear in the table.
+The argument for capping selection specifically is that it is a coarse decision, ranking eight
+settings of leaf size and tree width, and that ranking stabilises long before accuracy does.
+
+The cap is deliberately set above every dataset whose full run is affordable: Hillstrom trains
+on 25,615 rows, ACIC on 2,881, IHDP on 448. So their committed tables are untouched, they act
+as a control, and only Lenta and Criteo are capped at all.
+
+**The justification above is wrong, and measuring it is how that came out.** Forcing
+comparable reductions on Hillstrom and ACIC changes nearly every selection: 1 of 25 identical
+on ACIC at 5.8x, 5 of 25 on Hillstrom at 5.1x, 1 of 25 at 8.5x. The ranking of eight
+configurations does not stabilise before accuracy; it is not stable at all.
+
+What rescues the cap is the follow-up, which asks the question the first probe should have.
+Taking the twenty Hillstrom disagreements, fitting both configurations on the full training
+split and scoring both on test: mean change in Qini -0.00015, the capped choice better in 9
+cases of 20 and worse in 11, worst case -0.00078, against a Hillstrom Qini of 0.0028 to 0.0041
+with intervals about 0.004 wide. The cap changes which configuration is chosen and does not
+change what the chosen configuration is worth, because the candidates are near-ties on test.
+The instability is a property of this grid on this data, not a cost of capping.
+
+So the cap ships on measured grounds rather than the reasoned ones it was proposed with, and
+`docs/estimators.md` carries both the failed prediction and the numbers. It also leaves a
+sharper question for week 8: if the eight candidates are near-ties, the per-seed selection
+block under each README table is mostly noise, and the 89% of compute spent on tuning is
+buying very little. That belongs in `docs/rejected.md`, not in a quiet change here.
+
+**31. Lenta and Criteo cannot be reproduced in GitHub CI, and the workflow says so** (week 4).
+Change 22 moved the long benchmarks to a weekly job, and earlier in week 4 that job became a
+matrix over Hillstrom, Lenta and Criteo with a 180-minute timeout. That cannot work.
+GitHub-hosted runners have four cores against this laptop's twelve and a hard six-hour job
+limit, and Criteo alone ran for four hours here. Even after change 30 the margin is not there.
+So the weekly reproduction check is Hillstrom only, which is the one that fits, and Lenta and
+Criteo get a cheaper CI job that loads them, checks the row counts, the arm balance and that
+no post-treatment column reached the features, without refitting anything. That job answers
+"is the pipeline still correct", which is what CI can afford to ask; "are the numbers still the
+numbers" is answered locally against the committed results with `itx compare`.

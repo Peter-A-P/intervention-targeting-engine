@@ -1,11 +1,13 @@
 """Loaders: download, verify, encode, split. Nothing raw is ever committed."""
 
 from itx.data.acic import load_acic, load_acic_replicates
+from itx.data.criteo import load_criteo, subsample_path
 from itx.data.download import ChecksumMismatchError, fetch, fetch_all, sha256_of
 from itx.data.hillstrom import load_hillstrom
 from itx.data.ihdp import load_ihdp, load_ihdp_replicates
+from itx.data.lenta import load_lenta
 from itx.data.registry import SOURCES, Source, checksums, data_dir, source
-from itx.data.splits import stratified_split
+from itx.data.splits import stratified_split, stratified_subsample
 
 __all__ = [
     "SOURCES",
@@ -17,10 +19,14 @@ __all__ = [
     "fetch_all",
     "load_acic",
     "load_acic_replicates",
+    "load_criteo",
     "load_hillstrom",
     "load_ihdp",
     "load_ihdp_replicates",
+    "load_lenta",
     "sha256_of",
     "source",
     "stratified_split",
+    "stratified_subsample",
+    "subsample_path",
 ]
