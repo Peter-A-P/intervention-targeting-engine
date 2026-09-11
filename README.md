@@ -219,7 +219,7 @@ because the decision is what the budget holder is actually buying.
 
 ## Part of a portfolio
 
-One of ten projects built over twelve months to make production ML work inspectable.
+One of fifteen projects built over twelve months to make production ML work inspectable.
 
 ## How this was built
 
