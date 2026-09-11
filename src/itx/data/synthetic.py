@@ -172,3 +172,59 @@ def _pack(
         true_effect=effects,
         propensity=np.full(covariates.shape[0], propensity),
     )
+
+
+def complex_effect(
+    n_units: int = 8_000,
+    *,
+    propensity: float = 0.5,
+    seed: int = 0,
+    noise: float = 0.5,
+) -> UpliftDataset:
+    """A simple baseline with a treatment effect more complicated than it.
+
+    This generator exists to answer a question the other two cannot, and the reason is a
+    limitation of theirs worth stating. In :func:`heterogeneous_effect` the baseline is a
+    nonlinear function of four covariates and the effect is nearly linear in two, so the
+    effect is the *simpler* of the two surfaces. That is exactly the regime an S-learner is
+    built for: one shared model carries the complicated part, and a few splits on the
+    treatment indicator carry the rest. Benchmarking meta-learners only on data shaped that
+    way does not compare them, it tells the S-learner it was right.
+
+    Here the arrangement is reversed. The baseline is one covariate, near-linear. The effect
+    is an interaction between two others crossed with a hinge on a third, so representing it
+    inside a shared model costs many more splits than representing it as the difference of
+    two arm models. This is the regime the literature says the T-learner should win, and
+    the benchmark runs both so the claim can be checked rather than repeated.
+
+    Args:
+        n_units: Rows to generate.
+        propensity: Probability of treatment, constant.
+        seed: Generator seed.
+        noise: Standard deviation of the outcome noise.
+
+    Returns:
+        The dataset, with ``true_effect`` filled in and ``propensity`` known.
+    """
+    rng = np.random.default_rng(seed)
+    covariates = rng.normal(size=(n_units, len(FEATURES)))
+    treatment = rng.binomial(1, propensity, size=n_units).astype(np.int64)
+    effects = true_complex_effect(covariates)
+    baseline = 0.5 * covariates[:, 2]
+    noise_draw = rng.normal(scale=noise, size=n_units)
+    outcome = baseline + treatment * effects + noise_draw
+    return _pack("synthetic-complex", covariates, treatment, outcome, effects, propensity)
+
+
+def true_complex_effect(covariates: FloatArray) -> FloatArray:
+    """The effect function used by :func:`complex_effect`, published so tests can check it.
+
+    Args:
+        covariates: An ``(n, 5)`` covariate matrix.
+
+    Returns:
+        The true per-unit effect: an interaction, gated by a hinge on a third covariate.
+    """
+    hinge: FloatArray = (covariates[:, 3] > 0.5).astype(np.float64)
+    effect: FloatArray = covariates[:, 0] * covariates[:, 1] + 1.5 * hinge * covariates[:, 4]
+    return effect

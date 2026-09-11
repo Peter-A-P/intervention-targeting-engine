@@ -114,6 +114,9 @@ def benchmark(
         Path, typer.Option(help="Where the Qini figure goes.")
     ] = DEFAULT_FIGURE_DIR,
     plot: Annotated[bool, typer.Option(help="Write the Qini curve figure.")] = True,
+    tune: Annotated[
+        bool, typer.Option(help="Select hyperparameters on the validation split.")
+    ] = True,
     readme: Annotated[
         Path, typer.Option(help="Markdown file whose results block is regenerated.")
     ] = DEFAULT_README,
@@ -122,7 +125,12 @@ def benchmark(
     from itx.bench.plots import plot_qini_curves
     from itx.bench.runner import DATASETS, run
     from itx.bench.seeds import SEEDS
-    from itx.bench.table import to_markdown, update_markdown_file, write_json
+    from itx.bench.table import (
+        selected_configurations,
+        to_markdown,
+        update_markdown_file,
+        write_json,
+    )
     from itx.data.splits import stratified_split
 
     estimator_keys = [e.strip() for e in estimators.split(",")] if estimators else None
@@ -133,8 +141,13 @@ def benchmark(
         estimators=estimator_keys,
         seeds=seed_values,
         n_resamples=resamples,
+        tune=tune,
     )
     table = to_markdown(rows)
+    chosen = selected_configurations(rows)
+    if chosen:
+        note = "Selected on the validation split from the committed grid:"
+        table = "\n".join([table, note, "", chosen])
     typer.echo("")
     typer.echo(table)
 

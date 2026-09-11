@@ -127,6 +127,7 @@ class OutcomeLearner:
         self._single_class: float | None = None
         self._fitted = False
         self.feature_names: tuple[str, ...] = ()
+        self.n_rows = 0
 
     def fit(
         self,
@@ -151,10 +152,11 @@ class OutcomeLearner:
                 warn on every later prediction from an unnamed array, and the warning is
                 noise on a benchmark that fits hundreds of models.
         """
+        self.n_rows = int(matrix.shape[0])
+        self.feature_names = tuple(feature_names) if feature_names is not None else ()
         if self.binary and len(np.unique(target)) < 2:
             self._single_class = float(target[0]) if target.size else 0.0
             return
-        self.feature_names = tuple(feature_names) if feature_names is not None else ()
         self._model.fit(matrix, target, categorical_feature=list(categorical))
         self._fitted = True
 

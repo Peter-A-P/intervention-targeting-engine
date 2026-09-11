@@ -15,6 +15,12 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from itx.bench.grid import (
+    EstimatorFactory,
+    Selection,
+    default_selection,
+    select_config,
+)
 from itx.bench.seeds import (
     RANDOM_BASELINE_SEED,
     SEEDS,
@@ -24,10 +30,12 @@ from itx.bench.seeds import (
 from itx.data.hillstrom import load_hillstrom
 from itx.data.ihdp import load_ihdp
 from itx.data.splits import stratified_split
-from itx.data.synthetic import binary_outcome, heterogeneous_effect
+from itx.data.synthetic import binary_outcome, complex_effect, heterogeneous_effect
 from itx.estimators.base import BaseUpliftEstimator
 from itx.estimators.baselines import OutcomeRanking, RandomRanking
 from itx.estimators.s_learner import SLearner
+from itx.estimators.t_learner import TLearner
+from itx.estimators.x_learner import XLearner
 from itx.metrics.baselines import random_ranking_reference
 from itx.metrics.bootstrap import (
     DEFAULT_LEVEL,
@@ -51,20 +59,33 @@ DATASETS: dict[str, Callable[[], UpliftDataset]] = {
     "ihdp": lambda: load_ihdp(0),
     "synthetic-binary": binary_outcome,
     "synthetic-heterogeneous": heterogeneous_effect,
+    "synthetic-complex": complex_effect,
 }
 
-#: Estimators the CLI can name, each built fresh per seed.
-ESTIMATORS: dict[str, Callable[[int], BaseUpliftEstimator]] = {
-    "s-learner": lambda seed: SLearner(seed=seed),
-    "outcome-ranking": lambda seed: OutcomeRanking(seed=seed),
-    "random": lambda seed: RandomRanking(seed=seed),
+#: Estimators the CLI can name. Each is built from a base-learner configuration and a
+#: seed, so the same factory serves both the tuning loop and the final fit.
+ESTIMATORS: dict[str, EstimatorFactory] = {
+    "s-learner": lambda config, seed: SLearner(config, seed=seed),
+    "t-learner": lambda config, seed: TLearner(config, seed=seed),
+    "x-learner": lambda config, seed: XLearner(config, seed=seed),
+    "outcome-ranking": lambda config, seed: OutcomeRanking(config, seed=seed),
+    "random": lambda _config, seed: RandomRanking(seed=seed),
 }
+
+#: Estimators with nothing to tune. Running them through the grid would fit six identical
+#: models and pick between six identical scores.
+UNTUNED: frozenset[str] = frozenset({"random"})
 
 #: What runs when no estimator is named. A single random ranking is left out on purpose:
 #: the baseline the protocol calls for is the average of 200 of them, which is added
 #: separately, and putting one noisy draw next to it in the same table invites the reader
 #: to treat the gap between the two as a result. ``random`` can still be asked for by name.
-DEFAULT_ESTIMATORS: tuple[str, ...] = ("s-learner", "outcome-ranking")
+DEFAULT_ESTIMATORS: tuple[str, ...] = (
+    "s-learner",
+    "t-learner",
+    "x-learner",
+    "outcome-ranking",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +100,7 @@ class BenchmarkRow:
         metrics: Named metrics, each with its interval.
         fit_seconds: Wall-clock time to fit, for the cost side of the comparison.
         scores: Predicted uplift on the test rows, kept for plotting and not serialised.
+        selection: The configuration chosen on the validation split, and what it scored.
     """
 
     dataset: str
@@ -88,6 +110,7 @@ class BenchmarkRow:
     metrics: dict[str, Estimate]
     fit_seconds: float
     scores: FloatArray = field(repr=False)
+    selection: Selection | None = None
 
     def get(self, metric: str) -> Estimate | None:
         """Look up one metric, or None if this row does not carry it.
@@ -110,6 +133,7 @@ def evaluate(
     n_resamples: int = DEFAULT_RESAMPLES,
     level: float = DEFAULT_LEVEL,
     tie_seed: int = TIE_SEED,
+    selection: Selection | None = None,
 ) -> BenchmarkRow:
     """Fit an estimator on the train split and measure it on the test split.
 
@@ -122,6 +146,8 @@ def evaluate(
         n_resamples: Bootstrap resamples.
         level: Nominal coverage of the intervals.
         tie_seed: Seed for tie-breaking inside rankings.
+        selection: The selection that produced this estimator's configuration, recorded on
+            the row so the table says what was fitted rather than leaving it implied.
 
     Returns:
         The finished row.
@@ -153,6 +179,7 @@ def evaluate(
         metrics=metrics,
         fit_seconds=fit_seconds,
         scores=scores,
+        selection=selection,
     )
 
 
@@ -210,6 +237,7 @@ def run(
     budgets: Sequence[float] = BUDGETS,
     n_resamples: int = DEFAULT_RESAMPLES,
     include_random_reference: bool = True,
+    tune: bool = True,
 ) -> list[BenchmarkRow]:
     """Run one dataset across estimators and seeds.
 
@@ -220,6 +248,9 @@ def run(
         budgets: Shares of the population to report uplift at.
         n_resamples: Bootstrap resamples per row.
         include_random_reference: Add the averaged random-targeting row per seed.
+        tune: Select each estimator's configuration on the validation split from the
+            committed grid. Turning it off uses the default configuration everywhere,
+            which is faster and is what the fast tests do.
 
     Returns:
         Every row, in dataset-then-seed-then-estimator order.
@@ -241,12 +272,19 @@ def run(
     for seed in seeds:
         split = stratified_split(data, seed)
         for name in names:
+            factory = ESTIMATORS[name]
+            selection = (
+                select_config(factory, split, seed=seed)
+                if tune and name not in UNTUNED
+                else default_selection()
+            )
             rows.append(
                 evaluate(
-                    ESTIMATORS[name](seed),
+                    factory(selection.config, seed),
                     split,
                     budgets=budgets,
                     n_resamples=n_resamples,
+                    selection=selection,
                 )
             )
         if include_random_reference:

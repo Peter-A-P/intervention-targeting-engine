@@ -1,7 +1,8 @@
 # Plan: Intervention Targeting Engine
 
-**Written:** 2026-09-06. **Status:** week 1 built (2026-09-10). Changes to this plan since
-it was written are listed in section 11, each with the reason and the week it happened.
+**Written:** 2026-09-06. **Status:** weeks 1 and 2 built (2026-09-10). Changes to this plan
+since it was written are listed in section 11, each with the reason and the week it
+happened.
 **Build window:** 8 weeks, 2026-09-07 to 2026-11-01, evenings and weekends, alongside the
 setup of the drift runs in the release-gate repository during September.
 
@@ -116,11 +117,12 @@ Rules for data in this repository:
 ```
 src/itx/        (src layout, change 2 in section 11)
   data/         loaders, checksums, splits, dataset cards
-  estimators/   protocol, s_learner, t_learner, x_learner, dr_learner, r_learner, causal_forest
+  estimators/   protocol, s_learner, t_learner, x_learner, dr_learner, r_learner,
+                causal_forest, baselines (random and outcome ranking), propensity
   policy/       rank_and_cut, cost_aware, policy_value (ipw, dr)
   metrics/      qini, auuc, uplift_at_k, calibration, bootstrap
   sensitivity/  rosenbaum, evalue, negative_control
-  bench/        runner, results table renderer, seeds
+  bench/        runner, results table renderer, seeds, grid (change 8)
   cli.py        typer CLI: itx data pull, itx benchmark, itx demo build
 demo/           static site: precomputed rankings as JSON, slider, table
 docs/
@@ -143,7 +145,7 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 | Week | Dates | Build | Done when |
 |---|---|---|---|
 | 1 | Sep 7 - 13 | Repo scaffold (`uv`, `ruff`, `mypy --strict`, `pytest`, CI); data loaders with checksums for Hillstrom and IHDP; `UpliftEstimator` protocol; S-learner end to end on Hillstrom | **Done 2026-09-10.** Ruff, `mypy --strict` and 161 tests green (152 of them needing no download); Qini curves plotted for both datasets; results table generated into the README; ahead of plan: PEHE and ATE error (week 3) landed early because the IHDP loader is untestable without them |
-| 2 | Sep 14 - 20 | T and X learners; metrics module (Qini, AUUC, uplift at k, bootstrap); random and outcome-ranking baselines; synthetic-data tests | Three estimators, one table, intervals on Hillstrom |
+| 2 | Sep 14 - 20 | T and X learners; metrics module (Qini, AUUC, uplift at k, bootstrap); random and outcome-ranking baselines; synthetic-data tests | **Done 2026-09-10.** Three estimators with intervals on Hillstrom and IHDP, both baselines beaten on both; the metrics module and baselines had already landed in week 1, so the week also bought the validation grid from section 4 and a controlled demonstration of which meta-learner wins when. 212 tests |
 | 3 | Sep 21 - 27 | DR and R learners via EconML/CausalML wrappers; IHDP and ACIC loaders; PEHE and ATE error; calibration plot | Ground-truth metrics for five estimators |
 | 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | `itx benchmark --all` runs end to end on a laptop overnight |
 | 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset | Policy value table with both baselines |
@@ -259,3 +261,31 @@ error are twenty lines and the IHDP loader cannot be checked without them. The r
 specified this; noting it because a single `random` estimator also exists and is
 deliberately kept out of the default benchmark set. One random draw sitting next to a
 fitted model in the same table invites the reader to read the gap between them as a result.
+
+**8. The validation grid lives in `itx/bench/grid.py`** (week 2). Section 5's package
+diagram has no module for it. Selection is part of the evaluation protocol rather than part
+of an estimator: the grid has to be identical across estimators, and the thing that
+guarantees that is one module the runner calls, not a convention each estimator follows.
+
+**9. Selection is on the validation-split Qini** (week 2). Section 4 said hyperparameters
+are tuned on validation with a small fixed grid but did not say on what. It is the Qini
+coefficient, which needs the defence written into `itx/bench/grid.py`: selecting on a
+metric this project calls a poor referee is defensible only because inside selection every
+candidate is the same model class, so nothing can win by being a different kind of model
+that games the curve. The comparison that the criticism applies to, between model classes,
+is made on the test split against both baselines and never on this number. When realised
+policy value exists in week 5, a second selection rule is added and the two are compared.
+
+**10. A fourth synthetic generator, `complex_effect`** (week 2). Section 5 asks for
+synthetic data with a known effect so that estimators can be shown to recover it. That is
+what `heterogeneous_effect` does, and it turned out to be unfit for the *other* job the
+synthetic sets were being asked to do. Its effect surface is simpler than its baseline,
+which is exactly the arrangement an S-learner is built for, so comparing meta-learners on it
+measures the generator. `complex_effect` reverses the arrangement, and the ordering of the
+three estimators reverses with it. Both generators are in the benchmark and the comparison
+is in `docs/estimators.md`. Recovery tests are not comparison benchmarks, and week 2 found
+that out by making a prediction from the IHDP result that turned out to be wrong.
+
+**11. `min_child_samples` is settled** (week 2, closing change 5). It is in the grid, with
+candidates 5, 20 and 60 alongside `num_leaves` at 15 and 31: six configurations, identical
+for every estimator, committed in `itx/bench/grid.py`.

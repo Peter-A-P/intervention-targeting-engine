@@ -10,19 +10,34 @@ import numpy as np
 import pytest
 from typer.testing import CliRunner
 
+from itx.bench.grid import (
+    GRID,
+    MIN_CHILD_SAMPLES,
+    NUM_LEAVES,
+    default_selection,
+    select_config,
+)
 from itx.bench.plots import plot_qini_curves
 from itx.bench.runner import (
     DATASETS,
     DEFAULT_ESTIMATORS,
     ESTIMATORS,
+    UNTUNED,
     evaluate,
     random_reference_row,
     run,
 )
 from itx.bench.seeds import SEEDS, TIE_SEED, bootstrap_seed_for
-from itx.bench.table import summarise, to_markdown, update_markdown_file, write_json
+from itx.bench.table import (
+    selected_configurations,
+    summarise,
+    to_markdown,
+    update_markdown_file,
+    write_json,
+)
 from itx.cli import app
 from itx.data.splits import stratified_split
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG
 from itx.estimators.s_learner import SLearner
 
 RESAMPLES = 40
@@ -31,8 +46,13 @@ runner = CliRunner()
 
 @pytest.fixture(scope="module")
 def rows():
-    """Two seeds of the full benchmark on synthetic data, fitted once for the module."""
-    return run("synthetic-binary", seeds=(11, 23), n_resamples=RESAMPLES)
+    """Two seeds of the full benchmark on synthetic data, fitted once for the module.
+
+    Tuning is off: selection multiplies the fits by the size of the grid, and what these
+    tests check is the shape of the output, not which configuration wins. The grid itself
+    is tested directly in TestGrid.
+    """
+    return run("synthetic-binary", seeds=(11, 23), n_resamples=RESAMPLES, tune=False)
 
 
 class TestSeeds:
@@ -228,6 +248,7 @@ class TestCli:
                 str(tmp_path / "results"),
                 "--figure-dir",
                 str(tmp_path / "figures"),
+                "--no-tune",
             ],
         )
         assert result.exit_code == 0, result.stdout
@@ -299,3 +320,102 @@ class TestReadmeBlock:
         for dataset in ("hillstrom", "ihdp"):
             assert f"<!-- itx:table:{dataset} -->" in readme
             assert f"<!-- itx:end:{dataset} -->" in readme
+
+
+class TestGrid:
+    def test_the_grid_is_every_combination_of_the_two_committed_knobs(self):
+        assert len(GRID) == len(MIN_CHILD_SAMPLES) * len(NUM_LEAVES)
+        assert {config.min_child_samples for config in GRID} == set(MIN_CHILD_SAMPLES)
+        assert {config.num_leaves for config in GRID} == set(NUM_LEAVES)
+
+    def test_the_grid_varies_nothing_else(self):
+        # Identical across estimators is the point, and so is identical in every other
+        # respect: if the learning rate moved with the leaf size, the table would be
+        # reporting a two-dimensional search dressed up as one.
+        assert {config.learning_rate for config in GRID} == {DEFAULT_CONFIG.learning_rate}
+        assert {config.n_estimators for config in GRID} == {DEFAULT_CONFIG.n_estimators}
+
+    def test_selection_picks_the_candidate_with_the_best_validation_score(self, binary_data):
+        split = stratified_split(binary_data, 11)
+        grid = (
+            DEFAULT_CONFIG.with_(min_child_samples=5),
+            DEFAULT_CONFIG.with_(min_child_samples=400),
+        )
+        selection = select_config(
+            lambda config, seed: SLearner(config, seed=seed), split, seed=11, grid=grid
+        )
+        assert selection.tuned
+        assert len(selection.scores) == 2
+        assert selection.score == max(selection.scores)
+        assert selection.config in grid
+
+    def test_selection_never_reads_the_test_split(self, binary_data):
+        # Corrupting the test rows must not change which configuration is chosen.
+        split = stratified_split(binary_data, 11)
+        grid = (DEFAULT_CONFIG.with_(min_child_samples=5), DEFAULT_CONFIG.with_(num_leaves=15))
+
+        def factory(config, seed):
+            return SLearner(config, seed=seed)
+
+        clean = select_config(factory, split, seed=11, grid=grid)
+        object.__setattr__(split.test, "outcome", np.zeros(split.test.n_units))
+        after = select_config(factory, split, seed=11, grid=grid)
+        assert clean.config == after.config
+        assert clean.scores == pytest.approx(after.scores)
+
+    def test_an_empty_grid_is_an_error(self, binary_data):
+        with pytest.raises(ValueError, match="empty grid"):
+            select_config(
+                lambda config, seed: SLearner(config, seed=seed),
+                stratified_split(binary_data, 11),
+                seed=11,
+                grid=(),
+            )
+
+    def test_an_untuned_selection_says_so(self):
+        selection = default_selection()
+        assert not selection.tuned
+        assert "not tuned" in selection.describe()
+
+    def test_a_tuned_selection_names_its_settings(self, binary_data):
+        split = stratified_split(binary_data, 11)
+        selection = select_config(
+            lambda config, seed: SLearner(config, seed=seed),
+            split,
+            seed=11,
+            grid=(DEFAULT_CONFIG,),
+        )
+        assert "min_child_samples=" in selection.describe()
+        assert "num_leaves=" in selection.describe()
+
+    def test_the_random_baseline_is_not_tuned(self):
+        assert "random" in UNTUNED
+
+    def test_a_tuned_run_records_what_it_chose(self, binary_data):
+        rows = run(
+            "synthetic-binary",
+            estimators=["s-learner"],
+            seeds=(11,),
+            n_resamples=10,
+            include_random_reference=False,
+            tune=True,
+        )
+        assert rows[0].selection is not None
+        assert rows[0].selection.tuned
+        assert rows[0].selection.config in GRID
+
+    def test_the_chosen_configurations_are_reported(self, binary_data):
+        rows = run(
+            "synthetic-binary",
+            estimators=["s-learner"],
+            seeds=(11,),
+            n_resamples=10,
+            include_random_reference=False,
+            tune=True,
+        )
+        text = selected_configurations(rows)
+        assert "s-learner" in text
+        assert "min_child_samples=" in text
+
+    def test_nothing_is_reported_when_nothing_was_tuned(self, rows):
+        assert selected_configurations(rows) == ""

@@ -14,6 +14,7 @@ available next to it, and the full per-seed detail is written to JSON.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -122,6 +123,40 @@ def to_markdown(
     return "\n".join(lines) + "\n"
 
 
+def selected_configurations(rows: Sequence[BenchmarkRow]) -> str:
+    """A markdown list of which configuration each estimator was given, and how often.
+
+    The grid is committed, so the table is only reproducible if the choices it produced are
+    visible too. Estimators with nothing to tune are left out.
+
+    Args:
+        rows: Rows for a single dataset.
+
+    Returns:
+        A markdown list, or an empty string when nothing was tuned.
+    """
+    chosen: dict[str, Counter[str]] = {}
+    for row in rows:
+        if row.selection is None or not row.selection.tuned:
+            continue
+        label = (
+            f"min_child_samples={row.selection.config.min_child_samples}, "
+            f"num_leaves={row.selection.config.num_leaves}"
+        )
+        chosen.setdefault(row.estimator, Counter())[label] += 1
+
+    if not chosen:
+        return ""
+    lines = []
+    for estimator, counts in chosen.items():
+        picks = ", ".join(
+            f"{label} ({count} of {sum(counts.values())} seeds)"
+            for label, count in counts.most_common()
+        )
+        lines.append(f"- `{estimator}`: {picks}")
+    return "\n".join(lines) + "\n"
+
+
 def write_json(rows: Sequence[BenchmarkRow], path: Path) -> None:
     """Write every per-seed number to disk, so a table can be rebuilt without refitting.
 
@@ -136,6 +171,13 @@ def write_json(rows: Sequence[BenchmarkRow], path: Path) -> None:
             "seed": row.seed,
             "n_test": row.n_test,
             "fit_seconds": round(row.fit_seconds, 3),
+            "selection": None
+            if row.selection is None or not row.selection.tuned
+            else {
+                "min_child_samples": row.selection.config.min_child_samples,
+                "num_leaves": row.selection.config.num_leaves,
+                "validation_qini": row.selection.score,
+            },
             "metrics": {
                 name: {
                     "value": estimate.value,

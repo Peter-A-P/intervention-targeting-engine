@@ -8,7 +8,10 @@ from itx.estimators.base import (
 )
 from itx.estimators.baselines import OutcomeRanking, RandomRanking
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, OutcomeLearner
+from itx.estimators.propensity import PropensityFit, PropensityModel
 from itx.estimators.s_learner import SLearner
+from itx.estimators.t_learner import TLearner
+from itx.estimators.x_learner import XLearner
 
 __all__ = [
     "DEFAULT_CONFIG",
@@ -17,8 +20,12 @@ __all__ = [
     "NotFittedError",
     "OutcomeLearner",
     "OutcomeRanking",
+    "PropensityFit",
+    "PropensityModel",
     "RandomRanking",
     "SLearner",
+    "TLearner",
     "UpliftEstimator",
+    "XLearner",
     "add_treatment_column",
 ]

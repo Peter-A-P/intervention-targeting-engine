@@ -6,47 +6,73 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
-**Status: week 1 of 8.** One estimator of the seven is benchmarked, on two datasets of the
-five. The numbers below are real and reproducible; the table is not finished. Build plan:
-[PLAN.md](PLAN.md).
+**Status: week 2 of 8.** Three estimators of the seven are benchmarked, on two datasets of
+the five. The numbers below are real and reproducible; the table is not finished. Build
+plan: [PLAN.md](PLAN.md).
 
 ## Results
 
 Every table on this page is written by `uv run itx benchmark --dataset <name>` and is
 never edited by hand. Each number is the mean across five committed split seeds, with the
-95% bootstrap interval alongside it. There are no bare point estimates here by design: a
-Qini without an interval is treated in this repository as a defect.
+95% bootstrap interval alongside it. Hyperparameters are chosen per seed on a validation
+split from a grid that is identical for every estimator, and the test split is never
+touched until the numbers below are computed. There are no bare point estimates here by
+design: a Qini without an interval is treated in this repository as a defect.
 
 ### Hillstrom, 42,693 customers, randomised email campaign
 
 <!-- itx:table:hillstrom -->
 | Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% |
 |---|---|---|---|---|---|
-| `s-learner` | 0.0040 (0.0019, 0.0062) | 0.2596 (0.1966, 0.3201) | 0.0823 (0.0323, 0.1305) | 0.0866 (0.0533, 0.1211) | 0.0797 (0.0532, 0.1073) |
-| `outcome-ranking` | 0.0011 (-0.0010, 0.0031) | 0.2100 (0.1407, 0.2769) | 0.0511 (-0.0020, 0.1053) | 0.0621 (0.0263, 0.1005) | 0.0591 (0.0301, 0.0889) |
+| `s-learner` | 0.0042 (0.0020, 0.0063) | 0.2620 (0.1996, 0.3223) | 0.0883 (0.0387, 0.1355) | 0.0802 (0.0468, 0.1137) | 0.0803 (0.0545, 0.1077) |
+| `t-learner` | 0.0031 (0.0009, 0.0053) | 0.2441 (0.1802, 0.3044) | 0.0876 (0.0380, 0.1386) | 0.0772 (0.0433, 0.1121) | 0.0715 (0.0435, 0.0980) |
+| `x-learner` | 0.0032 (0.0011, 0.0054) | 0.2463 (0.1836, 0.3078) | 0.0823 (0.0346, 0.1325) | 0.0786 (0.0445, 0.1127) | 0.0748 (0.0477, 0.1026) |
+| `outcome-ranking` | 0.0012 (-0.0008, 0.0033) | 0.2129 (0.1427, 0.2794) | 0.0532 (-0.0011, 0.1076) | 0.0598 (0.0222, 0.0978) | 0.0584 (0.0292, 0.0883) |
 | `random-200` | -0.0000 (-0.0019, 0.0020) | 0.1931 (0.1605, 0.2267) | 0.0450 (0.0047, 0.0846) | 0.0451 (0.0181, 0.0728) | 0.0451 (0.0243, 0.0656) |
+
+Selected on the validation split from the committed grid:
+
+- `s-learner`: min_child_samples=5, num_leaves=15 (3 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
+- `t-learner`: min_child_samples=20, num_leaves=15 (3 of 5 seeds), min_child_samples=60, num_leaves=15 (2 of 5 seeds)
+- `x-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
+- `outcome-ranking`: min_child_samples=20, num_leaves=15 (3 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
 <!-- itx:end:hillstrom -->
 
 The outcome ranking is the ordinary way this job is done: model who is likely to respond,
 spend the budget from the top of that list. Its Qini interval contains zero, so on this
-dataset it has not been shown to beat picking at random. The S-learner's does not.
+dataset it has not been shown to beat picking at random. All three real estimators' do not.
 
 At a budget covering 20% of the population, the S-learner's targeted group shows an
-8.7-point difference in visit rate between arms against random targeting's 4.5. The
-outcome ranking manages 6.2, most of the way to what you would have got by not trying.
+8.0-point difference in visit rate between arms, against random targeting's 4.5. The
+outcome ranking manages 6.0, about a third of the way from doing nothing clever to doing
+this properly. The three estimators' intervals overlap heavily, so the honest reading is
+that they are not distinguishable from each other here, only from the two baselines.
 
 ### IHDP, 747 units, simulated outcomes with known individual effects
 
 <!-- itx:table:ihdp -->
 | Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% | PEHE | ATE error |
 |---|---|---|---|---|---|---|---|
-| `s-learner` | 0.0223 (-0.0675, 0.1123) | 0.9128 (0.8390, 0.9733) | 4.1449 (3.1283, 5.4084) | 4.2259 (3.2402, 5.5496) | 4.5377 (3.4576, 5.4847) | 0.5668 (0.4585, 0.6881) | 0.1290 (0.0616, 0.2157) |
-| `outcome-ranking` | 0.0082 (-0.0477, 0.0703) | 0.7329 (0.6382, 0.8242) | 1.3577 (-0.4274, 3.2541) | 2.2448 (0.8888, 3.6429) | 2.7642 (1.6749, 3.7825) | - | - |
+| `s-learner` | 0.0176 (-0.0699, 0.1079) | 0.9064 (0.8315, 0.9670) | 4.0150 (2.8356, 4.9348) | 4.2496 (2.9210, 5.7731) | 4.3617 (3.2989, 5.3901) | 0.5661 (0.4344, 0.7022) | 0.1385 (0.0697, 0.2215) |
+| `t-learner` | 0.0305 (-0.0578, 0.1222) | 0.9022 (0.8334, 0.9585) | 4.1149 (3.1768, 5.2630) | 4.2359 (3.4102, 5.4069) | 4.4967 (3.5423, 5.3866) | 0.8569 (0.7500, 0.9646) | 0.1248 (0.0508, 0.2608) |
+| `x-learner` | 0.0468 (-0.0462, 0.1433) | 0.8962 (0.8303, 0.9548) | 3.9407 (2.7052, 5.5056) | 4.2619 (3.3427, 5.1678) | 4.2332 (3.4652, 5.0388) | 0.7870 (0.6081, 0.9695) | 0.1032 (0.0219, 0.2284) |
+| `outcome-ranking` | 0.0088 (-0.0479, 0.0692) | 0.7345 (0.6413, 0.8244) | 1.3420 (-0.3277, 3.1934) | 2.2051 (0.9486, 3.5478) | 2.7399 (1.7099, 3.7437) | - | - |
 | `random-200` | 0.0001 (-0.0751, 0.0712) | 0.8283 (0.7705, 0.8888) | 3.9298 (2.2726, 5.5296) | 3.9178 (2.8451, 5.0637) | 3.9275 (3.2068, 4.6875) | - | - |
+
+Selected on the validation split from the committed grid:
+
+- `s-learner`: min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
+- `t-learner`: min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds)
+- `x-learner`: min_child_samples=60, num_leaves=15 (3 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
+- `outcome-ranking`: min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:ihdp -->
 
 The true average effect here is about 4.0, and PEHE is the per-unit error against an effect
-somebody wrote down, so lower is better and only this dataset can report it.
+somebody wrote down, so lower is better and only this dataset can report it. Which
+estimator wins it is not a fact about the estimators: it depends on whether the treatment
+effect is simpler or harder to describe than the baseline outcome, and
+[docs/estimators.md](docs/estimators.md) shows the ordering reversing completely between
+two synthetic problems that differ in nothing else.
 
 Read the two right-hand columns, not the Qini. On the first seed the outcome ranking has
 the **best Qini coefficient of the three** and buys 0.05 at a 10% budget, against random
@@ -66,10 +92,10 @@ is what a budget actually buys.
   the targeting decision flips; it does not remove the assumption.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
-- Not yet built, in schedule order: T, X, DR and R learners; the Criteo, Lenta and ACIC
-  loaders; realised policy value under a budget; Rosenbaum bounds and E-values; Dragonnet;
-  the budget-slider demo. Nothing above is a placeholder for them: the numbers reported
-  are the numbers measured.
+- Not yet built, in schedule order: DR and R learners; the Criteo, Lenta and ACIC loaders;
+  realised policy value under a budget; Rosenbaum bounds and E-values; Dragonnet; the
+  budget-slider demo. Nothing above is a placeholder for them: the numbers reported are the
+  numbers measured.
 
 ## Install and run
 
@@ -82,9 +108,11 @@ uv run itx benchmark --dataset hillstrom
 uv run itx benchmark --dataset ihdp
 ```
 
-`itx benchmark` fits, evaluates on a held-out split, writes every per-seed number to
+`itx benchmark` selects hyperparameters on the validation split, fits, evaluates on the
+held-out test split, writes every per-seed number and the chosen configuration to
 `results/<dataset>.json`, draws the Qini figure into `docs/figures/`, and rewrites the
-table above. Raw data is never committed; the SHA-256 of every download is, in
+table above. Add `--no-tune` to skip selection and use the default configuration, which is
+several times faster. Raw data is never committed; the SHA-256 of every download is, in
 [`src/itx/data/checksums.sha256`](src/itx/data/checksums.sha256), so a download can be
 verified without running any of this code:
 

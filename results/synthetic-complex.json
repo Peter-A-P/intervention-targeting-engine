@@ -1,0 +1,1417 @@
+[
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "s-learner",
+    "seed": 11,
+    "n_test": 1600,
+    "fit_seconds": 0.952,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 31,
+      "validation_qini": 0.172580109346848
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.14433424571608788,
+        "low": 0.1261265134159994,
+        "high": 0.162820669851077,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.4835835432929917,
+        "low": 0.41952377745696556,
+        "high": 0.5413604636206116,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.259247146111559,
+        "low": 1.9309999969170257,
+        "high": 2.5512875912677897,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.5994204131473568,
+        "low": 1.3387871996595357,
+        "high": 1.8612343993035725,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.1866927098918036,
+        "low": 0.9899057603829862,
+        "high": 1.3812411312745883,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.48236903886350607,
+        "low": 0.42362272913035737,
+        "high": 0.5463283955906685,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.003658204781498496,
+        "low": 0.0003815706746177091,
+        "high": 0.028085527053038795,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "t-learner",
+    "seed": 11,
+    "n_test": 1600,
+    "fit_seconds": 0.575,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.17005843049811423
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.14261380786301778,
+        "low": 0.12369499709212951,
+        "high": 0.1612785817352022,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.47374518329468446,
+        "low": 0.4094370784406817,
+        "high": 0.53300894729747,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.183783468011807,
+        "low": 1.8445432616490764,
+        "high": 2.532598665325071,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.5553878564361088,
+        "low": 1.2884823194885568,
+        "high": 1.7970188890675045,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.1088332922349082,
+        "low": 0.910195258511084,
+        "high": 1.3263352734931295,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.3832942613229628,
+        "low": 0.3381405406475498,
+        "high": 0.43554318058494695,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.0015063220285696302,
+        "low": 0.00023755337653312542,
+        "high": 0.021151400709874448,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "x-learner",
+    "seed": 11,
+    "n_test": 1600,
+    "fit_seconds": 0.846,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.1708985826986746
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.1433852088495813,
+        "low": 0.1245818004411468,
+        "high": 0.1622030856084575,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.47916098637055615,
+        "low": 0.41653534154001626,
+        "high": 0.5370583141379108,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.2734420136359885,
+        "low": 1.9248619006503433,
+        "high": 2.5688232491524934,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.6272800697389709,
+        "low": 1.3432846711910127,
+        "high": 1.8531841149165127,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.1744127566007223,
+        "low": 0.9522983691737688,
+        "high": 1.3649083992746052,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.3608216593163455,
+        "low": 0.29991082555768095,
+        "high": 0.43028083088244523,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.0013520403063960358,
+        "low": 0.00026735597029120116,
+        "high": 0.02003459856590609,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "outcome-ranking",
+    "seed": 11,
+    "n_test": 1600,
+    "fit_seconds": 0.238,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.12528977818986803
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.1038957727959407,
+        "low": 0.08621360234003772,
+        "high": 0.12167981409513984,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.32766388229773524,
+        "low": 0.25336800818383526,
+        "high": 0.3912495577727573,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 1.3963927917643626,
+        "low": 1.044183715898029,
+        "high": 1.737315937205998,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.0502909315369318,
+        "low": 0.833601845281793,
+        "high": 1.277625701646998,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.8734489552048481,
+        "low": 0.6912350774809658,
+        "high": 1.0418919164592872,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "random-200",
+    "seed": 11,
+    "n_test": 1600,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": 0.0007943889306682048,
+        "low": -0.015629011434248344,
+        "high": 0.019151745847661335,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": -0.0519450407928532,
+        "low": -0.11148584521717098,
+        "high": 0.013774416686263965,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": -0.06637087977445132,
+        "low": -0.4377131666281387,
+        "high": 0.262000196036474,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": -0.056413166447974096,
+        "low": -0.29610120235698273,
+        "high": 0.15980886478565093,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": -0.051908487097080645,
+        "low": -0.21697540598202586,
+        "high": 0.11844580271673809,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "s-learner",
+    "seed": 23,
+    "n_test": 1600,
+    "fit_seconds": 0.304,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.174519846795604
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.14979811277610144,
+        "low": 0.13137635686248358,
+        "high": 0.16748117850260733,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5458107770042854,
+        "low": 0.48973027749380427,
+        "high": 0.5957521043741528,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.222580595824388,
+        "low": 1.9749583358100118,
+        "high": 2.6074765276873975,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7320943829332753,
+        "low": 1.4840887388990243,
+        "high": 1.9876507380087718,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.3291465530159727,
+        "low": 1.1345797414897374,
+        "high": 1.507795842803304,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4660993328227866,
+        "low": 0.40954819380328483,
+        "high": 0.5413151775254309,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.010900327177847304,
+        "low": 0.0006418748303185066,
+        "high": 0.034806243233156335,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "t-learner",
+    "seed": 23,
+    "n_test": 1600,
+    "fit_seconds": 0.424,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.1717119677415936
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15024016948732644,
+        "low": 0.13116396731364663,
+        "high": 0.16905905529315726,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5433406009351431,
+        "low": 0.4881854913690351,
+        "high": 0.5969223153627589,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.2933407620507493,
+        "low": 2.0283344797825174,
+        "high": 2.6176122949318223,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7205868907793207,
+        "low": 1.4756181329224098,
+        "high": 1.9614992831366116,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2986260078507892,
+        "low": 1.1257781586845594,
+        "high": 1.49973070862541,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.39985964050989287,
+        "low": 0.34651512819733393,
+        "high": 0.46969864600914457,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.008672215845312635,
+        "low": 0.0003363610446523332,
+        "high": 0.02766454087004976,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "x-learner",
+    "seed": 23,
+    "n_test": 1600,
+    "fit_seconds": 0.777,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.17438264603287404
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15187433043072943,
+        "low": 0.13323766579134896,
+        "high": 0.1695727549927633,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5522240620884855,
+        "low": 0.4963359215410767,
+        "high": 0.6012307141366835,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.27658679036651,
+        "low": 1.9673638182677158,
+        "high": 2.6388938235242634,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7930184999306273,
+        "low": 1.5595100765802643,
+        "high": 1.996586690901206,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.3080833031843564,
+        "low": 1.1032586217931555,
+        "high": 1.5107379527183369,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.34781525748456965,
+        "low": 0.2954812653806664,
+        "high": 0.41834421671041294,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.007724041128647824,
+        "low": 0.0004209881491279194,
+        "high": 0.025185037434348977,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "outcome-ranking",
+    "seed": 23,
+    "n_test": 1600,
+    "fit_seconds": 0.246,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.11925499735921213
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.11117249251360778,
+        "low": 0.09419171635629622,
+        "high": 0.12754810930551655,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.4031183994645575,
+        "low": 0.3402545537990928,
+        "high": 0.4637357046963552,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 1.6722203842295358,
+        "low": 1.3344455470540235,
+        "high": 2.0139143619781086,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.205773797841094,
+        "low": 0.9939905100409686,
+        "high": 1.461413835834042,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.9530302902936881,
+        "low": 0.7920880261055266,
+        "high": 1.1341165583353656,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "random-200",
+    "seed": 23,
+    "n_test": 1600,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": -7.317902379117072e-06,
+        "low": -0.0183331113854694,
+        "high": 0.014520833226778707,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.03672476053297946,
+        "low": -0.025705424840448028,
+        "high": 0.08452657988068774,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05145539462015844,
+        "low": -0.2675994767825543,
+        "high": 0.37828854709106674,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.052019625506257154,
+        "low": -0.17830129300270378,
+        "high": 0.2972445900803468,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.04921881521901228,
+        "low": -0.14558324447097157,
+        "high": 0.21538426708928177,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "s-learner",
+    "seed": 37,
+    "n_test": 1600,
+    "fit_seconds": 0.27,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.16602477924479217
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15376268842875174,
+        "low": 0.13765699584464505,
+        "high": 0.17130249988578045,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.519317647865904,
+        "low": 0.4577799943569076,
+        "high": 0.5722362355693812,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.1396277363018097,
+        "low": 1.8413832561988617,
+        "high": 2.419662126302681,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.5907738264510833,
+        "low": 1.3285283710581939,
+        "high": 1.7962182652942402,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.1566085647486593,
+        "low": 0.9999501572861226,
+        "high": 1.3548135909243177,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4278028314517201,
+        "low": 0.38058789674623356,
+        "high": 0.4901338986996656,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.016967866086957696,
+        "low": 0.0016377841152077036,
+        "high": 0.03643757378785236,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "t-learner",
+    "seed": 37,
+    "n_test": 1600,
+    "fit_seconds": 0.403,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.16376262859873048
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15274957589285648,
+        "low": 0.13631341553639922,
+        "high": 0.17109638611518996,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.515946870666143,
+        "low": 0.450109453803283,
+        "high": 0.5711852463011533,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.112717011854315,
+        "low": 1.8047675985710647,
+        "high": 2.43680113025424,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.5595768747331933,
+        "low": 1.3169465567442722,
+        "high": 1.795390369426693,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.1779719945199598,
+        "low": 0.9902518009418483,
+        "high": 1.3742770232537638,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.3548209441655525,
+        "low": 0.3145490247763724,
+        "high": 0.4116684291823535,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.018679257229386955,
+        "low": 0.003115804504841537,
+        "high": 0.0353234234941726,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "x-learner",
+    "seed": 37,
+    "n_test": 1600,
+    "fit_seconds": 0.754,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.16524571105612595
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15369721656868138,
+        "low": 0.1376901741463305,
+        "high": 0.1717415735733004,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5192887849598284,
+        "low": 0.456687128958767,
+        "high": 0.5740362027061948,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.1862528309131535,
+        "low": 1.8718851369317746,
+        "high": 2.4605712890783966,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.6103963513604818,
+        "low": 1.36689570157075,
+        "high": 1.8357374131571873,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2019898890164717,
+        "low": 1.0312116896898678,
+        "high": 1.3912578192541287,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.32719007602145755,
+        "low": 0.27658786840578087,
+        "high": 0.3942564698377853,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.026309699157103704,
+        "low": 0.010965777447102055,
+        "high": 0.04217832595371695,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "outcome-ranking",
+    "seed": 37,
+    "n_test": 1600,
+    "fit_seconds": 0.253,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.1295614106175978
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.11668646771684901,
+        "low": 0.1004907419414031,
+        "high": 0.133152308510785,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.3738836980979539,
+        "low": 0.30592664779884626,
+        "high": 0.4328758319452859,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 1.411647709557325,
+        "low": 1.0972098049375156,
+        "high": 1.7384584691029838,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.0385355831444096,
+        "low": 0.8356227957903334,
+        "high": 1.2429043099346189,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.8728068958661229,
+        "low": 0.7068167183794001,
+        "high": 1.029502887920721,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "random-200",
+    "seed": 37,
+    "n_test": 1600,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": 0.0004099114877637046,
+        "low": -0.01218446649821103,
+        "high": 0.013915626122247069,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": -0.04785314183532155,
+        "low": -0.09428833331858773,
+        "high": 0.0013922403790373494,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": -0.05164897113848161,
+        "low": -0.40611571697945703,
+        "high": 0.2655544772430017,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": -0.05434586160414944,
+        "low": -0.2543842803845678,
+        "high": 0.14789618819922662,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": -0.051064427214771675,
+        "low": -0.20439080690210443,
+        "high": 0.08441038099778914,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "s-learner",
+    "seed": 53,
+    "n_test": 1600,
+    "fit_seconds": 0.539,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 31,
+      "validation_qini": 0.14731427886888082
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15705433243048383,
+        "low": 0.13749043089612814,
+        "high": 0.1754548574443859,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5420990637367764,
+        "low": 0.4881523566435784,
+        "high": 0.5915490927897968,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.3522386988239656,
+        "low": 2.02738838331604,
+        "high": 2.7102170960769625,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.6442876201917624,
+        "low": 1.4189291172906826,
+        "high": 1.8937947034509013,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2755006558896316,
+        "low": 1.0849622892270996,
+        "high": 1.469871915015077,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4579757132245741,
+        "low": 0.4085817268079623,
+        "high": 0.5135335076403578,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.011159190340337482,
+        "low": 0.0005681748620430506,
+        "high": 0.03371423277117084,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "t-learner",
+    "seed": 53,
+    "n_test": 1600,
+    "fit_seconds": 0.434,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.14646537188614192
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15773764684338404,
+        "low": 0.13791707097367922,
+        "high": 0.1763058822777634,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5372472128056287,
+        "low": 0.48182729433350974,
+        "high": 0.5904180026174749,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.2625380221861313,
+        "low": 1.9500504696794043,
+        "high": 2.68940792381743,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7057098782016307,
+        "low": 1.4424876316385804,
+        "high": 1.9769319548915407,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2301604115700386,
+        "low": 1.0258184618123563,
+        "high": 1.4325167975481976,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.40547096490370416,
+        "low": 0.3716425683131007,
+        "high": 0.44265691844398036,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.00781056199369496,
+        "low": 0.00045043883530913507,
+        "high": 0.028713300265706083,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "x-learner",
+    "seed": 53,
+    "n_test": 1600,
+    "fit_seconds": 0.815,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.14748553723655983
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.1574038428025216,
+        "low": 0.13737707694970364,
+        "high": 0.17571323125266924,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5409477295769772,
+        "low": 0.4867993809985744,
+        "high": 0.5930189414900584,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.40001392375563,
+        "low": 1.993866094492616,
+        "high": 2.796228580785235,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7367144697521755,
+        "low": 1.481031192101179,
+        "high": 1.9770286727788269,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.242748911496701,
+        "low": 1.0593712502231385,
+        "high": 1.4622897528642047,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.38898116575194003,
+        "low": 0.3503538510876626,
+        "high": 0.4323950365791171,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.009962244198647469,
+        "low": 0.0005428019409388407,
+        "high": 0.028815031236848195,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "outcome-ranking",
+    "seed": 53,
+    "n_test": 1600,
+    "fit_seconds": 0.257,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.104375702459809
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.11586748056249287,
+        "low": 0.09779411502616915,
+        "high": 0.13423918201095272,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.3980299972653576,
+        "low": 0.3357740393612135,
+        "high": 0.4582180203414932,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 1.702286731659949,
+        "low": 1.3810073715413667,
+        "high": 2.0365943982476304,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.2699048691919377,
+        "low": 1.0407701700135044,
+        "high": 1.4766145139440097,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.9587301795794315,
+        "low": 0.8009157011527744,
+        "high": 1.1392756060653446,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "random-200",
+    "seed": 53,
+    "n_test": 1600,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": 0.0008622905489244597,
+        "low": -0.014489751178559062,
+        "high": 0.015710781376298513,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.02087491579050762,
+        "low": -0.03062931094383115,
+        "high": 0.07082013154073757,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.03796749374654954,
+        "low": -0.376238108701715,
+        "high": 0.353968066719945,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.041903892811761774,
+        "low": -0.1879284167338472,
+        "high": 0.23888101854781002,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.03509792886583292,
+        "low": -0.11743584515353762,
+        "high": 0.18144684908885558,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "s-learner",
+    "seed": 71,
+    "n_test": 1600,
+    "fit_seconds": 0.271,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.1610012031394356
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15791654342490788,
+        "low": 0.13944334980502596,
+        "high": 0.17601515755080205,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5391105173525356,
+        "low": 0.4828660235608726,
+        "high": 0.5908791264858285,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.4429296242152807,
+        "low": 2.0755628346735,
+        "high": 2.770769074953154,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7192008938225403,
+        "low": 1.4820811567794963,
+        "high": 1.9627990762294247,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2661300978458583,
+        "low": 1.1019991536343494,
+        "high": 1.4673556671768446,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.447034565943202,
+        "low": 0.38601550446437455,
+        "high": 0.5201980735681814,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.009906722080929324,
+        "low": 0.0005289214856955647,
+        "high": 0.031640086661503156,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "t-learner",
+    "seed": 71,
+    "n_test": 1600,
+    "fit_seconds": 0.481,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.1598906460664846
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15124436141845976,
+        "low": 0.13309256828865568,
+        "high": 0.16927473701144785,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5185436763974607,
+        "low": 0.4585283571127719,
+        "high": 0.5699672749050316,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.390957695700535,
+        "low": 2.045850686146505,
+        "high": 2.699261797216846,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.6959498655407124,
+        "low": 1.4707878830935521,
+        "high": 1.9142537745478014,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2187027882755317,
+        "low": 1.0402595531963825,
+        "high": 1.41278042741841,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4452390878248457,
+        "low": 0.38358967823940954,
+        "high": 0.5196914887398284,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.012969405952215358,
+        "low": 0.0005863882422165213,
+        "high": 0.03483437724135387,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "x-learner",
+    "seed": 71,
+    "n_test": 1600,
+    "fit_seconds": 1.097,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 31,
+      "validation_qini": 0.15998893419436402
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15290680033934306,
+        "low": 0.13469407186676244,
+        "high": 0.17084624895166134,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5240216637109262,
+        "low": 0.46352347021142704,
+        "high": 0.5761978067773715,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.3766446398811736,
+        "low": 2.0525769053805676,
+        "high": 2.7135922117573332,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.6826550901770043,
+        "low": 1.450775593100889,
+        "high": 1.920517579581006,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2493633348604007,
+        "low": 1.0718921208334613,
+        "high": 1.4253620579945687,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4243880584792963,
+        "low": 0.3626216857979597,
+        "high": 0.49974783440923326,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.010834028641058082,
+        "low": 0.0004453670515871144,
+        "high": 0.03147625955260689,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "outcome-ranking",
+    "seed": 71,
+    "n_test": 1600,
+    "fit_seconds": 0.24,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.12006923237899125
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.10705344701391029,
+        "low": 0.08965075968996217,
+        "high": 0.12470540345301938,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.37311769420833896,
+        "low": 0.3039827065791143,
+        "high": 0.4319219947960876,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 1.5287750462196374,
+        "low": 1.1841816226720605,
+        "high": 1.930997509251266,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.2108905462125596,
+        "low": 1.0109649728294023,
+        "high": 1.421471901370557,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.9306649979354997,
+        "low": 0.7305478799187167,
+        "high": 1.1056305016396062,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "random-200",
+    "seed": 71,
+    "n_test": 1600,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": 0.00010266449254347311,
+        "low": -0.013599748440664965,
+        "high": 0.01430383628683341,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.010021463767410546,
+        "low": -0.03594322735467829,
+        "high": 0.05810231896411182,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.00740613964693224,
+        "low": -0.3219704150585665,
+        "high": 0.26846951717419576,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.0077085281755575885,
+        "low": -0.20092859187450865,
+        "high": 0.21116849897448184,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.012329796131747964,
+        "low": -0.14012071848275587,
+        "high": 0.18859856809118097,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  }
+]
