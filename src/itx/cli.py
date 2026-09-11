@@ -122,7 +122,7 @@ def benchmark(
     ] = DEFAULT_README,
 ) -> None:
     """Fit, evaluate and report one dataset, with intervals and both baselines."""
-    from itx.bench.plots import plot_qini_curves
+    from itx.bench.plots import plot_calibration, plot_qini_curves
     from itx.bench.runner import DATASETS, run
     from itx.bench.seeds import SEEDS
     from itx.bench.table import (
@@ -161,11 +161,96 @@ def benchmark(
     if plot:
         first_seed = seed_values[0]
         split = stratified_split(DATASETS[dataset](), first_seed)
-        figure_path = figure_dir / f"qini-{dataset}.png"
-        plot_qini_curves(
-            [row for row in rows if row.seed == first_seed], split.test, figure_path
+        seed_rows = [row for row in rows if row.seed == first_seed]
+        qini_path = plot_qini_curves(seed_rows, split.test, figure_dir / f"qini-{dataset}.png")
+        typer.echo(f"figure: {qini_path}")
+        effect_rows = [row for row in seed_rows if "calibration_slope" in row.metrics]
+        if effect_rows:
+            calibration_path = plot_calibration(
+                effect_rows, split.test, figure_dir / f"calibration-{dataset}.png"
+            )
+            typer.echo(f"figure: {calibration_path}")
+
+
+@app.command("report")
+def report(
+    dataset: Annotated[str, typer.Option(help="Dataset key to redraw.")] = "hillstrom",
+    results_dir: Annotated[
+        Path, typer.Option(help="Where the per-seed JSON lives.")
+    ] = DEFAULT_RESULTS_DIR,
+    readme: Annotated[
+        Path, typer.Option(help="Markdown file whose results block is regenerated.")
+    ] = DEFAULT_README,
+) -> None:
+    """Redraw a results table from a finished run, without refitting anything."""
+    from itx.bench.table import (
+        read_json,
+        selected_configurations,
+        to_markdown,
+        update_markdown_file,
+    )
+
+    path = results_dir / f"{dataset}.json"
+    if not path.is_file():
+        typer.echo(f"no results at {path}; run 'itx benchmark --dataset {dataset}' first")
+        raise typer.Exit(code=1)
+
+    rows = read_json(path)
+    table = to_markdown(rows)
+    chosen = selected_configurations(rows)
+    if chosen:
+        note = "Selected on the validation split from the committed grid:"
+        table = "\n".join([table, note, "", chosen])
+    typer.echo("")
+    typer.echo(table)
+    if update_markdown_file(readme, dataset, table):
+        typer.echo(f"results block updated: {readme}")
+
+
+@app.command("figures")
+def figures(
+    dataset: Annotated[str, typer.Option(help="Dataset key to redraw.")] = "hillstrom",
+    results_dir: Annotated[
+        Path, typer.Option(help="Where the per-seed JSON lives.")
+    ] = DEFAULT_RESULTS_DIR,
+    figure_dir: Annotated[
+        Path, typer.Option(help="Where the figures go.")
+    ] = DEFAULT_FIGURE_DIR,
+) -> None:
+    """Redraw a dataset's figures from a finished run, refitting only the first seed."""
+    from itx.bench.plots import plot_calibration, plot_qini_curves
+    from itx.bench.runner import refit_seed
+    from itx.bench.table import read_json
+
+    path = results_dir / f"{dataset}.json"
+    if not path.is_file():
+        typer.echo(f"no results at {path}; run 'itx benchmark --dataset {dataset}' first")
+        raise typer.Exit(code=1)
+
+    from itx.bench.grid import default_selection
+
+    rows = read_json(path)
+    seed = rows[0].seed
+    # A run made with --no-tune records no selection, so fall back to the default rather
+    # than dropping the estimator: the estimator list comes from the rows, not from which
+    # of them happened to have been tuned.
+    selections = {
+        row.estimator: row.selection if row.selection is not None else default_selection()
+        for row in rows
+        if row.seed == seed
+    }
+    had_calibration = {row.estimator for row in rows if "calibration_slope" in row.metrics}
+
+    refitted, split = refit_seed(dataset, seed, selections=selections)
+    qini_path = plot_qini_curves(refitted, split.test, figure_dir / f"qini-{dataset}.png")
+    typer.echo(f"figure: {qini_path}")
+
+    effect_rows = [row for row in refitted if row.estimator in had_calibration]
+    if effect_rows:
+        calibration_path = plot_calibration(
+            effect_rows, split.test, figure_dir / f"calibration-{dataset}.png"
         )
-        typer.echo(f"figure: {figure_path}")
+        typer.echo(f"figure: {calibration_path}")
 
 
 @app.command("demo")

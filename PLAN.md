@@ -1,6 +1,6 @@
 # Plan: Intervention Targeting Engine
 
-**Written:** 2026-09-06. **Status:** weeks 1 and 2 built (2026-09-10). Changes to this plan
+**Written:** 2026-09-06. **Status:** weeks 1 to 3 built (2026-09-11). Changes to this plan
 since it was written are listed in section 11, each with the reason and the week it
 happened.
 **Build window:** 8 weeks, 2026-09-07 to 2026-11-01, evenings and weekends, alongside the
@@ -74,7 +74,7 @@ Out of scope, on purpose:
 | Criteo-UPLIFT v2 | 13.9M rows, 12 features | Ad exposure | Visit, conversion | No | CC BY-NC-SA 4.0, downloaded through the official page. Downloaded and checksummed week 1; loader in week 4 |
 | Lenta | ~687k | SMS campaign | Purchase | No | Ships with `scikit-uplift`; check licence in the package |
 | IHDP | 747 units, 100 replicates | Home visits (semi-synthetic) | Cognitive score | Yes, simulated | The `ihdp_npci_1-100` benchmark archives the CEVAE and Dragonnet papers use, from fredjo.com. **Loader built, week 1** |
-| ACIC 2016 | 4,802 units, 77 settings | Simulated | Simulated | Yes | Public via the `aciccomp2016` R package or mirrored CSVs |
+| ACIC 2016 | 4,802 units, 10 settings | Simulated | Simulated | Yes | CDLA-Sharing-1.0, from the causallib CSV mirror. **Loader built, week 3** (change 13) |
 
 Rules for data in this repository:
 
@@ -118,12 +118,14 @@ Rules for data in this repository:
 src/itx/        (src layout, change 2 in section 11)
   data/         loaders, checksums, splits, dataset cards
   estimators/   protocol, s_learner, t_learner, x_learner, dr_learner, r_learner,
-                causal_forest, baselines (random and outcome ranking), propensity
+                causal_forest, baselines (random and outcome ranking), propensity,
+                sklearn_bridge (change 17)
   policy/       rank_and_cut, cost_aware, policy_value (ipw, dr)
-  metrics/      qini, auuc, uplift_at_k, calibration, bootstrap
+  metrics/      qini, auuc, uplift_at_k, calibration, bootstrap, ground_truth
   sensitivity/  rosenbaum, evalue, negative_control
   bench/        runner, results table renderer, seeds, grid (change 8)
-  cli.py        typer CLI: itx data pull, itx benchmark, itx demo build
+  cli.py        typer CLI: itx data pull, itx benchmark, itx report, itx figures,
+                itx demo build (change 20)
 demo/           static site: precomputed rankings as JSON, slider, table
 docs/
   data/         one card per dataset
@@ -146,7 +148,7 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 |---|---|---|---|
 | 1 | Sep 7 - 13 | Repo scaffold (`uv`, `ruff`, `mypy --strict`, `pytest`, CI); data loaders with checksums for Hillstrom and IHDP; `UpliftEstimator` protocol; S-learner end to end on Hillstrom | **Done 2026-09-10.** Ruff, `mypy --strict` and 161 tests green (152 of them needing no download); Qini curves plotted for both datasets; results table generated into the README; ahead of plan: PEHE and ATE error (week 3) landed early because the IHDP loader is untestable without them |
 | 2 | Sep 14 - 20 | T and X learners; metrics module (Qini, AUUC, uplift at k, bootstrap); random and outcome-ranking baselines; synthetic-data tests | **Done 2026-09-10.** Three estimators with intervals on Hillstrom and IHDP, both baselines beaten on both; the metrics module and baselines had already landed in week 1, so the week also bought the validation grid from section 4 and a controlled demonstration of which meta-learner wins when. 212 tests |
-| 3 | Sep 21 - 27 | DR and R learners via EconML/CausalML wrappers; IHDP and ACIC loaders; PEHE and ATE error; calibration plot | Ground-truth metrics for five estimators |
+| 3 | Sep 21 - 27 | DR and R learners via EconML/CausalML wrappers; IHDP and ACIC loaders; PEHE and ATE error; calibration plot | **Done 2026-09-11.** Five estimators with ground-truth metrics on IHDP and ACIC; calibration slope, calibration error and the decile plot; the CausalML build risk did not materialise, and the week instead turned up a real defect in the propensity model (change 14). 302 tests |
 | 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | `itx benchmark --all` runs end to end on a laptop overnight |
 | 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset | Policy value table with both baselines |
 | 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; Dragonnet in PyTorch; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | Sensitivity section with numbers; Dragonnet in the table; write-up drafted |
@@ -289,3 +291,88 @@ that out by making a prediction from the IHDP result that turned out to be wrong
 **11. `min_child_samples` is settled** (week 2, closing change 5). It is in the grid, with
 candidates 5, 20 and 60 alongside `num_leaves` at 15 and 31: six configurations, identical
 for every estimator, committed in `itx/bench/grid.py`.
+
+**12. EconML and CausalML installed without a build** (week 3). Recorded because it was
+listed as the week's main risk and it did not happen: both ship Python 3.13 wheels for
+Windows, and `uv sync --extra learners` needed no compiler. The pins moved to 0.17 in week
+1 for numpy 2 compatibility, which turned out to be the same release that fixed this.
+
+**13. ACIC 2016 is ten settings, not seventy-seven** (week 3). Section 3 said 77 settings
+via the `aciccomp2016` R package or mirrored CSVs. The loader uses the causallib mirror,
+which is plain CSV, maintained, carries the organisers' licence and citation, and needs no R
+toolchain. It holds ten simulation settings rather than the competition's full set. Ten is
+enough to average across problem types and to give the benchmark a large, strongly
+heterogeneous, badly confounded ground-truth dataset next to IHDP's small nearly homogeneous
+one, which is the job it was in the plan to do.
+
+**14. The propensity model predicts training rows out of fold** (week 3). Not in the plan at
+all, and the most important thing the week produced. A propensity model asked to predict the
+rows it was fitted on has partly memorised them, so `t - e(x)` stops being a residual with
+conditional mean zero, and the R-learner is built on exactly that residual. On ACIC its PEHE
+is 23.95 with an in-sample propensity and 1.20 with an out-of-fold one, against a true effect
+whose standard deviation is 3.85, on every seed.
+
+What makes it worth a plan entry rather than a commit message is how it was found. Every
+diagnostic that a careful person would check said the two fits were nearly identical: the
+share of units against the clipping bound moved from 48.2% to 47.8%, the median treatment
+residual from 0.014 to 0.025. The failure was visible only against a known truth. Section 1
+says the ground-truth datasets are there because they are the only way to show an estimator
+is correct rather than self-consistent; this is that claim collecting on itself.
+
+**15. A fifth synthetic generator, `confounded`** (week 3). The other four randomise
+assignment, which makes them incapable of testing anything built for confounding: a broken
+propensity model looks exactly like a working one when there is nothing to find. The new
+generator drives treatment from the same covariates that drive the outcome, hard enough that
+the naive difference in arm means has the wrong sign, and records the true assignment
+probability so an estimated propensity can be scored against the right answer. It is what
+the cross-fitting finding above is regression-tested on without a download.
+
+**16. The grid gains a `min_child_samples` of 200** (week 3). Eight candidates now rather
+than six. The DR-learner's final stage regresses on a pseudo-outcome that carries the
+inverse-propensity correction's variance as well as the outcome's, and on 2,400 training
+rows its PEHE was 1.28 at a leaf size of 20, worse than predicting a constant, against 0.40
+at 200. The old ceiling of 60 could not reach it. Widened for every estimator rather than
+for the one that needed it, so the grid stays identical across the table.
+
+**17. `itx/estimators/sklearn_bridge.py`** (week 3). Section 5's rule is that the base
+learner is LightGBM everywhere. EconML and CausalML build their own models by cloning an
+estimator they are handed, and a bare `LGBMRegressor` would lose the categorical column
+declaration, because `categorical_feature` is a `fit` argument neither library knows to
+pass. Hillstrom's `zip_code` and `channel` would then be ordered quantities for the DR and R
+learners and categories for the others, and the estimator column would be carrying an
+encoding difference. Two thin scikit-learn estimators close that.
+
+**18. Calibration bins are capped by the smaller arm** (week 3). Section 2 asks for a decile
+plot. Ten deciles of IHDP's 150-row test split leaves under three treated units in each, and
+most deciles then hold no treated unit at all and can report nothing, which produced a table
+of NaN calibration slopes sitting beside finite-looking intervals. The count is capped so a
+bin holds at least ten units of each arm: ten bins on Hillstrom and ACIC, two on IHDP. Two
+bins is a weak calibration estimate and is reported as such rather than dressed up as ten.
+
+**19. The grid is filtered by training size before selection** (week 3). Adding the leaf size
+of 200 in change 16 immediately cost the S-learner on IHDP: one seed in five selected it, 200
+leaves room for two leaves in 448 training rows, and the near-degenerate fit moved the
+five-seed PEHE from 0.57 to 1.28. A configuration that cannot fit a model is not a
+hyperparameter choice. Candidates whose leaf size exceeds a quarter of the training rows are
+dropped before selection runs. The grid stays identical across estimators; what rules a
+candidate out is the dataset.
+
+**20. Two new commands, `itx report` and `itx figures`** (week 3). Not in section 5, and both
+exist because the Hillstrom run reached twenty minutes with five estimators and an
+eight-candidate grid. `report` redraws a results table from the committed per-seed JSON
+without fitting anything, which is what that file was written for. `figures` redraws the
+figures by refitting only the first seed at the configuration the run recorded, about a
+minute rather than twenty. Neither invents a number: `report` reads them and `figures` needs
+per-unit scores, which are not stored because they are large and only the pictures use them.
+
+**21. Figures pin their matplotlib style** (week 3). CausalML imports seaborn, and importing
+seaborn rewrites matplotlib's global settings, so the same plotting code produced a white
+figure before the R-learner existed and a grey one after. A figure whose appearance depends
+on which estimators were imported is not reproducible. Every figure is now drawn inside an
+explicit style context and saved on an explicit white background.
+
+**22. CI is three jobs, and Hillstrom is not on every push** (week 3). Section 4 says a CI job
+runs the Hillstrom and IHDP benchmarks on every push. Hillstrom now takes around twenty
+minutes, most of it in the DR and R learners' cross-fitting, so it moved to a weekly schedule
+and manual dispatch, where it also asserts that the committed table still matches a fresh run.
+IHDP and ACIC stay on every push, along with the tests that need real data.

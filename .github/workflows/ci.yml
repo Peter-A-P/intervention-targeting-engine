@@ -1,15 +1,25 @@
 name: CI
 
-# Two jobs, because they answer different questions. "checks" asks whether the code is
-# correct and typed, and runs on synthetic data in under a minute. "benchmark" asks
-# whether the thing still produces its numbers, which needs a real download and a real
-# fit. Criteo is not here: it is 297 MB and 13.9M rows, and PLAN.md section 4 puts it on a
-# nightly or on-demand run rather than on every push.
+# Three jobs, split by what they answer and what they cost.
+#
+#   checks     is the code correct and typed? Synthetic data, about a minute.
+#   benchmark  do the small datasets still produce their numbers? A real download and a
+#              real fit, a few minutes.
+#   hillstrom  the same for the 42,693-row set. Selecting from an eight-candidate grid for
+#              five estimators over five seeds is around twenty minutes, most of it in the
+#              DR and R learners' cross-fitting, so it runs on a schedule and on demand
+#              rather than on every push.
+#
+# Criteo is in none of them: 297 MB and 13.9M rows, and PLAN.md section 4 puts it on the
+# same nightly-or-on-demand footing.
 
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # 06:00 UTC on Mondays, which is a quiet time in Newfoundland.
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 concurrency:
@@ -33,7 +43,7 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install Python 3.13 and the project
-        run: uv sync --all-groups
+        run: uv sync --all-groups --extra learners
 
       - name: ruff (lint)
         run: uv run ruff check .
@@ -48,7 +58,7 @@ jobs:
         run: uv run pytest -q
 
   benchmark:
-    name: Hillstrom and IHDP benchmarks
+    name: IHDP and ACIC benchmarks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -60,7 +70,7 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install Python 3.13 and the project
-        run: uv sync --all-groups
+        run: uv sync --all-groups --extra learners
 
       # Keyed on the committed checksums: if a digest changes the cache is a miss and the
       # file is downloaded and verified again, which is the point of committing them.
@@ -70,22 +80,68 @@ jobs:
           path: data/raw
           key: raw-${{ hashFiles('src/itx/data/checksums.sha256') }}
 
-      - name: Pull and verify the small datasets
-        run: uv run itx data pull hillstrom ihdp-train ihdp-test
+      - name: Pull and verify the datasets these jobs need
+        run: uv run itx data pull hillstrom ihdp-train ihdp-test acic-x acic-zymu-1
 
       - name: Tests that need real data
         run: uv run pytest -q --run-slow
 
-      - name: Hillstrom benchmark
-        run: uv run itx benchmark --dataset hillstrom
-
       - name: IHDP benchmark
         run: uv run itx benchmark --dataset ihdp
+
+      - name: ACIC benchmark
+        run: uv run itx benchmark --dataset acic
 
       - name: Keep the results and the figures
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
+          path: |
+            results/
+            docs/figures/
+          if-no-files-found: error
+
+  hillstrom:
+    name: Hillstrom benchmark
+    # The long one. Every push would spend twenty minutes re-proving a number that only
+    # moves when the estimators or the protocol move.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install Python 3.13 and the project
+        run: uv sync --all-groups --extra learners
+
+      - name: Cache the raw downloads
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-${{ hashFiles('src/itx/data/checksums.sha256') }}
+
+      - name: Pull and verify Hillstrom
+        run: uv run itx data pull hillstrom
+
+      - name: Hillstrom benchmark
+        run: uv run itx benchmark --dataset hillstrom
+
+      # The committed table has to match what a rerun produces. If this step reports a
+      # difference, either the numbers moved or the README was edited by hand, and both are
+      # things the project wants to hear about rather than discover later.
+      - name: The committed results table still matches a fresh run
+        run: git diff --exit-code -- README.md results/hillstrom.json
+
+      - name: Keep the results and the figures
+        uses: actions/upload-artifact@v4
+        with:
+          name: hillstrom-results
           path: |
             results/
             docs/figures/

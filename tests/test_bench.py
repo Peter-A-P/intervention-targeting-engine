@@ -14,6 +14,8 @@ from itx.bench.grid import (
     GRID,
     MIN_CHILD_SAMPLES,
     NUM_LEAVES,
+    Selection,
+    applicable_grid,
     default_selection,
     select_config,
 )
@@ -25,10 +27,12 @@ from itx.bench.runner import (
     UNTUNED,
     evaluate,
     random_reference_row,
+    refit_seed,
     run,
 )
 from itx.bench.seeds import SEEDS, TIE_SEED, bootstrap_seed_for
 from itx.bench.table import (
+    read_json,
     selected_configurations,
     summarise,
     to_markdown,
@@ -36,6 +40,7 @@ from itx.bench.table import (
     write_json,
 )
 from itx.cli import app
+from itx.data import synthetic
 from itx.data.splits import stratified_split
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG
 from itx.estimators.s_learner import SLearner
@@ -419,3 +424,201 @@ class TestGrid:
 
     def test_nothing_is_reported_when_nothing_was_tuned(self, rows):
         assert selected_configurations(rows) == ""
+
+
+class TestApplicableGrid:
+    """A candidate a dataset cannot fit is not a hyperparameter choice."""
+
+    def test_a_large_training_set_can_afford_every_candidate(self):
+        assert len(applicable_grid(25_000)) == len(GRID)
+
+    def test_a_small_training_set_drops_the_heaviest_candidates(self):
+        # IHDP's training split. A leaf size of 200 leaves room for two leaves, so the model
+        # can barely split and its uplift collapses toward zero.
+        affordable = applicable_grid(448)
+        assert {config.min_child_samples for config in affordable} == {5, 20, 60}
+
+    def test_it_never_returns_nothing(self):
+        affordable = applicable_grid(4)
+        assert affordable
+        assert {config.min_child_samples for config in affordable} == {min(MIN_CHILD_SAMPLES)}
+
+    def test_selection_only_ever_picks_something_affordable(self):
+        data = synthetic.heterogeneous_effect(400, seed=0)
+        split = stratified_split(data, 11)
+        selection = select_config(
+            lambda config, seed: SLearner(config, seed=seed), split, seed=11
+        )
+        assert selection.config in applicable_grid(split.train.n_units)
+
+
+class TestReadJson:
+    """A finished run should be redrawable without refitting anything."""
+
+    def test_rows_survive_a_round_trip(self, rows, tmp_path):
+        path = tmp_path / "results.json"
+        write_json(rows, path)
+        restored = read_json(path)
+        assert [r.estimator for r in restored] == [r.estimator for r in rows]
+        assert [r.seed for r in restored] == [r.seed for r in rows]
+        for original, copy in zip(rows, restored, strict=True):
+            assert set(copy.metrics) == set(original.metrics)
+            for name, estimate in original.metrics.items():
+                assert copy.metrics[name].value == pytest.approx(estimate.value)
+                assert copy.metrics[name].low == pytest.approx(estimate.low)
+
+    def test_the_table_is_identical_to_the_one_the_run_produced(self, rows, tmp_path):
+        path = tmp_path / "results.json"
+        write_json(rows, path)
+        assert to_markdown(read_json(path)) == to_markdown(rows)
+
+    def test_scores_are_not_stored_and_come_back_empty(self, rows, tmp_path):
+        # Only the figures need them, and figures are cheap to redraw next to a refit.
+        path = tmp_path / "results.json"
+        write_json(rows, path)
+        assert all(row.scores.size == 0 for row in read_json(path))
+
+    def test_the_selected_configuration_survives(self, tmp_path):
+        produced = run(
+            "synthetic-binary",
+            estimators=["s-learner"],
+            seeds=(11,),
+            n_resamples=10,
+            include_random_reference=False,
+            tune=True,
+        )
+        path = tmp_path / "results.json"
+        write_json(produced, path)
+        restored = read_json(path)[0]
+        chosen = produced[0].selection
+        assert chosen is not None
+        assert restored.selection is not None
+        assert restored.selection.config == chosen.config
+
+    def test_the_report_command_redraws_from_disk(self, rows, tmp_path):
+        write_json(rows, tmp_path / "synthetic-binary.json")
+        readme = tmp_path / "README.md"
+        readme.write_text(
+            "<!-- itx:table:synthetic-binary -->\nold\n<!-- itx:end:synthetic-binary -->\n",
+            encoding="utf-8",
+        )
+        result = runner.invoke(
+            app,
+            [
+                "report",
+                "--dataset",
+                "synthetic-binary",
+                "--results-dir",
+                str(tmp_path),
+                "--readme",
+                str(readme),
+            ],
+        )
+        assert result.exit_code == 0, result.stdout
+        assert "s-learner" in readme.read_text(encoding="utf-8")
+        assert "old" not in readme.read_text(encoding="utf-8")
+
+    def test_reporting_a_run_that_never_happened_says_so(self, tmp_path):
+        result = runner.invoke(
+            app, ["report", "--dataset", "hillstrom", "--results-dir", str(tmp_path)]
+        )
+        assert result.exit_code == 1
+        assert "run 'itx benchmark" in result.stdout
+
+
+class TestRefitSeed:
+    """Figures need scores, which are not stored. Refitting one seed is the cheap way back."""
+
+    def test_it_returns_scores_but_no_metrics(self):
+        selections = {"s-learner": default_selection()}
+        rows, split = refit_seed("synthetic-binary", 11, selections=selections)
+        assert len(rows) == 1
+        assert rows[0].scores.size == split.test.n_units
+        assert rows[0].metrics == {}
+
+    def test_it_uses_the_configuration_it_is_given(self):
+        chosen = Selection(
+            config=DEFAULT_CONFIG.with_(min_child_samples=200, num_leaves=15),
+            score=0.0,
+            scores=(),
+        )
+        rows, _ = refit_seed("synthetic-binary", 11, selections={"s-learner": chosen})
+        assert rows[0].selection is not None
+        assert rows[0].selection.config.min_child_samples == 200
+
+    def test_it_reproduces_the_scores_a_full_run_produced(self):
+        # The figures have to describe the same fit the table does, or they are decoration.
+        produced = run(
+            "synthetic-binary",
+            estimators=["s-learner"],
+            seeds=(11,),
+            n_resamples=10,
+            include_random_reference=False,
+            tune=False,
+        )
+        rows, _ = refit_seed(
+            "synthetic-binary", 11, selections={"s-learner": default_selection()}
+        )
+        assert rows[0].scores == pytest.approx(produced[0].scores)
+
+    def test_unknown_estimator_names_are_skipped_rather_than_raising(self):
+        rows, _ = refit_seed(
+            "synthetic-binary",
+            11,
+            selections={
+                "s-learner": default_selection(),
+                "not-an-estimator": default_selection(),
+            },
+        )
+        assert [row.estimator for row in rows] == ["s-learner"]
+
+    def test_the_figures_command_redraws_from_a_finished_run(self, rows, tmp_path):
+        write_json(rows, tmp_path / "synthetic-binary.json")
+        result = runner.invoke(
+            app,
+            [
+                "figures",
+                "--dataset",
+                "synthetic-binary",
+                "--results-dir",
+                str(tmp_path),
+                "--figure-dir",
+                str(tmp_path / "figures"),
+            ],
+        )
+        assert result.exit_code == 0, result.stdout
+        assert (tmp_path / "figures" / "qini-synthetic-binary.png").exists()
+        assert (tmp_path / "figures" / "calibration-synthetic-binary.png").exists()
+
+    def test_asking_for_figures_from_a_run_that_never_happened_says_so(self, tmp_path):
+        result = runner.invoke(
+            app, ["figures", "--dataset", "hillstrom", "--results-dir", str(tmp_path)]
+        )
+        assert result.exit_code == 1
+        assert "run 'itx benchmark" in result.stdout
+
+
+class TestFigureStyle:
+    """An imported library must not be able to change what the figures look like."""
+
+    def test_the_figures_pin_their_style(self):
+        from itx.bench import plots
+
+        assert plots.FIGURE_STYLE == "default"
+
+    def test_a_figure_is_the_same_whatever_seaborn_did_to_the_globals(self, rows, tmp_path):
+        import matplotlib.pyplot as plt
+
+        from itx.bench.plots import plot_qini_curves
+
+        split = stratified_split(DATASETS["synthetic-binary"](), 11)
+        seed_rows = [row for row in rows if row.seed == 11]
+
+        first = plot_qini_curves(seed_rows, split.test, tmp_path / "a.png").read_bytes()
+        # CausalML imports seaborn, which rewrites the global settings on import.
+        plt.style.use("ggplot")
+        try:
+            second = plot_qini_curves(seed_rows, split.test, tmp_path / "b.png").read_bytes()
+        finally:
+            plt.style.use("default")
+        assert first == second

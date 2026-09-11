@@ -4,45 +4,59 @@
     "estimator": "s-learner",
     "seed": 11,
     "n_test": 8539,
-    "fit_seconds": 0.951,
+    "fit_seconds": 1.125,
     "selection": {
-      "min_child_samples": 60,
+      "min_child_samples": 200,
       "num_leaves": 15,
-      "validation_qini": 0.004612184227769612
+      "validation_qini": 0.004643328811255959
     },
     "metrics": {
       "qini": {
-        "value": 0.004394911063240506,
-        "low": 0.002182894024886074,
-        "high": 0.006369256712183494,
+        "value": 0.0040979289713225404,
+        "low": 0.0019034661856437997,
+        "high": 0.006058536596567782,
         "level": 0.95,
         "n_resamples": 1000
       },
       "auuc": {
-        "value": 0.26586162642026917,
-        "low": 0.2060671996066046,
-        "high": 0.32781234426887385,
+        "value": 0.2603252832195334,
+        "low": 0.20024538454395657,
+        "high": 0.3213392722099867,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@10%": {
-        "value": 0.06427725118483413,
-        "low": 0.014634630195702639,
-        "high": 0.11228336585684026,
+        "value": 0.06955303425730062,
+        "low": 0.023176978935043453,
+        "high": 0.11406166635981993,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@20%": {
-        "value": 0.08098678607730557,
-        "low": 0.04687523451696134,
-        "high": 0.11374816085143954,
+        "value": 0.09409400747983425,
+        "low": 0.060254931707172464,
+        "high": 0.1251976201183736,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@30%": {
-        "value": 0.08479715989089824,
-        "low": 0.05949437156868495,
-        "high": 0.11104061305320037,
+        "value": 0.07989285136788409,
+        "low": 0.05212125010020897,
+        "high": 0.10573914300851006,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.6984314316794035,
+        "low": 0.2969396701288169,
+        "high": 1.06340825899228,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.019604211074217833,
+        "low": 0.015911516499514125,
+        "high": 0.03790622042349077,
         "level": 0.95,
         "n_resamples": 1000
       }
@@ -53,45 +67,59 @@
     "estimator": "t-learner",
     "seed": 11,
     "n_test": 8539,
-    "fit_seconds": 0.936,
+    "fit_seconds": 1.183,
     "selection": {
-      "min_child_samples": 60,
+      "min_child_samples": 200,
       "num_leaves": 15,
-      "validation_qini": 0.0029278901200844396
+      "validation_qini": 0.004013003521988644
     },
     "metrics": {
       "qini": {
-        "value": 0.0035619092086664837,
-        "low": 0.0015399978679851293,
-        "high": 0.005763635307387891,
+        "value": 0.0029357584332447458,
+        "low": 0.0009006765126397418,
+        "high": 0.005082983935581678,
         "level": 0.95,
         "n_resamples": 1000
       },
       "auuc": {
-        "value": 0.251506020555403,
-        "low": 0.1914728897893121,
-        "high": 0.31340180459134764,
+        "value": 0.24185933297786116,
+        "low": 0.1806674253780072,
+        "high": 0.3035961194515569,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@10%": {
-        "value": 0.060215443206075886,
-        "low": 0.012630938817812912,
-        "high": 0.10790424372888963,
+        "value": 0.07047994163242693,
+        "low": 0.02061540957101737,
+        "high": 0.11781622661652087,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@20%": {
-        "value": 0.06928720958166033,
-        "low": 0.03575774798624507,
-        "high": 0.10361156081764243,
+        "value": 0.07853825964062186,
+        "low": 0.043592458918047604,
+        "high": 0.11008009334982778,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@30%": {
-        "value": 0.06960342588701429,
-        "low": 0.04419473318181156,
-        "high": 0.09819842665399833,
+        "value": 0.05716845878136201,
+        "low": 0.0315425792469473,
+        "high": 0.08436837589288881,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.31104246237941147,
+        "low": 0.10434287071472174,
+        "high": 0.5335533428571141,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.046716688243873664,
+        "low": 0.03631711082689989,
+        "high": 0.061522241108400405,
         "level": 0.95,
         "n_resamples": 1000
       }
@@ -102,45 +130,185 @@
     "estimator": "x-learner",
     "seed": 11,
     "n_test": 8539,
-    "fit_seconds": 1.508,
+    "fit_seconds": 1.908,
     "selection": {
-      "min_child_samples": 60,
+      "min_child_samples": 200,
       "num_leaves": 15,
-      "validation_qini": 0.00359707243353429
+      "validation_qini": 0.004074873120012033
     },
     "metrics": {
       "qini": {
-        "value": 0.0033307393035813208,
-        "low": 0.0012880750787379264,
-        "high": 0.005458451636370883,
+        "value": 0.003022981722787206,
+        "low": 0.0009296282462314423,
+        "high": 0.005103055766196066,
         "level": 0.95,
         "n_resamples": 1000
       },
       "auuc": {
-        "value": 0.24815200711326774,
-        "low": 0.18758066127704956,
-        "high": 0.31164648545015916,
+        "value": 0.2429681252135118,
+        "low": 0.1830439337912237,
+        "high": 0.30538999564976194,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@10%": {
-        "value": 0.06048672785091694,
-        "low": 0.011092562491762936,
-        "high": 0.10938774879831047,
+        "value": 0.06466408800373084,
+        "low": 0.013909492596372525,
+        "high": 0.10755415084920823,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@20%": {
-        "value": 0.07158028100648971,
-        "low": 0.036832318485756244,
-        "high": 0.1044115811601492,
+        "value": 0.07219421480802883,
+        "low": 0.03824693796300092,
+        "high": 0.10308244030172012,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@30%": {
-        "value": 0.06459586900915824,
-        "low": 0.036248735168610394,
-        "high": 0.0913717933434853,
+        "value": 0.062036346077871896,
+        "low": 0.03678882471438823,
+        "high": 0.09120537178940627,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.35366181845127964,
+        "low": 0.10414417571017247,
+        "high": 0.5946743404630801,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.036879212985517204,
+        "low": 0.02780633992721953,
+        "high": 0.05121804537994601,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "dr-learner",
+    "seed": 11,
+    "n_test": 8539,
+    "fit_seconds": 10.163,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.0031896613811166034
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.003106443787539638,
+        "low": 0.001101979701791379,
+        "high": 0.005165314119464587,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.2447919010597967,
+        "low": 0.18460667098755884,
+        "high": 0.3065067701935394,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.063231850117096,
+        "low": 0.019495211358157998,
+        "high": 0.11426317281754204,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.05287261757849994,
+        "low": 0.02004968533989102,
+        "high": 0.08664927774343799,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.06692118658943304,
+        "low": 0.040778268283569716,
+        "high": 0.09232775331179044,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.2967455093389804,
+        "low": 0.09116321494601541,
+        "high": 0.4968116156280467,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.039843323881074845,
+        "low": 0.03441262514278161,
+        "high": 0.05737060984984727,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "r-learner",
+    "seed": 11,
+    "n_test": 8539,
+    "fit_seconds": 4.274,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 31,
+      "validation_qini": 0.0033523711311553763
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0025483830822628298,
+        "low": 0.00042921320006333445,
+        "high": 0.004757575611259183,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.23685365944811332,
+        "low": 0.17412161359335857,
+        "high": 0.29944537653748343,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.06024010329386556,
+        "low": 0.009329065719924241,
+        "high": 0.11101548813188318,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.06088992974238874,
+        "low": 0.02416359502613639,
+        "high": 0.09463866211460052,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.06940605209658783,
+        "low": 0.04159230499589346,
+        "high": 0.09674023043372791,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.17750873778841572,
+        "low": 0.01912032612315254,
+        "high": 0.3377055111358333,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.059735605395894106,
+        "low": 0.049254199513369214,
+        "high": 0.07526340396405982,
         "level": 0.95,
         "n_resamples": 1000
       }
@@ -151,45 +319,45 @@
     "estimator": "outcome-ranking",
     "seed": 11,
     "n_test": 8539,
-    "fit_seconds": 0.551,
+    "fit_seconds": 1.327,
     "selection": {
-      "min_child_samples": 20,
-      "num_leaves": 15,
-      "validation_qini": 0.0011305252935998218
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.001275300893749125
     },
     "metrics": {
       "qini": {
-        "value": 0.0011188466193474602,
-        "low": -0.0010755127882315512,
-        "high": 0.003033321141903263,
+        "value": 0.0011164955772087152,
+        "low": -0.0010887784806613543,
+        "high": 0.002986427417963833,
         "level": 0.95,
         "n_resamples": 1000
       },
       "auuc": {
-        "value": 0.20851029860446324,
-        "low": 0.1422286830868764,
-        "high": 0.2796255482163841,
+        "value": 0.20880451921337218,
+        "low": 0.14391855899751083,
+        "high": 0.2811655012385396,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@10%": {
-        "value": 0.034749798157881734,
-        "low": -0.020722744129616517,
-        "high": 0.08671543267057173,
+        "value": 0.0215415019762846,
+        "low": -0.03162290632632895,
+        "high": 0.0759228155282591,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@20%": {
-        "value": 0.07875014412544679,
-        "low": 0.03898274402384532,
-        "high": 0.11400149566510442,
+        "value": 0.05388260848101889,
+        "low": 0.01742464028238718,
+        "high": 0.09263943742717445,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@30%": {
-        "value": 0.06505545954151007,
-        "low": 0.0345564081606681,
-        "high": 0.09479159782224922,
+        "value": 0.05993470646869292,
+        "low": 0.0292092164836039,
+        "high": 0.08887459205111302,
         "level": 0.95,
         "n_resamples": 1000
       }
@@ -245,7 +413,7 @@
     "estimator": "s-learner",
     "seed": 23,
     "n_test": 8539,
-    "fit_seconds": 0.732,
+    "fit_seconds": 1.139,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -286,6 +454,20 @@
         "high": 0.10370676457301906,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.7343262117795949,
+        "low": 0.32781119512335266,
+        "high": 1.1256295892105317,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.01645904623936184,
+        "low": 0.014300496986003525,
+        "high": 0.035593620912122884,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -294,7 +476,7 @@
     "estimator": "t-learner",
     "seed": 23,
     "n_test": 8539,
-    "fit_seconds": 0.884,
+    "fit_seconds": 1.288,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -335,6 +517,20 @@
         "high": 0.09428975628322489,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.32825534708468107,
+        "low": 0.1334539783851723,
+        "high": 0.5370123729490457,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.038744503857749336,
+        "low": 0.03227623399907503,
+        "high": 0.05558875145947741,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -343,7 +539,7 @@
     "estimator": "x-learner",
     "seed": 23,
     "n_test": 8539,
-    "fit_seconds": 1.417,
+    "fit_seconds": 1.889,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -384,6 +580,146 @@
         "high": 0.09680273517200655,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.43123938019925473,
+        "low": 0.17983817811885913,
+        "high": 0.6803322116433426,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.02966572288570891,
+        "low": 0.02254453995897649,
+        "high": 0.046557892184028005,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "dr-learner",
+    "seed": 23,
+    "n_test": 8539,
+    "fit_seconds": 6.981,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.0015185157594189511
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.00305915883513822,
+        "low": 0.0009290960587253565,
+        "high": 0.005396239122569643,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.24498618577535552,
+        "low": 0.1853638927964444,
+        "high": 0.3064149506075581,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.09461201340551686,
+        "low": 0.04287870928193805,
+        "high": 0.14913242163183,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.0837800000274239,
+        "low": 0.05113424935381582,
+        "high": 0.11790204145603515,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.07759731889662286,
+        "low": 0.05239272369106665,
+        "high": 0.10524002786372329,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.3148710052173159,
+        "low": 0.09707746516073971,
+        "high": 0.5454377864783605,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.03966700496100214,
+        "low": 0.030974615362886836,
+        "high": 0.055188222275418274,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "r-learner",
+    "seed": 23,
+    "n_test": 8539,
+    "fit_seconds": 3.597,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.001297935857655013
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0027850738162907944,
+        "low": 0.0006454080400892927,
+        "high": 0.005052781035668971,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.2399656667453159,
+        "low": 0.18240739983130852,
+        "high": 0.29846121375140044,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.09781648365518111,
+        "low": 0.05067089251013075,
+        "high": 0.1493566949790986,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.07971540105881336,
+        "low": 0.04816771930138617,
+        "high": 0.11444518575503886,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.07834254177320116,
+        "low": 0.05059353958842858,
+        "high": 0.10396528469188006,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.255348839130691,
+        "low": 0.05172000732604269,
+        "high": 0.46472254990787554,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.043082553400234265,
+        "low": 0.035632147384170275,
+        "high": 0.05878914141587131,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -392,7 +728,7 @@
     "estimator": "outcome-ranking",
     "seed": 23,
     "n_test": 8539,
-    "fit_seconds": 0.72,
+    "fit_seconds": 1.035,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 31,
@@ -486,7 +822,7 @@
     "estimator": "s-learner",
     "seed": 37,
     "n_test": 8539,
-    "fit_seconds": 0.729,
+    "fit_seconds": 0.961,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -527,6 +863,20 @@
         "high": 0.11296619743436945,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.8494175694562572,
+        "low": 0.47955582482215237,
+        "high": 1.208444193357064,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.01598733514154998,
+        "low": 0.013921453659181586,
+        "high": 0.0343359322234692,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -535,7 +885,7 @@
     "estimator": "t-learner",
     "seed": 37,
     "n_test": 8539,
-    "fit_seconds": 0.929,
+    "fit_seconds": 1.35,
     "selection": {
       "min_child_samples": 60,
       "num_leaves": 15,
@@ -576,6 +926,20 @@
         "high": 0.0974426892089493,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.2713038579975172,
+        "low": 0.054753563084548956,
+        "high": 0.48896494462509843,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.0440168949139139,
+        "low": 0.03523129251925281,
+        "high": 0.06016270180493537,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -584,7 +948,7 @@
     "estimator": "x-learner",
     "seed": 37,
     "n_test": 8539,
-    "fit_seconds": 1.727,
+    "fit_seconds": 1.948,
     "selection": {
       "min_child_samples": 60,
       "num_leaves": 15,
@@ -625,6 +989,146 @@
         "high": 0.11918297033085962,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.37601308514550563,
+        "low": 0.12606106582882193,
+        "high": 0.618558694217483,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.03628446431840102,
+        "low": 0.02946176812687391,
+        "high": 0.05356654924192744,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "dr-learner",
+    "seed": 37,
+    "n_test": 8539,
+    "fit_seconds": 8.684,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.0024762293326130048
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0035882051972174027,
+        "low": 0.0014224262651593843,
+        "high": 0.0058856649066840695,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.2525416826072152,
+        "low": 0.18629849476118968,
+        "high": 0.3140271599530665,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.10356719237358872,
+        "low": 0.046385585435852104,
+        "high": 0.1519551520195971,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.08085665596029809,
+        "low": 0.0446967349922512,
+        "high": 0.11646532311325251,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.08540853658536586,
+        "low": 0.0570852710350896,
+        "high": 0.11274377076778166,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.3032084265284722,
+        "low": 0.11246982020941003,
+        "high": 0.48950816422692583,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.046967893697992334,
+        "low": 0.03916230011835709,
+        "high": 0.06465278927877026,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "r-learner",
+    "seed": 37,
+    "n_test": 8539,
+    "fit_seconds": 2.679,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.0027873985552565456
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0038795192264895126,
+        "low": 0.0016745673630794338,
+        "high": 0.006138956760198774,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.2578404922582292,
+        "low": 0.19520806704055074,
+        "high": 0.3175571120691645,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.10993564312792029,
+        "low": 0.05624857345295087,
+        "high": 0.16133058243850132,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.07950079426589493,
+        "low": 0.04537417839301306,
+        "high": 0.11562750145497394,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.07793138760880697,
+        "low": 0.052049343066046465,
+        "high": 0.1074148604846386,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.31828917773790044,
+        "low": 0.11164326581161546,
+        "high": 0.5102551567615401,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.0438109572599981,
+        "low": 0.03441261660525645,
+        "high": 0.05825302305619065,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -633,7 +1137,7 @@
     "estimator": "outcome-ranking",
     "seed": 37,
     "n_test": 8539,
-    "fit_seconds": 0.595,
+    "fit_seconds": 1.175,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -727,7 +1231,7 @@
     "estimator": "s-learner",
     "seed": 53,
     "n_test": 8539,
-    "fit_seconds": 1.03,
+    "fit_seconds": 1.131,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 31,
@@ -768,6 +1272,20 @@
         "high": 0.10210564546898925,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.5043770643876568,
+        "low": 0.2087450100383204,
+        "high": 0.8022541047321635,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.02226908592443457,
+        "low": 0.018752866552529085,
+        "high": 0.041387631578441525,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -776,7 +1294,7 @@
     "estimator": "t-learner",
     "seed": 53,
     "n_test": 8539,
-    "fit_seconds": 1.009,
+    "fit_seconds": 3.615,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -817,6 +1335,20 @@
         "high": 0.09397305145427563,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.3226046684813898,
+        "low": 0.10029754431890728,
+        "high": 0.5272725920200361,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.04352711562997549,
+        "low": 0.03370054861677843,
+        "high": 0.059125536487236126,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -825,7 +1357,7 @@
     "estimator": "x-learner",
     "seed": 53,
     "n_test": 8539,
-    "fit_seconds": 1.829,
+    "fit_seconds": 1.948,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -866,6 +1398,146 @@
         "high": 0.1022767815051268,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.3921663198725598,
+        "low": 0.1335371586311194,
+        "high": 0.6533044343408163,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.03427832882135916,
+        "low": 0.027181074420802098,
+        "high": 0.051346506518417344,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "dr-learner",
+    "seed": 53,
+    "n_test": 8539,
+    "fit_seconds": 8.703,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.002413572965768976
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002998657788232448,
+        "low": 0.0008843088516725938,
+        "high": 0.005303122441156308,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.24302673790719978,
+        "low": 0.17280286500282854,
+        "high": 0.30720203055654144,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.06757795344751866,
+        "low": 0.019337857438695018,
+        "high": 0.11950431581976127,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.07177390690978754,
+        "low": 0.03632265299843648,
+        "high": 0.1063770112028508,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.07207147874956094,
+        "low": 0.04298422772211216,
+        "high": 0.09917533812775567,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.2383512651957843,
+        "low": 0.04201242248354988,
+        "high": 0.4388823338531123,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.0456695785543599,
+        "low": 0.036764419249852645,
+        "high": 0.06159302798063673,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "r-learner",
+    "seed": 53,
+    "n_test": 8539,
+    "fit_seconds": 3.017,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 31,
+      "validation_qini": 0.0021213155140643782
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0031296217819393544,
+        "low": 0.0009473111703752316,
+        "high": 0.00526966326246929,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.2446740078966633,
+        "low": 0.1795092058738451,
+        "high": 0.30481142617066687,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.08393783522377561,
+        "low": 0.03439814742024186,
+        "high": 0.1355198218827741,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.08272800645682,
+        "low": 0.0461172825786543,
+        "high": 0.11495610766253028,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.06790103879501729,
+        "low": 0.03967046347805542,
+        "high": 0.09323035603651929,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.2185890102524105,
+        "low": 0.05794304060873179,
+        "high": 0.36772340644737883,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.05677157091768301,
+        "low": 0.05021167272544761,
+        "high": 0.07538160525836596,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -874,7 +1546,7 @@
     "estimator": "outcome-ranking",
     "seed": 53,
     "n_test": 8539,
-    "fit_seconds": 0.612,
+    "fit_seconds": 0.731,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -968,7 +1640,7 @@
     "estimator": "s-learner",
     "seed": 71,
     "n_test": 8539,
-    "fit_seconds": 0.858,
+    "fit_seconds": 0.882,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -1009,6 +1681,20 @@
         "high": 0.10851214589684745,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.6762475207326778,
+        "low": 0.3345327555840355,
+        "high": 1.0224975251847348,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.01587858016783664,
+        "low": 0.015492229426583824,
+        "high": 0.035998128404366045,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -1017,45 +1703,59 @@
     "estimator": "t-learner",
     "seed": 71,
     "n_test": 8539,
-    "fit_seconds": 1.007,
+    "fit_seconds": 1.278,
     "selection": {
-      "min_child_samples": 20,
+      "min_child_samples": 200,
       "num_leaves": 15,
-      "validation_qini": 0.003015046483354813
+      "validation_qini": 0.0031398617815272846
     },
     "metrics": {
       "qini": {
-        "value": 0.0020231887825218776,
-        "low": -2.8608651294693244e-05,
-        "high": 0.004235866350166721,
+        "value": 0.002647277219868051,
+        "low": 0.0005486032870613566,
+        "high": 0.004859238404731587,
         "level": 0.95,
         "n_resamples": 1000
       },
       "auuc": {
-        "value": 0.22654822331757984,
-        "low": 0.1642704546309115,
-        "high": 0.28985549687283013,
+        "value": 0.23680797645432416,
+        "low": 0.17578313289489797,
+        "high": 0.30131413553550157,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@10%": {
-        "value": 0.07706230802983766,
-        "low": 0.029390974957802487,
-        "high": 0.128953433754965,
+        "value": 0.11390301295025587,
+        "low": 0.06420002197741821,
+        "high": 0.16534931542300602,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@20%": {
-        "value": 0.08712621452423563,
-        "low": 0.05250905007798513,
-        "high": 0.12123004200357744,
+        "value": 0.08143637847215081,
+        "low": 0.0487125574957543,
+        "high": 0.11467358628567004,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@30%": {
-        "value": 0.07988053151286115,
-        "low": 0.050772628097889974,
-        "high": 0.1058725730661592,
+        "value": 0.073963133640553,
+        "low": 0.04831211115914262,
+        "high": 0.10395203962971654,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.2605194105487884,
+        "low": 0.057835480521763766,
+        "high": 0.4899423090032526,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.04573311983830053,
+        "low": 0.036206551313450366,
+        "high": 0.060509255202616546,
         "level": 0.95,
         "n_resamples": 1000
       }
@@ -1066,7 +1766,7 @@
     "estimator": "x-learner",
     "seed": 71,
     "n_test": 8539,
-    "fit_seconds": 1.636,
+    "fit_seconds": 2.024,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -1107,6 +1807,146 @@
         "high": 0.10351810787249567,
         "level": 0.95,
         "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.18525551433087975,
+        "low": -0.038090720995086653,
+        "high": 0.42514779953502785,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.04562439665806031,
+        "low": 0.03657108147720603,
+        "high": 0.061853071236874904,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "dr-learner",
+    "seed": 71,
+    "n_test": 8539,
+    "fit_seconds": 9.131,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.0033237825855424504
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0014029901101886809,
+        "low": -0.00072912764973109,
+        "high": 0.0036680393588955033,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.21573728036076045,
+        "low": 0.149480743444509,
+        "high": 0.28109946991344337,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.09127906976744185,
+        "low": 0.041321252050270756,
+        "high": 0.13736241420678819,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.07970862398913513,
+        "low": 0.043946541942799996,
+        "high": 0.11191818975294308,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.06593225631742532,
+        "low": 0.03818747838118298,
+        "high": 0.09747167848625282,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.12827133566591292,
+        "low": -0.06724347903277884,
+        "high": 0.32439196351548927,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.05912720151726516,
+        "low": 0.04702184650638675,
+        "high": 0.07383040692141403,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom-womens-visit",
+    "estimator": "r-learner",
+    "seed": 71,
+    "n_test": 8539,
+    "fit_seconds": 2.33,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.003393221054941418
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0020759143240254713,
+        "low": -7.802470143117986e-05,
+        "high": 0.004291849060490225,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.22724840797416873,
+        "low": 0.16618071246591784,
+        "high": 0.2879781686201924,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 0.10787626151820974,
+        "low": 0.05782720786209588,
+        "high": 0.15974218643201135,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 0.07682937535665688,
+        "low": 0.044131996492617266,
+        "high": 0.10833243229330823,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.07870424290689217,
+        "low": 0.05262600196837987,
+        "high": 0.10480450768423165,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.2209622586892041,
+        "low": 0.00984379215770386,
+        "high": 0.42999312664090317,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.05038990601254119,
+        "low": 0.039949918830261506,
+        "high": 0.06559390670023364,
+        "level": 0.95,
+        "n_resamples": 1000
       }
     }
   },
@@ -1115,45 +1955,45 @@
     "estimator": "outcome-ranking",
     "seed": 71,
     "n_test": 8539,
-    "fit_seconds": 0.668,
+    "fit_seconds": 1.001,
     "selection": {
-      "min_child_samples": 5,
-      "num_leaves": 15,
-      "validation_qini": 0.0008048966418555473
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.00093817168791532
     },
     "metrics": {
       "qini": {
-        "value": 0.0017216419982707416,
-        "low": -0.00027899407181246013,
-        "high": 0.0037083939691876715,
+        "value": 0.0017286096391717371,
+        "low": -0.00023132246821871386,
+        "high": 0.0037514911945639054,
         "level": 0.95,
         "n_resamples": 1000
       },
       "auuc": {
-        "value": 0.22368287427791708,
-        "low": 0.15536175917526646,
-        "high": 0.2879558482490184,
+        "value": 0.22340396804067109,
+        "low": 0.15562565276057463,
+        "high": 0.2874119364711724,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@10%": {
-        "value": 0.0721983231640402,
-        "low": 0.020294600420893538,
-        "high": 0.12370568931384869,
+        "value": 0.05006774807589978,
+        "low": 0.0017135490459950027,
+        "high": 0.10211570781765285,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@20%": {
-        "value": 0.06576926452518869,
-        "low": 0.029853743785148497,
-        "high": 0.1024088225643886,
+        "value": 0.05386416861826698,
+        "low": 0.01990636801234265,
+        "high": 0.0935740024093313,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@30%": {
-        "value": 0.06471410941999178,
-        "low": 0.036443335300748766,
-        "high": 0.09222522448426396,
+        "value": 0.06647752725100789,
+        "low": 0.03981986325214418,
+        "high": 0.09750712123825557,
         "level": 0.95,
         "n_resamples": 1000
       }

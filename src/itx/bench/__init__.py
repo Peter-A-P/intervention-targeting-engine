@@ -1,6 +1,6 @@
 """The benchmark: the one command the results table has to come out of."""
 
-from itx.bench.grid import GRID, Selection, select_config
+from itx.bench.grid import GRID, Selection, applicable_grid, select_config
 from itx.bench.runner import (
     BUDGETS,
     DATASETS,
@@ -8,6 +8,7 @@ from itx.bench.runner import (
     ESTIMATORS,
     BenchmarkRow,
     evaluate,
+    refit_seed,
     run,
 )
 from itx.bench.seeds import SEEDS, TIE_SEED
@@ -31,7 +32,9 @@ __all__ = [
     "BenchmarkRow",
     "Selection",
     "Summary",
+    "applicable_grid",
     "evaluate",
+    "refit_seed",
     "run",
     "select_config",
     "selected_configurations",

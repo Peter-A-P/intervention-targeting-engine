@@ -49,6 +49,39 @@ class Source:
         return digests[self.filename]
 
 
+#: The causallib mirror of the ACIC 2016 competition data. The competition's own
+#: distribution is an R package; this mirror is plain CSV, is maintained, and carries the
+#: organisers' licence and citation alongside the files.
+ACIC_BASE = (
+    "https://raw.githubusercontent.com/BiomedSciAI/causallib/master/"
+    "causallib/datasets/data/acic_challenge_2016"
+)
+ACIC_REPLICATES = 10
+ACIC_LICENCE = "Community Data License Agreement - Sharing, Version 1.0"
+
+
+def _acic_sources() -> dict[str, Source]:
+    """The shared covariate file plus one file per simulation setting."""
+    sources = {
+        "acic-x": Source(
+            key="acic-x",
+            filename="acic2016_x.csv",
+            url=f"{ACIC_BASE}/x.csv",
+            licence=ACIC_LICENCE,
+            note="4,802 units, 58 real covariates, shared by every replicate.",
+        )
+    }
+    for index in range(1, ACIC_REPLICATES + 1):
+        sources[f"acic-zymu-{index}"] = Source(
+            key=f"acic-zymu-{index}",
+            filename=f"acic2016_zymu_{index}.csv",
+            url=f"{ACIC_BASE}/zymu_{index}.csv",
+            licence=ACIC_LICENCE,
+            note=f"Simulation setting {index}: treatment, both potential outcomes, mu0, mu1.",
+        )
+    return sources
+
+
 SOURCES: dict[str, Source] = {
     "hillstrom": Source(
         key="hillstrom",
@@ -83,6 +116,7 @@ SOURCES: dict[str, Source] = {
         licence="Public benchmark file, redistributed by the CFR/CEVAE authors",
         note="75 units x 100 replicates. Rejoined with the train file. See docs/data/ihdp.md.",
     ),
+    **_acic_sources(),
 }
 
 

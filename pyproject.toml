@@ -91,6 +91,9 @@ ignore = [
 # Test names are the documentation here: "test_an_over_regularised_s_learner_warns_instead
 # _of_returning_a_silent_zero" says more than a docstring would, and annotating every
 # fixture argument adds noise without adding a check that mypy is not already making.
+# scikit-learn's estimator API is defined in terms of a capital X, and an estimator that
+# renames it is not an estimator scikit-learn can call.
+"src/itx/estimators/sklearn_bridge.py" = ["N803"]
 "tests/*" = ["ANN001", "ANN002", "ANN003", "ANN201", "ANN202", "D100", "D101", "D102", "D103"]
 
 [tool.ruff.lint.pydocstyle]

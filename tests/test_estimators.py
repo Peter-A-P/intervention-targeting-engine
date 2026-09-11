@@ -16,18 +16,24 @@ from itx.data import synthetic
 from itx.data.splits import stratified_split
 from itx.estimators.base import DegenerateFitWarning, NotFittedError, UpliftEstimator
 from itx.estimators.baselines import OutcomeRanking, RandomRanking
+from itx.estimators.dr_learner import DRLearner
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG
 from itx.estimators.propensity import PropensityModel
+from itx.estimators.r_learner import RLearner
 from itx.estimators.s_learner import SLearner
+from itx.estimators.sklearn_bridge import LightGBMClassifier, LightGBMRegressor
 from itx.estimators.t_learner import TLearner
 from itx.estimators.x_learner import XLearner
 from itx.metrics.ground_truth import ate_error, pehe
+from itx.metrics.qini import ate
 from itx.types import UpliftDataset
 
 ESTIMATOR_FACTORIES = [
     pytest.param(lambda: SLearner(seed=0), id="s-learner"),
     pytest.param(lambda: TLearner(seed=0), id="t-learner"),
     pytest.param(lambda: XLearner(seed=0), id="x-learner"),
+    pytest.param(lambda: DRLearner(seed=0), id="dr-learner"),
+    pytest.param(lambda: RLearner(seed=0), id="r-learner"),
     pytest.param(lambda: OutcomeRanking(seed=0), id="outcome-ranking"),
     pytest.param(lambda: RandomRanking(seed=0), id="random"),
 ]
@@ -38,6 +44,8 @@ EFFECT_ESTIMATORS = [
     pytest.param(SLearner, id="s-learner"),
     pytest.param(TLearner, id="t-learner"),
     pytest.param(XLearner, id="x-learner"),
+    pytest.param(DRLearner, id="dr-learner"),
+    pytest.param(RLearner, id="r-learner"),
 ]
 
 
@@ -455,3 +463,194 @@ class TestComplexGenerator:
         effect = synthetic.complex_effect(4_000, seed=0).require_true_effect()
         assert effect.std() > 1.0
         assert effect.min() < 0.0 < effect.max()
+
+
+class TestConfoundedData:
+    """The generator that exists so the confounding machinery has something to fail on."""
+
+    def test_the_naive_comparison_gets_the_sign_wrong(self):
+        # If this stops being true the generator has stopped confounding anything and every
+        # test below it is passing for the wrong reason.
+        data = synthetic.confounded(6_000, seed=0)
+        assert data.require_true_effect().mean() > 0.2
+        assert ate(data.outcome, data.treatment) < 0.0
+
+    def test_strength_zero_is_a_coin_flip(self):
+        data = synthetic.confounded(4_000, strength=0.0, seed=0)
+        assert data.propensity is not None
+        assert data.propensity == pytest.approx(np.full(data.n_units, 0.5))
+
+    def test_the_true_propensity_is_recorded(self):
+        data = synthetic.confounded(2_000, seed=0)
+        assert data.propensity is not None
+        assert 0.0 < data.propensity.min() < 0.1
+        assert 0.9 < data.propensity.max() < 1.0
+
+
+class TestCrossFittedPropensity:
+    """The week 3 finding, as a test.
+
+    An in-sample propensity is not a slightly worse propensity. It breaks the orthogonality
+    the R-learner is built on, and the failure is invisible in every diagnostic except a
+    comparison against a known truth.
+    """
+
+    def test_out_of_fold_is_the_default(self):
+        data = synthetic.confounded(2_000, seed=0)
+        fit = PropensityModel(seed=0, use_known=False).fit(data)
+        assert fit.out_of_fold
+        assert "out-of-fold" in fit.describe()
+
+    def test_it_can_be_turned_off_so_the_cost_can_be_measured(self):
+        data = synthetic.confounded(2_000, seed=0)
+        fit = PropensityModel(seed=0, use_known=False, cross_fit=False).fit(data)
+        assert not fit.out_of_fold
+        assert "in-sample" in fit.describe()
+
+    def test_an_in_sample_propensity_is_closer_to_the_realised_treatment(self):
+        # The mechanism: fitted on its own rows, the model is pulled toward each unit's
+        # actual treatment, so the residual it leaves behind is too small to be a residual.
+        data = synthetic.confounded(4_000, seed=1)
+        in_sample = PropensityModel(seed=0, use_known=False, cross_fit=False).fit(data).values
+        out_of_fold = PropensityModel(seed=0, use_known=False).fit(data).values
+        treatment = data.treatment.astype(float)
+        assert np.abs(treatment - in_sample).mean() < np.abs(treatment - out_of_fold).mean()
+
+    def test_the_out_of_fold_propensity_tracks_the_true_one_better(self):
+        data = synthetic.confounded(4_000, seed=1)
+        truth = data.propensity
+        assert truth is not None
+        in_sample = PropensityModel(seed=0, use_known=False, cross_fit=False).fit(data).values
+        out_of_fold = PropensityModel(seed=0, use_known=False).fit(data).values
+        assert np.abs(out_of_fold - truth).mean() < np.abs(in_sample - truth).mean()
+
+    def test_the_r_learner_is_far_better_with_an_out_of_fold_propensity(self):
+        data = synthetic.confounded(6_000, seed=2)
+        split = stratified_split(data, 11)
+        truth = split.test.require_true_effect()
+
+        scores = {}
+        for cross_fit in (False, True):
+            estimator = RLearner(seed=11, use_known_propensity=False)
+            estimator._propensity.cross_fit = cross_fit
+            predicted = estimator.fit(split.train).predict_uplift(split.test.features)
+            scores[cross_fit] = pehe(predicted, truth)
+        assert scores[True] < scores[False]
+
+    def test_folds_shrink_rather_than_fail_when_an_arm_is_thin(self):
+        data = synthetic.confounded(600, strength=0.0, seed=3)
+        thin = data.take(
+            np.concatenate(
+                [
+                    np.flatnonzero(data.treatment == 1)[:3],
+                    np.flatnonzero(data.treatment == 0),
+                ]
+            )
+        )
+        fit = PropensityModel(seed=0, use_known=False, folds=5).fit(thin)
+        assert np.isfinite(fit.values).all()
+
+
+class TestDRLearner:
+    def test_it_reports_the_overlap_it_is_working_with(self):
+        # EconML fits its own propensity whatever the dataset knows, so the reported
+        # overlap has to describe an estimated propensity, not a design one.
+        data = synthetic.confounded(3_000, seed=0)
+        estimator = DRLearner(seed=0).fit(data)
+        assert estimator.propensity_fit is not None
+        assert not estimator.propensity_fit.known
+        assert estimator.propensity_fit.out_of_fold
+
+    def test_it_handles_confounding_the_naive_comparison_cannot(self):
+        data = synthetic.confounded(8_000, seed=4)
+        split = stratified_split(data, 11)
+        truth = split.test.require_true_effect()
+        predicted = DRLearner(seed=11).fit(split.train).predict_uplift(split.test.features)
+        # The naive difference in arm means has the wrong sign here; a doubly robust
+        # estimate should land near the truth instead.
+        assert ate(split.test.outcome, split.test.treatment) < 0.0
+        assert ate_error(predicted, truth) < 0.25
+
+    def test_folds_shrink_rather_than_fail_when_an_arm_is_thin(self):
+        data = synthetic.heterogeneous_effect(500, propensity=0.5, seed=5)
+        thin = data.take(
+            np.concatenate(
+                [
+                    np.flatnonzero(data.treatment == 1)[:3],
+                    np.flatnonzero(data.treatment == 0),
+                ]
+            )
+        )
+        predicted = DRLearner(seed=0, folds=5).fit(thin).predict_uplift(thin.features)
+        assert np.isfinite(predicted).all()
+
+
+class TestRLearner:
+    def test_it_uses_a_known_propensity_when_the_dataset_has_one(self, binary_data):
+        estimator = RLearner(seed=0).fit(binary_data)
+        assert estimator.propensity_fit is not None
+        assert estimator.propensity_fit.known
+
+    def test_it_handles_confounding_the_naive_comparison_cannot(self):
+        data = synthetic.confounded(8_000, seed=4)
+        split = stratified_split(data, 11)
+        truth = split.test.require_true_effect()
+        predicted = (
+            RLearner(seed=11, use_known_propensity=False)
+            .fit(split.train)
+            .predict_uplift(split.test.features)
+        )
+        assert ate(split.test.outcome, split.test.treatment) < 0.0
+        assert ate_error(predicted, truth) < 0.3
+
+
+class TestSklearnBridge:
+    """The wrapped libraries clone whatever they are handed, so it has to survive cloning."""
+
+    def test_cloning_preserves_the_configuration(self):
+        from sklearn.base import clone
+
+        original = LightGBMRegressor(
+            DEFAULT_CONFIG.with_(num_leaves=7), seed=3, categorical=(1,)
+        )
+        copy = clone(original)
+        assert copy.config.num_leaves == 7
+        assert copy.seed == 3
+        assert copy.categorical == (1,)
+
+    def test_the_regressor_fits_and_predicts(self):
+        rng = np.random.default_rng(0)
+        x = rng.normal(size=(500, 3))
+        y = x[:, 0] * 2.0 + rng.normal(scale=0.1, size=500)
+        model = LightGBMRegressor(seed=0).fit(x, y)
+        assert np.corrcoef(model.predict(x), y)[0, 1] > 0.9
+
+    def test_the_classifier_returns_probabilities_for_both_classes(self):
+        rng = np.random.default_rng(1)
+        x = rng.normal(size=(500, 3))
+        y = (x[:, 0] > 0).astype(int)
+        model = LightGBMClassifier(seed=0).fit(x, y)
+        probabilities = model.predict_proba(x)
+        assert probabilities.shape == (500, 2)
+        assert probabilities.sum(axis=1) == pytest.approx(np.ones(500))
+
+    def test_a_single_class_target_does_not_crash_a_fold(self):
+        # Possible inside a cross-fitting fold on a rare-event dataset.
+        rng = np.random.default_rng(2)
+        x = rng.normal(size=(50, 3))
+        model = LightGBMClassifier(seed=0).fit(x, np.zeros(50, dtype=int))
+        assert model.predict_proba(x).shape == (50, 1)
+        assert model.predict(x) == pytest.approx(np.zeros(50))
+
+    def test_the_categorical_columns_reach_lightgbm(self):
+        # Two models on the same data, one told a column is categorical and one not. If the
+        # declaration were being dropped they would be identical.
+        rng = np.random.default_rng(3)
+        codes = rng.integers(0, 5, size=800).astype(float)
+        x = np.column_stack([codes, rng.normal(size=800)])
+        y = np.array([0.0, 3.0, 1.0, 4.0, 2.0])[codes.astype(int)] + rng.normal(
+            scale=0.1, size=800
+        )
+        plain = LightGBMRegressor(seed=0).fit(x, y).predict(x)
+        declared = LightGBMRegressor(seed=0, categorical=(0,)).fit(x, y).predict(x)
+        assert not np.allclose(plain, declared)

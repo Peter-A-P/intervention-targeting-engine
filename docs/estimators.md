@@ -4,8 +4,8 @@ The useful half of a comparison. This file accumulates as estimators land; it is
 at week 6 (PLAN.md section 6). Every claim here has a number behind it from
 `results/*.json`, produced by `itx benchmark`.
 
-Estimators in the table so far: S, T and X learners. Baselines: outcome ranking, random
-targeting.
+Estimators in the table so far: S, T, X, DR and R learners. Baselines: outcome ranking,
+random targeting.
 
 ---
 
@@ -23,8 +23,8 @@ bootstrap interval. Lower is better.
 
 | Generator | Shape of the problem | S-learner | T-learner | X-learner |
 |---|---|---|---|---|
-| `synthetic-heterogeneous` | Nonlinear baseline in four covariates, near-linear effect in two: **the effect is the simpler surface** | **0.181** (0.164, 0.198) | 0.302 (0.288, 0.317) | 0.195 (0.184, 0.207) |
-| `synthetic-complex` | Near-linear baseline in one covariate, an interaction gated by a hinge for the effect: **the effect is the harder surface** | 0.456 (0.402, 0.522) | 0.398 (0.351, 0.456) | **0.370 (0.317, 0.435)** |
+| `synthetic-heterogeneous` | Nonlinear baseline in four covariates, near-linear effect in two: **the effect is the simpler surface** | **0.181** (0.164, 0.198) | 0.308 (0.293, 0.324) | 0.208 (0.196, 0.221) |
+| `synthetic-complex` | Near-linear baseline in one covariate, an interaction gated by a hinge for the effect: **the effect is the harder surface** | 0.456 (0.402, 0.522) | 0.398 (0.351, 0.456) | **0.370** (0.317, 0.435) |
 
 The ordering reverses. It is the same five covariates, the same sample size, the same base
 learner, the same committed grid and the same seeds; the only thing that changed is which
@@ -35,8 +35,8 @@ decisive. The per-seed comparison is, and it is the right one here because the f
 are the same partitions for every estimator, so the contrast is paired rather than
 marginal. On `synthetic-heterogeneous` the S-learner has the lower PEHE than the T-learner
 on **five seeds out of five**. On `synthetic-complex` it has the higher PEHE on **five out
-of five**, and the X-learner wins every seed outright. Nothing here rests on a single
-partition.
+of five**, against both the T-learner and the X-learner, and the X-learner wins every seed
+outright. Nothing here rests on a single partition.
 
 The mechanism is not mysterious. An S-learner puts everything in one model, so it can spend
 its capacity on the baseline and describe the effect with a handful of splits on the
@@ -68,6 +68,55 @@ S-learner still wins, on five seeds out of five. Homogeneity was the wrong expla
 the right one is the simplicity of the effect surface relative to the baseline, which the
 two generators above separate cleanly. IHDP behaves like the first regime, and the
 S-learner has the lowest PEHE there on all five seeds.
+
+---
+
+## The week 3 finding: an in-sample propensity is not a slightly worse propensity
+
+The R-learner arrived, was benchmarked on ACIC 2016, and reported a PEHE of 23.95 against a
+true effect whose standard deviation is 3.85. It ranked well while doing it, the best Qini
+of the five, so the ordering was fine and the magnitudes were nonsense. That is a bug-shaped
+result and it was one.
+
+The cause was the propensity model, which fitted and then predicted the same rows. A model
+asked about rows it has already seen has partly memorised them, so its prediction for a unit
+is pulled toward that unit's own realised treatment. The residual ``t - e(x)`` then no longer
+has conditional mean zero. The R-learner divides by exactly that residual, so it was dividing
+by something systematically too small. Predicting each training row from folds that exclude
+it fixes the orthogonality, and the numbers move like this:
+
+| ACIC 2016, R-learner | In-sample propensity | Out-of-fold propensity |
+|---|---|---|
+| PEHE, seed 11 | 23.95 | 1.20 |
+| PEHE, seed 23 | 24.35 | 1.42 |
+| PEHE, seed 37 | 23.91 | 1.39 |
+| Predicted effect, standard deviation | 24.2 | 3.79 |
+
+The true effect's standard deviation is 3.85, so the out-of-fold version has the spread
+about right and the in-sample one is off by a factor of six.
+
+**The part worth keeping is what the diagnostics said while this was happening.** The
+obvious things to check about a propensity model both looked fine, and both were the same
+either way:
+
+| Diagnostic | In-sample | Out-of-fold |
+|---|---|---|
+| Units against the clipping bound | 48.2% | 47.8% |
+| Median treatment residual | 0.014 | 0.025 |
+| PEHE of the estimator that uses it | **23.95** | **1.20** |
+
+Nothing in the propensity's own summary statistics says one of these is unusable. The damage
+is in the correlation between a unit's residual and its own outcome, which no marginal
+summary of the propensity can see. It was visible only by comparing against a known truth.
+PLAN.md section 1 justifies carrying the simulated datasets on the grounds that they are the
+only way to show an estimator is correct rather than self-consistent; this is that argument
+collecting on itself, and it is the clearest evidence in the repository for why a benchmark
+of randomised datasets alone would not have been enough.
+
+Cross-fitting is now the default and
+`tests/test_estimators.py::TestCrossFittedPropensity` holds it there. The X-learner and the
+DR-learner were unaffected: the X-learner uses the propensity only as a convex weight between
+two bounded models, and EconML cross-fits its own nuisances internally.
 
 ---
 
@@ -186,6 +235,82 @@ rather than being absorbed into it.
 
 ---
 
+## DR-learner
+
+A pseudo-outcome combining an outcome model with an inverse-propensity correction, regressed
+on the covariates. Doubly robust: consistent if either the outcome model or the propensity
+model is right, which is two chances instead of one.
+
+**Where it breaks: the guarantee is asymptotic and the variance is not.** The pseudo-outcome
+carries the inverse-propensity correction's variance on top of the outcome's, and the final
+stage has to regress on that. With enough rows this is the best estimator in the table. With
+few it is the worst, by a distance:
+
+| Benchmark dataset | Training rows | DR-learner PEHE | Best other estimator |
+|---|---|---|---|
+| IHDP | 448 | **8.54** | 0.57 (S-learner) |
+| ACIC 2016 | 2,881 | 1.79 | 0.83 (X-learner) |
+
+And a probe outside the benchmark, holding everything fixed except the sample size and the
+leaf size, so the two effects can be seen apart. These are single untuned fits on
+`synthetic-heterogeneous` rather than tuned five-seed benchmark rows, and are labelled that
+way because they are not comparable with the table above:
+
+| Rows | Leaf size 20 | Leaf size 60 | Leaf size 200 |
+|---|---|---|---|
+| 4,000 (2,400 training) | 1.28 | 0.67 | 0.40 |
+| 20,000 (12,000 training) | 0.29 | 0.30 | 0.28 |
+
+At 2,400 training rows the DR-learner is worse than predicting a constant unless it is
+heavily regularised. At 12,000 the choice stops mattering and it lands at 0.29, better than
+any other estimator manages on the same generator. Sample size is doing most of the work
+here and regularisation is standing in for it.
+
+The IHDP number deserves a moment. A PEHE of 8.54 on a dataset whose true effect has a
+standard deviation of 0.86 is not a weak estimate, it is an actively harmful one: predicting
+a constant zero scores 4.11 there, averaged over the same five seeds, so the DR-learner is
+twice as wrong as doing nothing at all. Its
+calibration error of 6.25 says the same thing from the other direction. Nothing about the
+double robustness property protects against this, because double robustness is a statement
+about bias in the limit and this is variance at n=448.
+
+It is also the estimator most sensitive to how much regularisation the grid can offer, which
+is why the grid gained a leaf size of 200 in week 3: at 20 its PEHE on 2,400 rows was 1.28,
+worse than a constant, and at 200 it was 0.40.
+
+**Where it works.** On ACIC's 2,881 rows it has the best Qini of the five, 0.2401
+(0.1765, 0.3085), and a calibration slope of 1.01, the closest to honest in the table. Given
+enough data it is doing exactly what it promises.
+
+---
+
+## R-learner
+
+Residual on residual. Partial the covariates out of both the outcome and the treatment, then
+regress what is left of one on what is left of the other, weighted by the square of the
+treatment residual.
+
+**Where it breaks: it is the estimator that most depends on its nuisances being right**, and
+the week 3 finding above is the demonstration. Everything else in the table degraded
+gracefully when the propensity was fitted in sample; the R-learner produced numbers that were
+wrong by a factor of twenty. That is the flip side of its elegance: the other learners use
+the propensity as a weight, and this one uses it as a denominator.
+
+A claim in the first draft of this module's docstring has to be withdrawn, because the
+evidence contradicts it. It said that a unit whose treatment was nearly perfectly predictable
+contributes almost nothing, since its weight is the square of a near-zero residual, and so
+the R-learner does not need clipping. That is true of the estimating equation and false of
+the implementation: the target is divided by that same near-zero residual before the weight
+is applied, and a tree fitted to enormous targets with tiny weights does not behave the way
+the algebra suggests. Poor overlap hurts the R-learner like everything else.
+
+**Where it works.** On ACIC it has the best ATE error of the five, 0.1387 (0.0733, 0.2141),
+against a naive comparison that is out by 68%. On IHDP's 448 rows it is mid-table, PEHE
+1.34, which is a reasonable showing for a method whose residuals have to be estimated well
+before anything downstream means anything.
+
+---
+
 ## Outcome ranking, the baseline that is supposed to lose
 
 Not an estimator. A plain model of the outcome, ignoring the treatment, with its predicted
@@ -230,10 +355,28 @@ Two things are going on and both matter.
    treatment caused their response. That is the trap the project is built around, and it
    is why realised policy value at a budget, not the curve, is the headline number.
 
-**Why it gets no PEHE.** Its scores are predicted outcomes, on the outcome's scale, not
-effects. Running them through PEHE produces a large number that reads like a bad error
-score and is really a units mismatch. The benchmark leaves those cells empty
-(`estimates_effect = False`) rather than printing something meaningless.
+**On ACIC 2016 it is worse than random, and this time the Qini agrees.** The clearest
+version of the whole argument:
+
+| ACIC 2016 | Qini | Uplift at 10% |
+|---|---|---|
+| `x-learner` | 0.2273 | 8.41 |
+| `dr-learner` | 0.2401 | 7.34 |
+| Random targeting | -0.0000 | 3.42 |
+| Outcome ranking | **-0.0233** | **0.34** |
+
+Spending the budget on the highest-risk tenth of this population buys 0.34, and spending it
+on a random tenth buys 3.42. The ordinary approach is not merely leaving most of the
+available return on the table, it is ten times worse than not thinking about it at all. That
+is what happens when the people most likely to have the outcome are the people least
+susceptible to the intervention, which is the normal shape of a fraud queue or a clinical
+follow-up list and the reason this project exists.
+
+**Why it gets no PEHE or calibration.** Its scores are predicted outcomes, on the outcome's
+scale, not effects. Running them through PEHE produces a large number that reads like a bad
+error score and is really a units mismatch, and asking whether a risk score is the right size
+to be a treatment effect is not a question about the score. The benchmark leaves those cells
+empty (`estimates_effect = False`) rather than printing something meaningless.
 
 ---
 
@@ -251,6 +394,66 @@ columns, where zero is not the null: targeting at random still buys the ATE.
 
 ---
 
+## Calibration: ranking well and forecasting well are different jobs
+
+Qini, AUUC and uplift at k are all invariant to multiplying every prediction by a constant.
+An estimator that ranks perfectly and predicts effects three times too large scores
+identically to one that gets the magnitudes right, and will then forecast three times the
+return on the programme. The calibration columns are the only ones in the table that notice.
+
+Two numbers, because they fail differently. The slope is the regression of realised uplift on
+predicted uplift across deciles, so 1.0 is honest, below 1 means the predictions are more
+spread out than reality and above 1 means they are more compressed. The error is the mean
+absolute gap in the outcome's own units, which unlike the slope does see a constant offset.
+
+On ACIC 2016, where the test split is large enough for ten deciles to mean something:
+
+| Estimator | Calibration slope | Calibration error | PEHE |
+|---|---|---|---|
+| `s-learner` | 1.53 (1.15, 1.88) | 1.31 | 1.72 |
+| `t-learner` | 1.08 (0.84, 1.32) | 1.11 | 1.22 |
+| `x-learner` | 1.11 (0.85, 1.36) | 1.03 | 0.83 |
+| `dr-learner` | 1.01 (0.79, 1.24) | 1.17 | 1.79 |
+| `r-learner` | 1.07 (0.82, 1.32) | 0.95 | 1.23 |
+
+The S-learner is the one to look at. Its slope of 1.53 is the only one whose interval
+excludes 1, and it means the predictions are too compressed: realised uplift varies half as
+much again as the model says it does. That is the shrinkage this file has described twice
+already, now visible as a number rather than as an argument.
+
+**And on Hillstrom the same shrinkage makes it the best calibrated of the five.**
+
+| Estimator | Calibration slope, Hillstrom | Calibration slope, ACIC |
+|---|---|---|
+| `s-learner` | **0.69** (0.33, 1.04) | **1.53** (1.15, 1.88) |
+| `t-learner` | 0.30 (0.09, 0.52) | 1.08 (0.84, 1.32) |
+| `x-learner` | 0.35 (0.10, 0.59) | 1.11 (0.85, 1.36) |
+| `dr-learner` | 0.26 (0.06, 0.46) | 1.01 (0.79, 1.24) |
+| `r-learner` | 0.24 (0.05, 0.42) | 1.07 (0.82, 1.32) |
+
+Every estimator is under 1 on Hillstrom and around or above 1 on ACIC, and the S-learner is
+furthest from the pack in both directions. Hillstrom's real effect is small and fairly
+uniform, so a flexible model finds heterogeneity that is mostly noise and over-spreads its
+predictions; ACIC's effect genuinely varies more than it averages, so shrinking toward a
+constant costs you. The S-learner shrinks hardest. That is one mechanism producing opposite
+verdicts on two datasets, which is the same lesson as the regime table at the top of this
+file arriving through a different column, and it is the reason the honest answer to "which
+estimator should I use" starts with a question about the data.
+
+A practical consequence worth stating for anyone reading the table to plan a budget: on
+Hillstrom, a forecast built on any of these models' predicted decile spreads would be too
+optimistic about the difference between the best and worst deciles, by a factor of between
+one and a half and four.
+
+**The bin count is capped by the smaller arm.** Ten deciles is the convention and IHDP cannot
+support it: a 150-row test split with 28 treated units gives under three treated per decile,
+and most deciles then contain none at all and can report nothing. The count is capped so a
+bin holds at least ten of each arm, which on IHDP means two bins and a calibration estimate
+too weak to lean on. That is reported as two bins rather than as ten bins mostly full of
+missing values.
+
+---
+
 ## Tuning, and what the grid selection is worth
 
 Every estimator gets the same six-candidate grid over `min_child_samples` and `num_leaves`,
@@ -259,6 +462,14 @@ selecting on a metric this repository calls a poor referee is defensible: inside
 every candidate is the same model class, so nothing can win by being a different kind of
 model that games the curve. Across estimators, where that protection disappears, the
 comparison is made on the test split against both baselines.
+
+**Candidates a dataset cannot fit are removed first.** Week 3 added a leaf size of 200 for
+the DR-learner's benefit and immediately broke the S-learner on IHDP: one seed in five
+selected it, 200 leaves room for two leaves in 448 training rows, and the resulting
+near-degenerate fit dragged the five-seed PEHE from 0.57 to 1.28. A configuration that cannot
+fit a model is not a hyperparameter choice, so the grid is filtered by training size before
+selection runs, at four leaves' worth of rows. The grid stays identical across estimators,
+which is what the fairness rule requires; what rules a candidate out is the dataset.
 
 **On Hillstrom it helps a little and chooses consistently.** The S-learner's Qini moved
 from 0.0040 untuned to 0.0042 tuned, which is nothing against an interval of roughly
@@ -280,6 +491,6 @@ should be read against both the bootstrap interval and this instability.
 
 ## Still to come
 
-DR and R learners (week 3), Dragonnet (week 6), causal forest if the schedule allows.
-Approaches considered and left as literature rather than code, per PLAN.md section 2:
-TARNet, CEVAE, and the class-transformation method.
+Dragonnet (week 6), causal forest if the schedule allows. Approaches considered and left as
+literature rather than code, per PLAN.md section 2: TARNet, CEVAE, and the
+class-transformation method.

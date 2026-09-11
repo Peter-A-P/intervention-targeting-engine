@@ -4,7 +4,7 @@
     "estimator": "s-learner",
     "seed": 11,
     "n_test": 1600,
-    "fit_seconds": 0.952,
+    "fit_seconds": 0.395,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 31,
@@ -46,6 +46,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.2112601676382897,
+        "low": 1.1295267834572271,
+        "high": 1.3020715954776785,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.1518989229980385,
+        "low": 0.13454237904569977,
+        "high": 0.2552247428379012,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.48236903886350607,
         "low": 0.42362272913035737,
@@ -67,7 +81,7 @@
     "estimator": "t-learner",
     "seed": 11,
     "n_test": 1600,
-    "fit_seconds": 0.575,
+    "fit_seconds": 0.36,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -109,6 +123,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 0.988051026241215,
+        "low": 0.9114396593063797,
+        "high": 1.0535058485943134,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.1040757899184197,
+        "low": 0.09177667767107782,
+        "high": 0.2069572344943038,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.3832942613229628,
         "low": 0.3381405406475498,
@@ -130,7 +158,7 @@
     "estimator": "x-learner",
     "seed": 11,
     "n_test": 1600,
-    "fit_seconds": 0.846,
+    "fit_seconds": 0.676,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -172,6 +200,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.0268467492658404,
+        "low": 0.9514611588635504,
+        "high": 1.0968414902266441,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.12556811031063866,
+        "low": 0.095938538615931,
+        "high": 0.21410678798058533,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.3608216593163455,
         "low": 0.29991082555768095,
@@ -190,10 +232,164 @@
   },
   {
     "dataset": "synthetic-complex",
+    "estimator": "dr-learner",
+    "seed": 11,
+    "n_test": 1600,
+    "fit_seconds": 3.095,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.16946303659317782
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.14215123546975897,
+        "low": 0.12402088943357524,
+        "high": 0.1608401621089363,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.47595497716536284,
+        "low": 0.4114650384813214,
+        "high": 0.5335658672187698,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.169024845191319,
+        "low": 1.8773614032505979,
+        "high": 2.4811634892630696,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.5522786115143734,
+        "low": 1.2909306802019764,
+        "high": 1.7836338609245375,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.160227321218167,
+        "low": 0.9651663933130689,
+        "high": 1.3671124483258807,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.9384223411925203,
+        "low": 0.8531732691104659,
+        "high": 1.0058997250331836,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.09443912463429871,
+        "low": 0.09183241617105774,
+        "high": 0.2065581224758344,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.47041926875246753,
+        "low": 0.40453682293720183,
+        "high": 0.5454125606618887,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.01926595425004475,
+        "low": 0.0013105506783890719,
+        "high": 0.04280022071575084,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "r-learner",
+    "seed": 11,
+    "n_test": 1600,
+    "fit_seconds": 1.041,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.169838776679653
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.1411067441455893,
+        "low": 0.12339871399116524,
+        "high": 0.15963110416947054,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.4726457645358695,
+        "low": 0.4081417280567913,
+        "high": 0.5329056179198566,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.1847093660953547,
+        "low": 1.8644170754646106,
+        "high": 2.514438719359033,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.556169410197657,
+        "low": 1.2906942078792527,
+        "high": 1.8183213145830441,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.1260434820468186,
+        "low": 0.9320078503674254,
+        "high": 1.3274890706065878,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.9495330471254783,
+        "low": 0.8781285531642892,
+        "high": 1.021225793614365,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.09860049863863928,
+        "low": 0.07997990022339492,
+        "high": 0.19666369123650237,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.3763810803501044,
+        "low": 0.33168667868249546,
+        "high": 0.4303719739105638,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.019383043378858968,
+        "low": 0.002061252333456998,
+        "high": 0.03790414747872329,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
     "estimator": "outcome-ranking",
     "seed": 11,
     "n_test": 1600,
-    "fit_seconds": 0.238,
+    "fit_seconds": 0.202,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -287,7 +483,7 @@
     "estimator": "s-learner",
     "seed": 23,
     "n_test": 1600,
-    "fit_seconds": 0.304,
+    "fit_seconds": 0.263,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -329,6 +525,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.33513162270365,
+        "low": 1.2522865254443218,
+        "high": 1.4262253928175468,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.23509971004559568,
+        "low": 0.1907406027948891,
+        "high": 0.31728374541599363,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.4660993328227866,
         "low": 0.40954819380328483,
@@ -350,7 +560,7 @@
     "estimator": "t-learner",
     "seed": 23,
     "n_test": 1600,
-    "fit_seconds": 0.424,
+    "fit_seconds": 0.378,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -392,6 +602,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.015237130152895,
+        "low": 0.9492842606231027,
+        "high": 1.090197269179462,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.07475562584005177,
+        "low": 0.07299258623972273,
+        "high": 0.1818435334420274,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.39985964050989287,
         "low": 0.34651512819733393,
@@ -413,7 +637,7 @@
     "estimator": "x-learner",
     "seed": 23,
     "n_test": 1600,
-    "fit_seconds": 0.777,
+    "fit_seconds": 0.667,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -455,6 +679,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.1024057959984424,
+        "low": 1.0249256849107158,
+        "high": 1.1648465886284505,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.12591009001601317,
+        "low": 0.09878006203842817,
+        "high": 0.21254300860775194,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.34781525748456965,
         "low": 0.2954812653806664,
@@ -473,10 +711,164 @@
   },
   {
     "dataset": "synthetic-complex",
+    "estimator": "dr-learner",
+    "seed": 23,
+    "n_test": 1600,
+    "fit_seconds": 3.298,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.17307904171793959
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.14769576749113938,
+        "low": 0.1290805477391037,
+        "high": 0.16562644164447402,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5327915843333787,
+        "low": 0.47547795497271933,
+        "high": 0.5855561991722262,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.3169573810456714,
+        "low": 1.9945085540991985,
+        "high": 2.650485581545511,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.6254708581727269,
+        "low": 1.4152715041461563,
+        "high": 1.8678950268198669,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2644611526244025,
+        "low": 1.0900502242780106,
+        "high": 1.4625763918833963,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.8697546103179149,
+        "low": 0.8110801239576629,
+        "high": 0.9418211772246267,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.13491637362967013,
+        "low": 0.10633689164799212,
+        "high": 0.2229970128652074,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4333253123274021,
+        "low": 0.39163476489505483,
+        "high": 0.4875084536110194,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.01129464771597508,
+        "low": 0.0005743507600652447,
+        "high": 0.033337342178992084,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "r-learner",
+    "seed": 23,
+    "n_test": 1600,
+    "fit_seconds": 1.074,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.17267125798726846
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.14908014131524844,
+        "low": 0.1303141027323356,
+        "high": 0.16685814834588078,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5360779036001794,
+        "low": 0.4792797605837638,
+        "high": 0.5878199550042714,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.289294999826253,
+        "low": 1.972206060852618,
+        "high": 2.6021143852689743,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7064998339884885,
+        "low": 1.4743828313750433,
+        "high": 1.9210576536244308,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2763627226028078,
+        "low": 1.0965009092154856,
+        "high": 1.466718053782285,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.9307876042821115,
+        "low": 0.8671343818878066,
+        "high": 1.0049695900617883,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.0934733838891475,
+        "low": 0.07639981839386767,
+        "high": 0.1851543769021588,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.396254714827247,
+        "low": 0.3489556949704045,
+        "high": 0.4611504153163253,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.014887959059138332,
+        "low": 0.0008556607152064685,
+        "high": 0.03534849813287739,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
     "estimator": "outcome-ranking",
     "seed": 23,
     "n_test": 1600,
-    "fit_seconds": 0.246,
+    "fit_seconds": 0.224,
     "selection": {
       "min_child_samples": 60,
       "num_leaves": 15,
@@ -570,7 +962,7 @@
     "estimator": "s-learner",
     "seed": 37,
     "n_test": 1600,
-    "fit_seconds": 0.27,
+    "fit_seconds": 0.244,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -612,6 +1004,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.3247414598859224,
+        "low": 1.21486566995019,
+        "high": 1.4127019199867166,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.21844470045251835,
+        "low": 0.18059349979953637,
+        "high": 0.30908526592713226,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.4278028314517201,
         "low": 0.38058789674623356,
@@ -633,7 +1039,7 @@
     "estimator": "t-learner",
     "seed": 37,
     "n_test": 1600,
-    "fit_seconds": 0.403,
+    "fit_seconds": 0.358,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -675,6 +1081,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.074176430510778,
+        "low": 0.9905346652135413,
+        "high": 1.1415056747877605,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.10274986070390421,
+        "low": 0.08557717023754069,
+        "high": 0.19408045381514696,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.3548209441655525,
         "low": 0.3145490247763724,
@@ -696,7 +1116,7 @@
     "estimator": "x-learner",
     "seed": 37,
     "n_test": 1600,
-    "fit_seconds": 0.754,
+    "fit_seconds": 0.718,
     "selection": {
       "min_child_samples": 5,
       "num_leaves": 15,
@@ -738,6 +1158,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.1122583650658966,
+        "low": 1.0289575681360383,
+        "high": 1.1849619153592208,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.12245214236743104,
+        "low": 0.10268866347388539,
+        "high": 0.21601271763063876,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.32719007602145755,
         "low": 0.27658786840578087,
@@ -756,48 +1190,202 @@
   },
   {
     "dataset": "synthetic-complex",
-    "estimator": "outcome-ranking",
+    "estimator": "dr-learner",
     "seed": 37,
     "n_test": 1600,
-    "fit_seconds": 0.253,
+    "fit_seconds": 2.906,
     "selection": {
-      "min_child_samples": 60,
-      "num_leaves": 15,
-      "validation_qini": 0.1295614106175978
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.16260189604766564
     },
     "metrics": {
       "qini": {
-        "value": 0.11668646771684901,
-        "low": 0.1004907419414031,
-        "high": 0.133152308510785,
+        "value": 0.15131304866664727,
+        "low": 0.1353099075604315,
+        "high": 0.16899370415299445,
         "level": 0.95,
         "n_resamples": 1000
       },
       "auuc": {
-        "value": 0.3738836980979539,
-        "low": 0.30592664779884626,
-        "high": 0.4328758319452859,
+        "value": 0.5070617193458424,
+        "low": 0.4422085787559398,
+        "high": 0.5608611059940802,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@10%": {
-        "value": 1.411647709557325,
-        "low": 1.0972098049375156,
-        "high": 1.7384584691029838,
+        "value": 2.100685797731948,
+        "low": 1.8046292699305628,
+        "high": 2.4355368812752443,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@20%": {
-        "value": 1.0385355831444096,
-        "low": 0.8356227957903334,
-        "high": 1.2429043099346189,
+        "value": 1.5225793681562576,
+        "low": 1.2676544123957985,
+        "high": 1.7452751168746239,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@30%": {
-        "value": 0.8728068958661229,
-        "low": 0.7068167183794001,
-        "high": 1.029502887920721,
+        "value": 1.189823253393179,
+        "low": 1.0005615188017212,
+        "high": 1.368702707802817,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.9605695456694479,
+        "low": 0.8884381774787189,
+        "high": 1.0281032717084235,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.09732247574221795,
+        "low": 0.08195123470772628,
+        "high": 0.19931209172827205,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4325041667095637,
+        "low": 0.38365691622970094,
+        "high": 0.501303800875391,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.017091117433303816,
+        "low": 0.001900827971743376,
+        "high": 0.039333468195967926,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "r-learner",
+    "seed": 37,
+    "n_test": 1600,
+    "fit_seconds": 0.917,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.16283986542851556
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15059869464594333,
+        "low": 0.1346871735563302,
+        "high": 0.16840885034592137,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5080750496339254,
+        "low": 0.4418788048831078,
+        "high": 0.5629033362954408,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.120871487331009,
+        "low": 1.7974712344908754,
+        "high": 2.4392225961703784,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.5578275475818277,
+        "low": 1.3012924499372756,
+        "high": 1.787599048849418,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2151396479734038,
+        "low": 1.0260082275864706,
+        "high": 1.3993345009721354,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.9860897516479515,
+        "low": 0.912342381430507,
+        "high": 1.0560759865300338,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.11886583733080532,
+        "low": 0.09130344611763148,
+        "high": 0.21124855665106212,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.41945316637898644,
+        "low": 0.3672259823992068,
+        "high": 0.49460050704757824,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.020052335327677136,
+        "low": 0.0017909139809895772,
+        "high": 0.04211725595132127,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "outcome-ranking",
+    "seed": 37,
+    "n_test": 1600,
+    "fit_seconds": 0.234,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.13054429436535653
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.11571062117627584,
+        "low": 0.09911609960207,
+        "high": 0.13211300827662772,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.37437711810593716,
+        "low": 0.30614443105400924,
+        "high": 0.43523404862859966,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 1.4768876089778091,
+        "low": 1.1609515007576048,
+        "high": 1.8027029324965045,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.0535239244904857,
+        "low": 0.8575022705794181,
+        "high": 1.2579605285264748,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.9331167713072184,
+        "low": 0.7722350242955869,
+        "high": 1.0785937986757395,
         "level": 0.95,
         "n_resamples": 1000
       }
@@ -853,7 +1441,7 @@
     "estimator": "s-learner",
     "seed": 53,
     "n_test": 1600,
-    "fit_seconds": 0.539,
+    "fit_seconds": 0.409,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 31,
@@ -895,6 +1483,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.2351527024024485,
+        "low": 1.1492770455413825,
+        "high": 1.3282228118997246,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.20881237229840374,
+        "low": 0.1634369246858768,
+        "high": 0.2964243030366055,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.4579757132245741,
         "low": 0.4085817268079623,
@@ -916,7 +1518,7 @@
     "estimator": "t-learner",
     "seed": 53,
     "n_test": 1600,
-    "fit_seconds": 0.434,
+    "fit_seconds": 0.356,
     "selection": {
       "min_child_samples": 60,
       "num_leaves": 15,
@@ -958,6 +1560,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 0.9910555981962753,
+        "low": 0.9111246420558585,
+        "high": 1.0620084119333901,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.10872989753826556,
+        "low": 0.0832567809292421,
+        "high": 0.20224097577885497,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.40547096490370416,
         "low": 0.3716425683131007,
@@ -979,7 +1595,7 @@
     "estimator": "x-learner",
     "seed": 53,
     "n_test": 1600,
-    "fit_seconds": 0.815,
+    "fit_seconds": 0.723,
     "selection": {
       "min_child_samples": 60,
       "num_leaves": 15,
@@ -1021,6 +1637,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.0160512217204591,
+        "low": 0.9391328309638725,
+        "high": 1.094029316147515,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.11291328576817769,
+        "low": 0.09628717240987791,
+        "high": 0.22690970682076786,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.38898116575194003,
         "low": 0.3503538510876626,
@@ -1039,48 +1669,202 @@
   },
   {
     "dataset": "synthetic-complex",
-    "estimator": "outcome-ranking",
+    "estimator": "dr-learner",
     "seed": 53,
     "n_test": 1600,
-    "fit_seconds": 0.257,
+    "fit_seconds": 2.923,
     "selection": {
-      "min_child_samples": 60,
+      "min_child_samples": 200,
       "num_leaves": 15,
-      "validation_qini": 0.104375702459809
+      "validation_qini": 0.14565011692330107
     },
     "metrics": {
       "qini": {
-        "value": 0.11586748056249287,
-        "low": 0.09779411502616915,
-        "high": 0.13423918201095272,
+        "value": 0.15454264961469114,
+        "low": 0.1346735888957859,
+        "high": 0.17302119251123457,
         "level": 0.95,
         "n_resamples": 1000
       },
       "auuc": {
-        "value": 0.3980299972653576,
-        "low": 0.3357740393612135,
-        "high": 0.4582180203414932,
+        "value": 0.5297358707956416,
+        "low": 0.4757145902897803,
+        "high": 0.583430857988726,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@10%": {
-        "value": 1.702286731659949,
-        "low": 1.3810073715413667,
-        "high": 2.0365943982476304,
+        "value": 2.317125878684518,
+        "low": 1.9720063415466196,
+        "high": 2.7419229012512307,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@20%": {
-        "value": 1.2699048691919377,
-        "low": 1.0407701700135044,
-        "high": 1.4766145139440097,
+        "value": 1.7081294760758934,
+        "low": 1.4410880001915871,
+        "high": 1.935572982809844,
         "level": 0.95,
         "n_resamples": 1000
       },
       "uplift@30%": {
-        "value": 0.9587301795794315,
-        "low": 0.8009157011527744,
-        "high": 1.1392756060653446,
+        "value": 1.251787581752218,
+        "low": 1.0476709012809697,
+        "high": 1.4510118968308932,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.9430058249960197,
+        "low": 0.8719284404508747,
+        "high": 1.0215571031961554,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.1120777284193712,
+        "low": 0.10007745051553261,
+        "high": 0.22795054272134932,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4344231694272929,
+        "low": 0.4020783875669963,
+        "high": 0.4721508728457614,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.02150578092186349,
+        "low": 0.0024969073792394294,
+        "high": 0.04244019798704998,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "r-learner",
+    "seed": 53,
+    "n_test": 1600,
+    "fit_seconds": 0.922,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.1463549836887432
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.15555555641867963,
+        "low": 0.1361640310481605,
+        "high": 0.1738207201199851,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5333164275548569,
+        "low": 0.47842382680302303,
+        "high": 0.5860227127464662,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.351995711014457,
+        "low": 2.0048674802527895,
+        "high": 2.70562085666907,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.685980873417602,
+        "low": 1.4372453538696073,
+        "high": 1.9325320455237682,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.1980814689436963,
+        "low": 1.0282502431051308,
+        "high": 1.3990460428890559,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.9698791099123942,
+        "low": 0.8983942988646522,
+        "high": 1.0493590612229013,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.15258243100017127,
+        "low": 0.10944906520892919,
+        "high": 0.23384752490606125,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4390226036114066,
+        "low": 0.4036480483851293,
+        "high": 0.47842561387955945,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.017128378904179096,
+        "low": 0.0011170275847027162,
+        "high": 0.03855121184383802,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "outcome-ranking",
+    "seed": 53,
+    "n_test": 1600,
+    "fit_seconds": 0.231,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.10540387843961267
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.11331314336468001,
+        "low": 0.0954729987728434,
+        "high": 0.13161732257293804,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.3921207011229898,
+        "low": 0.3240335092479693,
+        "high": 0.44921964526310826,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 1.7019964738515203,
+        "low": 1.371438268539714,
+        "high": 2.0481299199018137,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.2072822179428844,
+        "low": 0.9821670969603411,
+        "high": 1.4285723671623587,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 0.9469900264595414,
+        "low": 0.7731034988552572,
+        "high": 1.1196759754692727,
         "level": 0.95,
         "n_resamples": 1000
       }
@@ -1136,7 +1920,7 @@
     "estimator": "s-learner",
     "seed": 71,
     "n_test": 1600,
-    "fit_seconds": 0.271,
+    "fit_seconds": 0.233,
     "selection": {
       "min_child_samples": 20,
       "num_leaves": 15,
@@ -1178,6 +1962,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.335734005654367,
+        "low": 1.2348447896914545,
+        "high": 1.4227772243858463,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.24192924879510347,
+        "low": 0.20268196562238583,
+        "high": 0.33031933148717063,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.447034565943202,
         "low": 0.38601550446437455,
@@ -1199,7 +1997,7 @@
     "estimator": "t-learner",
     "seed": 71,
     "n_test": 1600,
-    "fit_seconds": 0.481,
+    "fit_seconds": 0.382,
     "selection": {
       "min_child_samples": 60,
       "num_leaves": 15,
@@ -1241,6 +2039,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 0.9916742782627511,
+        "low": 0.9169388839589532,
+        "high": 1.0655108844626415,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.11011546670036473,
+        "low": 0.08596330852507952,
+        "high": 0.21372909765911752,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.4452390878248457,
         "low": 0.38358967823940954,
@@ -1262,7 +2074,7 @@
     "estimator": "x-learner",
     "seed": 71,
     "n_test": 1600,
-    "fit_seconds": 1.097,
+    "fit_seconds": 0.946,
     "selection": {
       "min_child_samples": 60,
       "num_leaves": 31,
@@ -1304,6 +2116,20 @@
         "level": 0.95,
         "n_resamples": 1000
       },
+      "calibration_slope": {
+        "value": 1.0124327566148874,
+        "low": 0.9402304469149527,
+        "high": 1.088689150097317,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.114447111873869,
+        "low": 0.09685561289963024,
+        "high": 0.21818270588049687,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
       "pehe": {
         "value": 0.4243880584792963,
         "low": 0.3626216857979597,
@@ -1322,10 +2148,164 @@
   },
   {
     "dataset": "synthetic-complex",
+    "estimator": "dr-learner",
+    "seed": 71,
+    "n_test": 1600,
+    "fit_seconds": 2.987,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.1584528738012334
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.1500285458091554,
+        "low": 0.13188733710062375,
+        "high": 0.16818706198748723,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5152601656230562,
+        "low": 0.4546067629268277,
+        "high": 0.5693709376026561,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.348670188263406,
+        "low": 2.015212211487959,
+        "high": 2.6603799872884624,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7237278657234893,
+        "low": 1.4780882051651,
+        "high": 1.9462883124354808,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.2148783123295068,
+        "low": 1.0521334955372958,
+        "high": 1.4290368359141226,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 0.955304180682949,
+        "low": 0.885147463080323,
+        "high": 1.0287205561645267,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.15855039176508168,
+        "low": 0.12637628030768772,
+        "high": 0.24775950031495506,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.4463702520673585,
+        "low": 0.39300965150082345,
+        "high": 0.5151281866360127,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.0006535743053193675,
+        "low": 0.00033967376628229253,
+        "high": 0.025383846272834666,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
+    "estimator": "r-learner",
+    "seed": 71,
+    "n_test": 1600,
+    "fit_seconds": 1.008,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.15913227222500517
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.1515183906297325,
+        "low": 0.1328293599527985,
+        "high": 0.1698078480074482,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "auuc": {
+        "value": 0.5215901186917077,
+        "low": 0.4597732385847418,
+        "high": 0.5752556762609519,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@10%": {
+        "value": 2.41349533050551,
+        "low": 2.0930628400355165,
+        "high": 2.7828619694516474,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@20%": {
+        "value": 1.7534521111603356,
+        "low": 1.4632801285916273,
+        "high": 1.98473671559223,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "uplift@30%": {
+        "value": 1.1898413214688344,
+        "low": 1.01776525952418,
+        "high": 1.3990727450571423,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_slope": {
+        "value": 1.0086471831872184,
+        "low": 0.9315096114180536,
+        "high": 1.0781850551511734,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "calibration_error": {
+        "value": 0.10600991488184978,
+        "low": 0.09055692666127603,
+        "high": 0.209410635649075,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "pehe": {
+        "value": 0.3610081510932424,
+        "low": 0.3256478491727904,
+        "high": 0.4087500546136898,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "ate_error": {
+        "value": 0.024758680990025463,
+        "low": 0.008203375791012477,
+        "high": 0.042858120923519066,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "synthetic-complex",
     "estimator": "outcome-ranking",
     "seed": 71,
     "n_test": 1600,
-    "fit_seconds": 0.24,
+    "fit_seconds": 0.216,
     "selection": {
       "min_child_samples": 60,
       "num_leaves": 15,

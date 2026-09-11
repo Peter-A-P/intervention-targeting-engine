@@ -23,3 +23,21 @@
 2716e1bf0fd157a93b5bf86924d9088419dfbac2022c6cd90030220634f616dc  criteo-research-uplift-v2.1.csv.gz
 750697c71b4f8d7a3aafff771b56a4ac4cd83ec649bf69afb04f8a5aee41a240  ihdp_npci_1-100.train.npz
 a70a8acbcc4e8deb677cc9bf9e9dabeb17caaa37cdbb1d7ba06be7ffb929c41c  ihdp_npci_1-100.test.npz
+#
+# acic2016_x.csv and acic2016_zymu_1..10.csv
+#   https://raw.githubusercontent.com/BiomedSciAI/causallib/master/causallib/datasets/data/acic_challenge_2016/
+#   ACIC 2016 competition data (Dorie, Hill, Shalit, Scott and Cervone, Statistical Science
+#   2019), mirrored by causallib as plain CSV. 4,802 units, 58 real covariates, 10 simulated
+#   settings. Community Data License Agreement - Sharing 1.0. Recorded 2026-09-11.
+#
+0d6387ad45d23e54b11cbf967248fb68ad5e578db80d193208b8b4c98b1ed0c1  acic2016_x.csv
+002fad96bb55d54edec08a0af46ef4f8ad69e0cfe6294ab48f351f22976a6e76  acic2016_zymu_1.csv
+bc3a03bb461bb1629add09c01dfc77053cf36e8faf8e48a7645b35ddb4005d1c  acic2016_zymu_2.csv
+8090562d3fcf5a3b02ff5493592a2880b95b106e1c12e2c3a6e6c28ae8468ff6  acic2016_zymu_3.csv
+61b405c545a451b7e2ce31614150834f94aa4b27069e2755876ed6e11cfee5fd  acic2016_zymu_4.csv
+e350ac76d0b8e83f45f7f04a4b76b9a32a0d53098452075617e61ce62ad0463a  acic2016_zymu_5.csv
+a059950f0b51056660364eca14524a3d3254f93c608d8a1df9240c2c4179a7b5  acic2016_zymu_6.csv
+ac102c3f34680ff901c30fb95985297eea0f20efaf02108f287ceec60b6a2a1f  acic2016_zymu_7.csv
+bbcde6ad666640adcd39fd50cab00865d22b5c463ce9db6d0940d8eccd5afcf3  acic2016_zymu_8.csv
+02663b776fa87cd3d91ee7871e98c1b4d63579957b12ef9bb1ecf367b7afc366  acic2016_zymu_9.csv
+c8ee8ca537ef4315a0ee5753bd01d792a1b3cdacb1fd69e1288b2bb89944d1b7  acic2016_zymu_10.csv

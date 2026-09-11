@@ -6,7 +6,7 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
-**Status: week 2 of 8.** Three estimators of the seven are benchmarked, on two datasets of
+**Status: week 3 of 8.** Five estimators of the seven are benchmarked, on three datasets of
 the five. The numbers below are real and reproducible; the table is not finished. Build
 plan: [PLAN.md](PLAN.md).
 
@@ -22,57 +22,80 @@ design: a Qini without an interval is treated in this repository as a defect.
 ### Hillstrom, 42,693 customers, randomised email campaign
 
 <!-- itx:table:hillstrom -->
-| Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% |
-|---|---|---|---|---|---|
-| `s-learner` | 0.0042 (0.0020, 0.0063) | 0.2620 (0.1996, 0.3223) | 0.0883 (0.0387, 0.1355) | 0.0802 (0.0468, 0.1137) | 0.0803 (0.0545, 0.1077) |
-| `t-learner` | 0.0031 (0.0009, 0.0053) | 0.2441 (0.1802, 0.3044) | 0.0876 (0.0380, 0.1386) | 0.0772 (0.0433, 0.1121) | 0.0715 (0.0435, 0.0980) |
-| `x-learner` | 0.0032 (0.0011, 0.0054) | 0.2463 (0.1836, 0.3078) | 0.0823 (0.0346, 0.1325) | 0.0786 (0.0445, 0.1127) | 0.0748 (0.0477, 0.1026) |
-| `outcome-ranking` | 0.0012 (-0.0008, 0.0033) | 0.2129 (0.1427, 0.2794) | 0.0532 (-0.0011, 0.1076) | 0.0598 (0.0222, 0.0978) | 0.0584 (0.0292, 0.0883) |
-| `random-200` | -0.0000 (-0.0019, 0.0020) | 0.1931 (0.1605, 0.2267) | 0.0450 (0.0047, 0.0846) | 0.0451 (0.0181, 0.0728) | 0.0451 (0.0243, 0.0656) |
+| Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% | Calibration slope | Calibration error |
+|---|---|---|---|---|---|---|---|
+| `s-learner` | 0.0041 (0.0019, 0.0062) | 0.2609 (0.1984, 0.3210) | 0.0893 (0.0404, 0.1358) | 0.0828 (0.0494, 0.1160) | 0.0793 (0.0530, 0.1066) | 0.6926 (0.3295, 1.0444) | 0.0180 (0.0157, 0.0370) |
+| `t-learner` | 0.0031 (0.0009, 0.0053) | 0.2442 (0.1803, 0.3047) | 0.0970 (0.0465, 0.1479) | 0.0779 (0.0441, 0.1120) | 0.0678 (0.0405, 0.0948) | 0.2987 (0.0901, 0.5153) | 0.0437 (0.0347, 0.0594) |
+| `x-learner` | 0.0031 (0.0010, 0.0053) | 0.2452 (0.1827, 0.3065) | 0.0831 (0.0351, 0.1321) | 0.0788 (0.0448, 0.1124) | 0.0743 (0.0478, 0.1026) | 0.3477 (0.1011, 0.5944) | 0.0365 (0.0287, 0.0529) |
+| `dr-learner` | 0.0028 (0.0007, 0.0051) | 0.2402 (0.1757, 0.3031) | 0.0841 (0.0339, 0.1344) | 0.0738 (0.0392, 0.1079) | 0.0736 (0.0463, 0.1014) | 0.2563 (0.0551, 0.4590) | 0.0463 (0.0377, 0.0625) |
+| `r-learner` | 0.0029 (0.0007, 0.0051) | 0.2413 (0.1795, 0.3017) | 0.0920 (0.0417, 0.1434) | 0.0759 (0.0416, 0.1096) | 0.0745 (0.0473, 0.1012) | 0.2381 (0.0501, 0.4221) | 0.0508 (0.0419, 0.0667) |
+| `outcome-ranking` | 0.0012 (-0.0008, 0.0033) | 0.2129 (0.1431, 0.2796) | 0.0462 (-0.0070, 0.1011) | 0.0524 (0.0159, 0.0917) | 0.0578 (0.0288, 0.0882) | - | - |
+| `random-200` | -0.0000 (-0.0019, 0.0020) | 0.1931 (0.1605, 0.2267) | 0.0450 (0.0047, 0.0846) | 0.0451 (0.0181, 0.0728) | 0.0451 (0.0243, 0.0656) | - | - |
 
 Selected on the validation split from the committed grid:
 
-- `s-learner`: min_child_samples=5, num_leaves=15 (3 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
-- `t-learner`: min_child_samples=20, num_leaves=15 (3 of 5 seeds), min_child_samples=60, num_leaves=15 (2 of 5 seeds)
-- `x-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
-- `outcome-ranking`: min_child_samples=20, num_leaves=15 (3 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
+- `s-learner`: min_child_samples=5, num_leaves=15 (3 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
+- `t-learner`: min_child_samples=200, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds)
+- `x-learner`: min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
+- `dr-learner`: min_child_samples=60, num_leaves=15 (3 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
+- `r-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds)
+- `outcome-ranking`: min_child_samples=200, num_leaves=31 (2 of 5 seeds), min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:hillstrom -->
 
 The outcome ranking is the ordinary way this job is done: model who is likely to respond,
 spend the budget from the top of that list. Its Qini interval contains zero, so on this
-dataset it has not been shown to beat picking at random. All three real estimators' do not.
+dataset it has not been shown to beat picking at random. All five estimators' intervals
+exclude zero.
 
 At a budget covering 20% of the population, the S-learner's targeted group shows an
-8.0-point difference in visit rate between arms, against random targeting's 4.5. The
-outcome ranking manages 6.0, about a third of the way from doing nothing clever to doing
-this properly. The three estimators' intervals overlap heavily, so the honest reading is
-that they are not distinguishable from each other here, only from the two baselines.
+8.3-point difference in visit rate between arms, against random targeting's 4.5. The
+outcome ranking manages 5.2, less than a quarter of the way from doing nothing clever to
+doing this properly. The five estimators' intervals overlap heavily, so the honest reading
+is that they are distinguishable from the two baselines and not from each other.
+
+The calibration columns tell a different story from the ACIC ones below, and the difference
+is the point. Every estimator here has a slope well under 1, meaning its predictions are
+more spread out than the uplift that actually materialises: on a dataset whose real effect
+is small and fairly uniform, a flexible model finds heterogeneity that is mostly noise. The
+S-learner is the least wrong of them at 0.69, for the same reason it is the most wrong on
+ACIC at 1.53. It shrinks predicted effects toward a constant, which is a liability where the
+effect genuinely varies and a virtue where it does not.
+
+![Qini curves on Hillstrom](docs/figures/qini-hillstrom.png)
 
 ### IHDP, 747 units, simulated outcomes with known individual effects
 
 <!-- itx:table:ihdp -->
-| Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% | PEHE | ATE error |
-|---|---|---|---|---|---|---|---|
-| `s-learner` | 0.0176 (-0.0699, 0.1079) | 0.9064 (0.8315, 0.9670) | 4.0150 (2.8356, 4.9348) | 4.2496 (2.9210, 5.7731) | 4.3617 (3.2989, 5.3901) | 0.5661 (0.4344, 0.7022) | 0.1385 (0.0697, 0.2215) |
-| `t-learner` | 0.0305 (-0.0578, 0.1222) | 0.9022 (0.8334, 0.9585) | 4.1149 (3.1768, 5.2630) | 4.2359 (3.4102, 5.4069) | 4.4967 (3.5423, 5.3866) | 0.8569 (0.7500, 0.9646) | 0.1248 (0.0508, 0.2608) |
-| `x-learner` | 0.0468 (-0.0462, 0.1433) | 0.8962 (0.8303, 0.9548) | 3.9407 (2.7052, 5.5056) | 4.2619 (3.3427, 5.1678) | 4.2332 (3.4652, 5.0388) | 0.7870 (0.6081, 0.9695) | 0.1032 (0.0219, 0.2284) |
-| `outcome-ranking` | 0.0088 (-0.0479, 0.0692) | 0.7345 (0.6413, 0.8244) | 1.3420 (-0.3277, 3.1934) | 2.2051 (0.9486, 3.5478) | 2.7399 (1.7099, 3.7437) | - | - |
-| `random-200` | 0.0001 (-0.0751, 0.0712) | 0.8283 (0.7705, 0.8888) | 3.9298 (2.2726, 5.5296) | 3.9178 (2.8451, 5.0637) | 3.9275 (3.2068, 4.6875) | - | - |
+| Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% | Calibration slope | Calibration error | PEHE | ATE error |
+|---|---|---|---|---|---|---|---|---|---|
+| `s-learner` | 0.0176 (-0.0699, 0.1079) | 0.9064 (0.8315, 0.9670) | 4.0150 (2.8356, 4.9348) | 4.2496 (2.9210, 5.7731) | 4.3617 (3.2989, 5.3901) | 0.8537 (-0.1313, 1.8405) | 0.3087 (0.1209, 0.8890) | 0.5661 (0.4344, 0.7022) | 0.1385 (0.0697, 0.2215) |
+| `t-learner` | 0.0305 (-0.0578, 0.1222) | 0.9022 (0.8334, 0.9585) | 4.1149 (3.1768, 5.2630) | 4.2359 (3.4102, 5.4069) | 4.4967 (3.5423, 5.3866) | 0.4966 (-0.1301, 1.0832) | 0.6427 (0.2497, 1.1272) | 0.8569 (0.7500, 0.9646) | 0.1248 (0.0508, 0.2608) |
+| `x-learner` | 0.0468 (-0.0462, 0.1433) | 0.8962 (0.8303, 0.9548) | 3.9407 (2.7052, 5.5056) | 4.2619 (3.3427, 5.1678) | 4.2332 (3.4652, 5.0388) | 1.9537 (-0.2795, 4.0129) | 0.3797 (0.1325, 1.0181) | 0.7870 (0.6081, 0.9695) | 0.1032 (0.0219, 0.2284) |
+| `dr-learner` | -0.0004 (-0.0790, 0.0787) | 0.8104 (0.7258, 0.8873) | 3.3536 (1.9119, 5.2414) | 3.8849 (2.5805, 4.9767) | 3.7311 (2.7941, 4.6571) | -0.0022 (-0.1098, 0.0923) | 6.2535 (5.1738, 7.3768) | 8.5415 (7.1699, 9.9460) | 1.6629 (0.4919, 3.0153) |
+| `r-learner` | 0.0021 (-0.0804, 0.0807) | 0.8878 (0.8067, 0.9464) | 4.1897 (3.1444, 5.2740) | 4.0266 (2.7901, 5.0829) | 4.0827 (3.0604, 5.0693) | 0.3630 (-0.2123, 0.8253) | 0.8393 (0.3955, 1.4655) | 1.3381 (1.1803, 1.5026) | 0.3380 (0.2001, 0.5365) |
+| `outcome-ranking` | 0.0088 (-0.0479, 0.0692) | 0.7345 (0.6413, 0.8244) | 1.3420 (-0.3277, 3.1934) | 2.2051 (0.9486, 3.5478) | 2.7399 (1.7099, 3.7437) | - | - | - | - |
+| `random-200` | 0.0001 (-0.0751, 0.0712) | 0.8283 (0.7705, 0.8888) | 3.9298 (2.2726, 5.5296) | 3.9178 (2.8451, 5.0637) | 3.9275 (3.2068, 4.6875) | - | - | - | - |
 
 Selected on the validation split from the committed grid:
 
 - `s-learner`: min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
 - `t-learner`: min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds)
 - `x-learner`: min_child_samples=60, num_leaves=15 (3 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
+- `dr-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
+- `r-learner`: min_child_samples=60, num_leaves=15 (3 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
 - `outcome-ranking`: min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:ihdp -->
 
 The true average effect here is about 4.0, and PEHE is the per-unit error against an effect
-somebody wrote down, so lower is better and only this dataset can report it. Which
+somebody wrote down, so lower is better and only the simulated datasets can report it. Which
 estimator wins it is not a fact about the estimators: it depends on whether the treatment
 effect is simpler or harder to describe than the baseline outcome, and
-[docs/estimators.md](docs/estimators.md) shows the ordering reversing completely between
-two synthetic problems that differ in nothing else.
+[docs/estimators.md](docs/estimators.md) shows the ordering reversing completely between two
+synthetic problems that differ in nothing else.
+
+IHDP is also small, at 448 training rows, and that is why the DR-learner is last here by a
+distance. Its doubly robust guarantee is asymptotic; its pseudo-outcome's variance is not,
+and at this size the variance wins. Predicting a constant zero would score 4.11.
 
 Read the two right-hand columns, not the Qini. On the first seed the outcome ranking has
 the **best Qini coefficient of the three** and buys 0.05 at a 10% budget, against random
@@ -85,6 +108,65 @@ is what a budget actually buys.
 
 ![Qini curves on IHDP](docs/figures/qini-ihdp.png)
 
+### ACIC 2016, 4,802 units, simulated outcomes with known individual effects
+
+The competition dataset from the 2016 Atlantic Causal Inference Conference: real covariates,
+a simulated treatment assignment that depends on them, and a simulated outcome. Six times
+IHDP's size, an effect that varies nearly twice as much as it averages, and confounding
+strong enough that the naive difference in arm means is 3.58 against a true effect of 2.13.
+
+<!-- itx:table:acic -->
+| Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% | Calibration slope | Calibration error | PEHE | ATE error |
+|---|---|---|---|---|---|---|---|---|---|
+| `s-learner` | 0.2170 (0.1582, 0.2785) | 0.7506 (0.6915, 0.8137) | 7.4746 (5.8664, 9.1483) | 6.9870 (5.6439, 8.3597) | 6.4845 (5.3567, 7.6608) | 1.5256 (1.1520, 1.8837) | 1.3076 (1.1003, 2.3021) | 1.7178 (1.5633, 1.8647) | 0.3182 (0.2163, 0.4252) |
+| `t-learner` | 0.2107 (0.1520, 0.2712) | 0.7611 (0.6993, 0.8256) | 7.8915 (5.9614, 9.8037) | 7.0914 (5.6406, 8.5452) | 6.7091 (5.4234, 7.9346) | 1.0810 (0.8360, 1.3221) | 1.1050 (0.8915, 2.0397) | 1.2155 (1.1465, 1.2834) | 0.3585 (0.2839, 0.4292) |
+| `x-learner` | 0.2273 (0.1681, 0.2895) | 0.7479 (0.6896, 0.8106) | 8.4128 (6.6035, 10.0808) | 7.3268 (5.8891, 8.6295) | 6.4870 (5.4129, 7.6685) | 1.1057 (0.8498, 1.3630) | 1.0296 (0.7755, 1.8750) | 0.8252 (0.7652, 0.8817) | 0.2023 (0.1513, 0.2534) |
+| `dr-learner` | 0.2401 (0.1765, 0.3085) | 0.8059 (0.7402, 0.8749) | 7.3375 (5.6267, 9.1518) | 6.6582 (5.3928, 8.0011) | 6.5613 (5.4333, 7.6433) | 1.0110 (0.7946, 1.2441) | 1.1662 (0.9558, 2.1793) | 1.7920 (1.6956, 1.8894) | 0.4873 (0.3842, 0.5909) |
+| `r-learner` | 0.2277 (0.1682, 0.2915) | 0.7413 (0.6809, 0.8052) | 7.8016 (6.0948, 9.6156) | 6.9500 (5.5382, 8.3248) | 6.4901 (5.3063, 7.6164) | 1.0724 (0.8202, 1.3236) | 0.9483 (0.7877, 1.8826) | 1.2290 (1.1519, 1.3097) | 0.1387 (0.0733, 0.2141) |
+| `outcome-ranking` | -0.0233 (-0.0674, 0.0216) | 0.4065 (0.3212, 0.4886) | 0.3415 (-1.5933, 2.4039) | 1.4755 (0.1591, 2.7197) | 1.7931 (0.6724, 2.9486) | - | - | - | - |
+| `random-200` | -0.0000 (-0.0467, 0.0507) | 0.4881 (0.4251, 0.5563) | 3.4172 (0.9091, 6.0770) | 3.4402 (1.7333, 5.0483) | 3.4256 (2.2269, 4.6987) | - | - | - | - |
+
+Selected on the validation split from the committed grid:
+
+- `s-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds)
+- `t-learner`: min_child_samples=20, num_leaves=31 (2 of 5 seeds), min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds)
+- `x-learner`: min_child_samples=20, num_leaves=15 (3 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
+- `dr-learner`: min_child_samples=200, num_leaves=15 (4 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds)
+- `r-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
+- `outcome-ranking`: min_child_samples=5, num_leaves=31 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=60, num_leaves=31 (1 of 5 seeds)
+<!-- itx:end:acic -->
+
+This is where the trap is at its worst, and it is worth reading the two baseline rows
+against the estimators:
+
+| ACIC 2016 | Qini | Uplift at a 10% budget |
+|---|---|---|
+| `x-learner` | 0.2273 | 8.41 |
+| Random targeting | -0.0000 | 3.42 |
+| Outcome ranking | **-0.0233** | **0.34** |
+
+Spending the budget on the highest-risk tenth of this population buys 0.34. Spending it on a
+random tenth buys 3.42. Ranking by risk is not leaving return on the table here, it is ten
+times worse than not thinking about it at all, and its Qini is negative rather than merely
+unimpressive. That happens when the people most likely to have the outcome are the people
+least susceptible to the intervention, which is the normal shape of a fraud queue or a
+clinical follow-up list.
+
+![Qini curves on ACIC 2016](docs/figures/qini-acic.png)
+
+Five estimators sit well above the diagonal. The outcome ranking, in brown, is below it for
+the first sixty percent of the population: for any budget in that range, the ordinary
+approach delivers less than picking names out of a hat.
+
+![Calibration on ACIC 2016](docs/figures/calibration-acic.png)
+
+The calibration columns are the only ones in the table that notice magnitude. Qini, AUUC and
+uplift at k are all unchanged if every prediction is multiplied by a constant, so a model
+that ranks perfectly and predicts effects half the size they should be scores identically to
+one that gets them right, and then forecasts half the return. The S-learner's calibration
+slope of 1.53 is the only one whose interval excludes 1: its predictions are too compressed,
+and realised uplift varies half as much again as it says.
+
 ## What this does not do
 
 - It does not identify effects without an experiment or a credible ignorability
@@ -92,27 +174,39 @@ is what a budget actually buys.
   the targeting decision flips; it does not remove the assumption.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
-- Not yet built, in schedule order: DR and R learners; the Criteo, Lenta and ACIC loaders;
-  realised policy value under a budget; Rosenbaum bounds and E-values; Dragonnet; the
-  budget-slider demo. Nothing above is a placeholder for them: the numbers reported are the
-  numbers measured.
+- Not yet built, in schedule order: the Criteo and Lenta loaders; realised policy value
+  under a budget; Rosenbaum bounds and E-values; Dragonnet; the budget-slider demo. Nothing
+  above is a placeholder for them: the numbers reported are the numbers measured.
 
 ## Install and run
 
 Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-uv sync                       # create the environment
+uv sync --extra learners      # create the environment; the extra adds EconML and CausalML
 uv run itx data pull          # download the raw datasets and verify their checksums
 uv run itx benchmark --dataset hillstrom
 uv run itx benchmark --dataset ihdp
+uv run itx benchmark --dataset acic
 ```
+
+The DR and R learners come from EconML and CausalML, which is why they sit behind an extra:
+without it the other three estimators and every metric still run, and asking for a wrapped
+one says how to install it.
 
 `itx benchmark` selects hyperparameters on the validation split, fits, evaluates on the
 held-out test split, writes every per-seed number and the chosen configuration to
-`results/<dataset>.json`, draws the Qini figure into `docs/figures/`, and rewrites the
-table above. Add `--no-tune` to skip selection and use the default configuration, which is
-several times faster. Raw data is never committed; the SHA-256 of every download is, in
+`results/<dataset>.json`, draws the figures into `docs/figures/`, and rewrites the table
+above. Add `--no-tune` to skip selection and use the default configuration, which is several
+times faster.
+
+The Hillstrom run takes about twenty minutes, so two commands exist to avoid repeating it
+when only the presentation has changed:
+
+```bash
+uv run itx report  --dataset hillstrom   # redraw the table from results/, no fitting at all
+uv run itx figures --dataset hillstrom   # redraw the figures, refitting only the first seed
+``` Raw data is never committed; the SHA-256 of every download is, in
 [`src/itx/data/checksums.sha256`](src/itx/data/checksums.sha256), so a download can be
 verified without running any of this code:
 
@@ -242,8 +336,8 @@ because the decision is what the budget holder is actually buying.
 - [PLAN.md](PLAN.md): scope, evaluation protocol, package design, week-by-week schedule.
 - [docs/estimators.md](docs/estimators.md): where each estimator breaks, with evidence.
 - [docs/data/hillstrom.md](docs/data/hillstrom.md),
-  [docs/data/ihdp.md](docs/data/ihdp.md): one card per dataset, with source, licence,
-  treatment definition, quirks and split seeds.
+  [docs/data/ihdp.md](docs/data/ihdp.md), [docs/data/acic.md](docs/data/acic.md): one card
+  per dataset, with source, licence, treatment definition, quirks and split seeds.
 
 ## Part of a portfolio
 

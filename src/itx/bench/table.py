@@ -20,14 +20,14 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from itx.bench.runner import group_by_estimator, metric_names
+from itx.bench.grid import Selection
+from itx.bench.runner import BenchmarkRow, group_by_estimator, metric_names
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG
 from itx.metrics.bootstrap import Estimate, bootstrap_over
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
-
-    from itx.bench.runner import BenchmarkRow
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,6 +195,61 @@ def write_json(rows: Sequence[BenchmarkRow], path: Path) -> None:
     path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def read_json(path: Path) -> list[BenchmarkRow]:
+    """Rebuild benchmark rows from a results file, so a table can be redrawn without refitting.
+
+    This is what ``write_json`` is for. Regenerating the README from a run that already
+    happened should cost a second, not twenty minutes, and a reader who wants to check the
+    table against the per-seed numbers should not have to own a machine that can refit five
+    estimators.
+
+    The scores are not stored, so the rows come back with an empty score array. Everything
+    that needs them, which is the figures, has to refit; everything that needs only the
+    metrics, which is every table, does not.
+
+    Args:
+        path: A file written by :func:`write_json`.
+
+    Returns:
+        The rows, in the order they were written.
+    """
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    rows: list[BenchmarkRow] = []
+    for record in payload:
+        selection = record.get("selection")
+        rows.append(
+            BenchmarkRow(
+                dataset=record["dataset"],
+                estimator=record["estimator"],
+                seed=record["seed"],
+                n_test=record["n_test"],
+                metrics={
+                    name: Estimate(
+                        value=metric["value"],
+                        low=metric["low"],
+                        high=metric["high"],
+                        level=metric["level"],
+                        n_resamples=metric["n_resamples"],
+                    )
+                    for name, metric in record["metrics"].items()
+                },
+                fit_seconds=record["fit_seconds"],
+                scores=np.empty(0, dtype=np.float64),
+                selection=None
+                if selection is None
+                else Selection(
+                    config=DEFAULT_CONFIG.with_(
+                        min_child_samples=selection["min_child_samples"],
+                        num_leaves=selection["num_leaves"],
+                    ),
+                    score=selection["validation_qini"],
+                    scores=(),
+                ),
+            )
+        )
+    return rows
+
+
 MARKER_START = "<!-- itx:table:{name} -->"
 MARKER_END = "<!-- itx:end:{name} -->"
 
@@ -236,5 +291,7 @@ def _column_label(metric: str) -> str:
         "auuc": "Normalised AUUC",
         "pehe": "PEHE",
         "ate_error": "ATE error",
+        "calibration_slope": "Calibration slope",
+        "calibration_error": "Calibration error",
     }
     return labels.get(metric, metric)

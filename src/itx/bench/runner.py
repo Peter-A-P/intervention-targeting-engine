@@ -27,12 +27,20 @@ from itx.bench.seeds import (
     TIE_SEED,
     bootstrap_seed_for,
 )
+from itx.data.acic import load_acic
 from itx.data.hillstrom import load_hillstrom
 from itx.data.ihdp import load_ihdp
 from itx.data.splits import stratified_split
-from itx.data.synthetic import binary_outcome, complex_effect, heterogeneous_effect
+from itx.data.synthetic import (
+    binary_outcome,
+    complex_effect,
+    confounded,
+    heterogeneous_effect,
+)
 from itx.estimators.base import BaseUpliftEstimator
 from itx.estimators.baselines import OutcomeRanking, RandomRanking
+from itx.estimators.dr_learner import DRLearner
+from itx.estimators.r_learner import RLearner
 from itx.estimators.s_learner import SLearner
 from itx.estimators.t_learner import TLearner
 from itx.estimators.x_learner import XLearner
@@ -43,6 +51,7 @@ from itx.metrics.bootstrap import (
     Estimate,
     bootstrap_vector,
 )
+from itx.metrics.calibration import calibration_error, calibration_slope
 from itx.metrics.ground_truth import ate_error, pehe
 from itx.metrics.qini import ranking_metrics
 
@@ -57,9 +66,11 @@ BUDGETS: tuple[float, ...] = (0.1, 0.2, 0.3)
 DATASETS: dict[str, Callable[[], UpliftDataset]] = {
     "hillstrom": load_hillstrom,
     "ihdp": lambda: load_ihdp(0),
+    "acic": lambda: load_acic(0),
     "synthetic-binary": binary_outcome,
     "synthetic-heterogeneous": heterogeneous_effect,
     "synthetic-complex": complex_effect,
+    "synthetic-confounded": confounded,
 }
 
 #: Estimators the CLI can name. Each is built from a base-learner configuration and a
@@ -68,6 +79,8 @@ ESTIMATORS: dict[str, EstimatorFactory] = {
     "s-learner": lambda config, seed: SLearner(config, seed=seed),
     "t-learner": lambda config, seed: TLearner(config, seed=seed),
     "x-learner": lambda config, seed: XLearner(config, seed=seed),
+    "dr-learner": lambda config, seed: DRLearner(config, seed=seed),
+    "r-learner": lambda config, seed: RLearner(config, seed=seed),
     "outcome-ranking": lambda config, seed: OutcomeRanking(config, seed=seed),
     "random": lambda _config, seed: RandomRanking(seed=seed),
 }
@@ -84,6 +97,8 @@ DEFAULT_ESTIMATORS: tuple[str, ...] = (
     "s-learner",
     "t-learner",
     "x-learner",
+    "dr-learner",
+    "r-learner",
     "outcome-ranking",
 )
 
@@ -165,6 +180,7 @@ def evaluate(
             budgets=budgets,
             tie_seed=tie_seed,
             with_ground_truth=estimator.estimates_effect,
+            with_calibration=estimator.estimates_effect,
         ),
         test.n_units,
         n_resamples=n_resamples,
@@ -292,6 +308,54 @@ def run(
     return rows
 
 
+def refit_seed(
+    dataset: str,
+    seed: int,
+    *,
+    selections: Mapping[str, Selection],
+    estimators: Sequence[str] | None = None,
+) -> tuple[list[BenchmarkRow], Split]:
+    """Refit one seed using configurations that were already chosen, and skip the metrics.
+
+    The figures need per-unit scores, which the results file does not store, so redrawing
+    them needs a fit. It does not need the twenty minutes the full run costs: one seed, no
+    grid search because the winning configuration is read back from the run that happened,
+    and no bootstrap because a figure does not use one.
+
+    Args:
+        dataset: A key of :data:`DATASETS`.
+        seed: The split seed to refit.
+        selections: The configuration each estimator was given, by estimator name.
+        estimators: Which estimators to refit; the keys of ``selections`` by default.
+
+    Returns:
+        The rows, carrying scores but no metrics, and the split they were fitted on.
+    """
+    names = list(estimators) if estimators is not None else list(selections)
+    split = stratified_split(DATASETS[dataset](), seed)
+    rows: list[BenchmarkRow] = []
+    for name in names:
+        if name not in ESTIMATORS:
+            continue
+        selection = selections.get(name, default_selection())
+        estimator = ESTIMATORS[name](selection.config, seed)
+        started = time.perf_counter()
+        estimator.fit(split.train)
+        rows.append(
+            BenchmarkRow(
+                dataset=split.test.name,
+                estimator=estimator.name,
+                seed=seed,
+                n_test=split.test.n_units,
+                metrics={},
+                fit_seconds=time.perf_counter() - started,
+                scores=estimator.predict_uplift(split.test.features),
+                selection=selection,
+            )
+        )
+    return rows, split
+
+
 def _statistics(
     test: UpliftDataset,
     scores: FloatArray,
@@ -299,13 +363,16 @@ def _statistics(
     budgets: Sequence[float],
     tie_seed: int,
     with_ground_truth: bool = True,
+    with_calibration: bool = True,
 ) -> Callable[[IntArray], dict[str, float]]:
     """Every metric for this row, as one function of the resampled row positions.
 
     One function rather than one per metric, because the ranking metrics share a sort and
     the ground-truth metrics have to be dropped as a group: when the dataset has no truth
     to compare against, and when the estimator produces a ranking score rather than an
-    effect on the outcome's scale.
+    effect on the outcome's scale. Calibration is dropped on the same condition as the
+    second of those, and for the same reason: asking whether a risk score is the right size
+    to be a treatment effect is not a question about the score.
     """
     outcome, treatment = test.outcome, test.treatment
     truth = test.true_effect if with_ground_truth else None
@@ -318,6 +385,13 @@ def _statistics(
             budgets=budgets,
             seed=tie_seed,
         )
+        if with_calibration:
+            values["calibration_slope"] = calibration_slope(
+                outcome[index], treatment[index], scores[index], seed=tie_seed
+            )
+            values["calibration_error"] = calibration_error(
+                outcome[index], treatment[index], scores[index], seed=tie_seed
+            )
         if truth is not None:
             values["pehe"] = pehe(scores[index], truth[index])
             values["ate_error"] = ate_error(scores[index], truth[index])

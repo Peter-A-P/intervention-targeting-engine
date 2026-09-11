@@ -14,6 +14,7 @@ each resample would answer a different and more expensive question.
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -53,12 +54,18 @@ class Estimate:
     def format(self, digits: int = 4) -> str:
         """Render for a table.
 
+        A statistic that is undefined on the full sample renders as a dash even when some
+        resamples produced a number. Printing ``nan`` next to a finite-looking interval
+        invites a reader to believe the interval means something.
+
         Args:
             digits: Decimal places.
 
         Returns:
-            The value with its interval in brackets.
+            The value with its interval in brackets, or a dash if it is undefined.
         """
+        if not math.isfinite(self.value):
+            return "-"
         return f"{self.value:.{digits}f} ({self.low:.{digits}f}, {self.high:.{digits}f})"
 
     @property

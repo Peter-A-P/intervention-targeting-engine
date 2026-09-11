@@ -8,7 +8,7 @@ is, and the estimator column would quietly become a compute column.
 
 ## What is tuned, and why these two knobs
 
-``min_child_samples`` and ``num_leaves``, six combinations. The learning rate and the
+``min_child_samples`` and ``num_leaves``, eight combinations. The learning rate and the
 number of boosting rounds are held fixed so that every candidate sees the same model
 capacity from the boosting side, and because tuning all four turns a fixed grid into a
 search whose cost depends on the dataset.
@@ -17,6 +17,15 @@ search whose cost depends on the dataset.
 works at all: at 100 the S-learner on IHDP's 448 training rows never split on the treatment
 and returned exactly zero uplift, while at 20 it recovered the effect. One constant cannot
 serve a 747-unit dataset and a 64,000-unit one, so the grid picks per dataset and per seed.
+
+The 200 candidate was added in week 3, when the DR-learner arrived and the grid's old
+ceiling of 60 turned out to be too low for it. Its final stage regresses on a doubly robust
+pseudo-outcome, which carries the inverse-propensity correction's variance as well as the
+outcome's: on 2,400 training rows its PEHE was 1.28 at a leaf size of 20, worse than
+predicting a constant, and 0.40 at 200. That is the method's known weakness rather than a
+defect in it, and the grid has to be wide enough for the weakness to be managed, or the
+results table reports how badly suited one shared constant was to one estimator. Widening it
+for every estimator rather than for the one that needed it keeps the comparison level.
 
 ## What it is selected on, and the honest problem with that
 
@@ -41,6 +50,21 @@ aligned with the decision and is not available until week 5. When it is, this mo
 second selection rule and the two are compared, because whether it changes the chosen
 configurations is itself worth reporting.
 
+## Candidates a dataset cannot support are removed before selection
+
+A leaf size of 200 on IHDP's 448 training rows leaves room for two leaves at most, so the
+model can barely split at all and its predicted uplift collapses toward zero. That is not a
+hyperparameter setting, it is a broken model, and offering it to a selection rule running on
+a 149-row validation split means the rule will occasionally pick it.
+
+That is not hypothetical either. Adding the 200 candidate for the DR-learner's benefit moved
+the S-learner's IHDP PEHE from 0.57 to 1.28, entirely because one seed in five selected it
+and produced a near-degenerate fit. So :func:`applicable_grid` drops candidates whose leaf
+size exceeds a quarter of the training rows, which is the point below which four leaves stop
+being possible. The grid stays identical across estimators, which is what the fairness rule
+actually requires; what varies is the dataset, and a dataset is allowed to rule out a
+configuration it cannot fit.
+
 Nothing selected here is ever reported. The validation split exists so that the test split
 stays untouched, and a number computed during selection is not a result.
 """
@@ -61,9 +85,10 @@ if TYPE_CHECKING:
     from itx.estimators.base import BaseUpliftEstimator
     from itx.types import Split
 
-#: Candidate leaf sizes. 5 is small enough for IHDP's 448 training rows to split at all,
-#: 60 is large enough to hold a 25,000-row fit back from memorising noise.
-MIN_CHILD_SAMPLES: tuple[int, ...] = (5, 20, 60)
+#: Candidate leaf sizes. 5 is small enough for IHDP's 448 training rows to split at all;
+#: 200 is heavy enough to hold the DR-learner's final stage back from chasing the variance
+#: of its own pseudo-outcome on a small dataset.
+MIN_CHILD_SAMPLES: tuple[int, ...] = (5, 20, 60, 200)
 
 #: Candidate tree widths.
 NUM_LEAVES: tuple[int, ...] = (15, 31)
@@ -79,6 +104,36 @@ GRID: tuple[BaseLearnerConfig, ...] = tuple(
 #: An estimator is built from a config and a seed, so one factory serves both the tuning
 #: loop and the final fit.
 type EstimatorFactory = Callable[[BaseLearnerConfig, int], BaseUpliftEstimator]
+
+
+#: A candidate needs room for at least this many leaves to be worth trying, so its leaf
+#: size may not exceed the training rows divided by this.
+MIN_LEAVES_AFFORDABLE = 4
+
+
+def applicable_grid(
+    n_train: int, grid: Sequence[BaseLearnerConfig] = GRID
+) -> tuple[BaseLearnerConfig, ...]:
+    """The candidates a training set of this size can actually fit.
+
+    Args:
+        n_train: Rows the candidates would be fitted on.
+        grid: Candidate configurations.
+
+    Returns:
+        The candidates whose leaf size leaves room for at least
+        :data:`MIN_LEAVES_AFFORDABLE` leaves. Never empty: if every candidate is too large
+        the smallest one is kept, because selecting from nothing is worse than selecting
+        from a bad option, and the degenerate-fit warning will catch the result.
+    """
+    ceiling = max(1, n_train // MIN_LEAVES_AFFORDABLE)
+    affordable = tuple(config for config in grid if config.min_child_samples <= ceiling)
+    if affordable:
+        return affordable
+    smallest = min(grid, key=lambda config: config.min_child_samples)
+    return tuple(
+        config for config in grid if config.min_child_samples == smallest.min_child_samples
+    )
 
 
 @dataclass(frozen=True, slots=True)
@@ -135,6 +190,7 @@ def select_config(
     if not grid:
         msg = "cannot select from an empty grid"
         raise ValueError(msg)
+    grid = applicable_grid(split.train.n_units, grid)
 
     validation = split.validation
     scores: list[float] = []

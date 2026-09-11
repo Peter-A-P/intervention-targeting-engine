@@ -228,3 +228,60 @@ def true_complex_effect(covariates: FloatArray) -> FloatArray:
     hinge: FloatArray = (covariates[:, 3] > 0.5).astype(np.float64)
     effect: FloatArray = covariates[:, 0] * covariates[:, 1] + 1.5 * hinge * covariates[:, 4]
     return effect
+
+
+def confounded(
+    n_units: int = 8_000,
+    *,
+    strength: float = 2.0,
+    seed: int = 0,
+    noise: float = 0.5,
+) -> UpliftDataset:
+    """Treatment assignment that depends on the covariates, like every observational dataset.
+
+    The other three generators randomise assignment, which makes them the right test for
+    whether an estimator recovers an effect and the wrong test for everything that exists
+    to handle confounding: the propensity model, the DR and R learners, and the policy-value
+    estimators in week 5. On randomised data a propensity model has nothing to find, so a
+    broken one looks exactly like a working one.
+
+    Here the same covariates drive both the outcome and the treatment, so the naive
+    difference in arm means is biased and an estimator has to do something about it. The
+    ``strength`` argument controls how far: at 0 assignment is a coin flip, and as it rises
+    the treated and control groups stop resembling each other until parts of the covariate
+    space contain only one arm and no method can help.
+
+    ``propensity`` is filled in with the true assignment probability. Nothing in the package
+    reads it for a fitted estimator unless asked, but it makes this the one dataset where an
+    estimated propensity can be scored against the right answer.
+
+    Args:
+        n_units: Rows to generate.
+        strength: How strongly the covariates drive assignment. 0 is randomised.
+        seed: Generator seed.
+        noise: Standard deviation of the outcome noise.
+
+    Returns:
+        The dataset, with ``true_effect`` and the true ``propensity`` filled in.
+    """
+    rng = np.random.default_rng(seed)
+    covariates = rng.normal(size=(n_units, len(FEATURES)))
+    # Assignment leans on x2 and x3, which also drive the baseline, so they confound; the
+    # effect is driven by x0 and x1, which do not, so the effect stays estimable.
+    propensity = _sigmoid(strength * (0.6 * covariates[:, 2] - 0.4 * covariates[:, 3]))
+    treatment = rng.binomial(1, propensity).astype(np.int64)
+    effects = true_heterogeneous_effect(covariates)
+    noise_draw = rng.normal(scale=noise, size=n_units)
+    outcome = _baseline(covariates) + treatment * effects + noise_draw
+
+    features = pl.DataFrame(
+        {column: covariates[:, index] for index, column in enumerate(FEATURES)}
+    )
+    return UpliftDataset(
+        name="synthetic-confounded",
+        features=features,
+        treatment=treatment,
+        outcome=outcome,
+        true_effect=effects,
+        propensity=propensity,
+    )

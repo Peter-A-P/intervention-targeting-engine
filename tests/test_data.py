@@ -13,6 +13,10 @@ import polars as pl
 import pytest
 
 from itx.data import synthetic
+from itx.data.acic import CATEGORICAL as ACIC_CATEGORICAL
+from itx.data.acic import N_REPLICATES as ACIC_REPLICATES
+from itx.data.acic import N_UNITS as ACIC_UNITS
+from itx.data.acic import load_acic, load_acic_replicates
 from itx.data.download import ChecksumMismatchError, fetch, human_bytes, sha256_of
 from itx.data.hillstrom import CATEGORICAL, FEATURES, load_hillstrom
 from itx.data.ihdp import N_REPLICATES, N_UNITS, load_ihdp, load_ihdp_replicates
@@ -281,3 +285,67 @@ class TestLoaders:
 
 def test_checksum_mismatch_is_its_own_error_type():
     assert issubclass(ChecksumMismatchError, RuntimeError)
+
+
+@pytest.mark.slow
+class TestAcic:
+    def test_it_loads_the_full_competition_sample(self):
+        data = load_acic(0)
+        assert data.n_units == ACIC_UNITS
+        assert len(data.feature_names) == 58
+        assert data.categorical == ACIC_CATEGORICAL
+        assert data.replicate == 0
+
+    def test_the_ground_truth_is_the_noiseless_surfaces(self):
+        # mu1 - mu0, not y1 - y0: differencing the noisy potential outcomes would put the
+        # outcome noise into the target twice and inflate every estimator's PEHE.
+        data = load_acic(0)
+        truth = data.require_true_effect()
+        assert truth.mean() == pytest.approx(2.128, abs=0.01)
+        assert truth.std() == pytest.approx(3.977, abs=0.01)
+
+    def test_the_observed_outcome_is_assembled_from_the_right_arm(self):
+        import polars as pl
+
+        from itx.data.download import fetch
+
+        data = load_acic(0)
+        raw = pl.read_csv(fetch("acic-zymu-1", quiet=True), infer_schema_length=None)
+        treated = data.treatment == 1
+        assert data.outcome[treated] == pytest.approx(raw["y1"].to_numpy()[treated])
+        assert data.outcome[~treated] == pytest.approx(raw["y0"].to_numpy()[~treated])
+
+    def test_the_assignment_is_confounded(self):
+        # The naive comparison should be well away from the truth, or the dataset is not
+        # testing anything the rest of the package exists for.
+        from itx.metrics.qini import ate
+
+        data = load_acic(0)
+        naive = ate(data.outcome, data.treatment)
+        assert abs(naive - data.require_true_effect().mean()) > 1.0
+
+    def test_the_propensity_is_not_claimed_to_be_known(self):
+        assert load_acic(0).propensity is None
+
+    def test_the_lettered_covariates_become_integer_codes(self):
+        data = load_acic(0)
+        for column in ACIC_CATEGORICAL:
+            values = sorted(set(data.features[column].to_list()))
+            assert values[0] == 0.0
+            assert values == [float(index) for index in range(len(values))]
+
+    def test_replicates_are_different_simulation_settings(self):
+        first = load_acic(0).require_true_effect().mean()
+        second = load_acic(1).require_true_effect().mean()
+        assert abs(first - second) > 0.5
+
+    def test_every_replicate_shares_the_same_covariates(self):
+        assert load_acic(0).features.equals(load_acic(3).features)
+
+    def test_it_yields_the_requested_number_of_replicates(self):
+        assert [d.replicate for d in load_acic_replicates(3)] == [0, 1, 2]
+
+    @pytest.mark.parametrize("replicate", [-1, ACIC_REPLICATES])
+    def test_an_out_of_range_replicate_is_an_error(self, replicate):
+        with pytest.raises(ValueError, match="replicate must be"):
+            load_acic(replicate)
