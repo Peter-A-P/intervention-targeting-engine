@@ -103,8 +103,17 @@ uv run ruff check . && uv run mypy
 Every organisation that spends money on people has to pick which people. A retention
 offer, an outreach call, a transaction pulled for manual fraud review, a clinical
 follow-up: the budget covers a fraction of the population, so somebody chooses the
-fraction. The normal way to choose is to rank everyone by risk and treat the top of the
-list.
+fraction.
+
+The last two look different from the first two and are the same problem. An analyst hour
+spent on a transaction is worth spending only if the review changes what happens to it,
+and most reviews do not: the blatant fraud is stopped by the automated rules anyway, and
+the clean transaction was never going to be a loss either way. A follow-up call after
+discharge is worth making only if it is the call that keeps the patient out of hospital,
+not when they would have been readmitted whatever anyone did, or were never going back in.
+In all four, the budget buys a fixed number of actions, and most of those actions land on
+people whose outcome was already settled. The normal way to choose who gets them is to
+rank everyone by risk and treat the top of the list.
 
 That is the wrong list. It is wrong in a way that is easy to miss, because it still
 produces a report that looks fine.
