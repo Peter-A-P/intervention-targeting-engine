@@ -1,0 +1,2047 @@
+[
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "s-learner",
+    "seed": 11,
+    "n_test": 279592,
+    "fit_seconds": 18.122,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.0029712585169804915
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.003121332349027529,
+        "low": 0.0023675458748692304,
+        "high": 0.0037268121789704903,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1940069272434217,
+        "low": 0.1525777080218028,
+        "high": 0.229668880302586,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05359826656492506,
+        "low": 0.035800283888539196,
+        "high": 0.06760980175274603,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.037016631152423096,
+        "low": 0.027272141442162716,
+        "high": 0.04561158400892053,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.029082335805120763,
+        "low": 0.022577517996300003,
+        "high": 0.03537555404590558,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.9419615457889046,
+        "low": 0.6408733249674904,
+        "high": 1.2073076870119053,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.0009014445941730672,
+        "low": 0.000831589901263543,
+        "high": 0.0033677245960606543,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "t-learner",
+    "seed": 11,
+    "n_test": 279592,
+    "fit_seconds": 20.965,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 31,
+      "validation_qini": 0.0026236655814722357
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0022877589475358805,
+        "low": 0.0015832535717501708,
+        "high": 0.0030125083674764418,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.17248404990233013,
+        "low": 0.13778291024454406,
+        "high": 0.20624347767194592,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.058810158875758245,
+        "low": 0.044940997669369334,
+        "high": 0.07164488452756324,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03344171707753976,
+        "low": 0.025062471042425868,
+        "high": 0.04135094156114127,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.025182363511809178,
+        "low": 0.01929913604908679,
+        "high": 0.03108581102556623,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.5136798716227295,
+        "low": 0.3573215603625287,
+        "high": 0.6559580061753008,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.007596404754988082,
+        "low": 0.006122530154608519,
+        "high": 0.009668946869019599,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "x-learner",
+    "seed": 11,
+    "n_test": 279592,
+    "fit_seconds": 41.431,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.0026945168918692617
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002821884170690476,
+        "low": 0.0020725924852253042,
+        "high": 0.0034510754919659255,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.18636536054366049,
+        "low": 0.15011385642603417,
+        "high": 0.2161514144241801,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.06195402829798191,
+        "low": 0.047305372558404044,
+        "high": 0.07591627761801614,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03784768895660218,
+        "low": 0.029114596302430854,
+        "high": 0.045795865187573254,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.027471676435049414,
+        "low": 0.021716182606942486,
+        "high": 0.03268509310261933,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.6858242786021697,
+        "low": 0.5078966530240654,
+        "high": 0.843034686729886,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.004664727765736665,
+        "low": 0.0035359490797825877,
+        "high": 0.007211079102352969,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "dr-learner",
+    "seed": 11,
+    "n_test": 279592,
+    "fit_seconds": 139.466,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 31,
+      "validation_qini": 0.0018615502877469686
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0025423677385792987,
+        "low": 0.0018559125090070055,
+        "high": 0.0033276142117656025,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.17908321159672483,
+        "low": 0.13815500087244925,
+        "high": 0.21406555078474876,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.054910378009313976,
+        "low": 0.04081001601059802,
+        "high": 0.06868522537040732,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03439355073768016,
+        "low": 0.025664008316473065,
+        "high": 0.043031750163944955,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.02580305583166896,
+        "low": 0.019372977325138156,
+        "high": 0.03250578060585559,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.5860254230619584,
+        "low": 0.3811072056424647,
+        "high": 0.7865828267168988,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.004668037224923447,
+        "low": 0.0033932061138828534,
+        "high": 0.007048008548360255,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "r-learner",
+    "seed": 11,
+    "n_test": 279592,
+    "fit_seconds": 33.633,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.0016170823646235923
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0028061586460356508,
+        "low": 0.0021182720686686793,
+        "high": 0.0034557642549755034,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1859285984684103,
+        "low": 0.14951735951070255,
+        "high": 0.222868860737336,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.06466480532935615,
+        "low": 0.05059180220229376,
+        "high": 0.07961522659527973,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.038616879729148346,
+        "low": 0.030222366933631336,
+        "high": 0.047089504125980744,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.027182720788931122,
+        "low": 0.021132442273635133,
+        "high": 0.032975170933895556,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.8880912321712451,
+        "low": 0.6665778868193545,
+        "high": 1.0892128637981056,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.0025715878753906248,
+        "low": 0.002257073937641177,
+        "high": 0.004893509069084611,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "outcome-ranking",
+    "seed": 11,
+    "n_test": 279592,
+    "fit_seconds": 12.425,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.002997472705483944
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0030588059937010663,
+        "low": 0.0023502396677051,
+        "high": 0.0037503857210358883,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1925000557729406,
+        "low": 0.15033585981257028,
+        "high": 0.22939361559118965,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05719618629762496,
+        "low": 0.04269926626353231,
+        "high": 0.07370879353268124,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03900631853340536,
+        "low": 0.02993130778123501,
+        "high": 0.04784943442597163,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.029190222379469444,
+        "low": 0.022578569810288353,
+        "high": 0.035452891811481646,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "random-200",
+    "seed": 11,
+    "n_test": 279592,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": 2.6077720389230346e-05,
+        "low": -0.00039984942717482375,
+        "high": 0.0004911646590106223,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.11456036347304163,
+        "low": 0.10349741259413268,
+        "high": 0.12659399388278314,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.010434778697032705,
+        "low": 0.0036356984613127984,
+        "high": 0.016369516275902777,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.010456659612635852,
+        "low": 0.006455125127516167,
+        "high": 0.014651962924385137,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.010434376751801606,
+        "low": 0.007407737474052016,
+        "high": 0.01322599882408172,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "s-learner",
+    "seed": 23,
+    "n_test": 279592,
+    "fit_seconds": 14.791,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.003088404948167203
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002898699247767673,
+        "low": 0.002276668666321555,
+        "high": 0.0035171968283690437,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.18836175410654593,
+        "low": 0.15332663645077532,
+        "high": 0.22384506409099425,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05448217339982314,
+        "low": 0.038424986707304674,
+        "high": 0.07091540468689705,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.039619281033074494,
+        "low": 0.0307982591939683,
+        "high": 0.047977383857848416,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.02930078198304671,
+        "low": 0.0237417925911476,
+        "high": 0.03521765860140194,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.9325620452160722,
+        "low": 0.6911453089395447,
+        "high": 1.1907743120634906,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.001454678958917397,
+        "low": 0.0014654246414217283,
+        "high": 0.0040107401490862195,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "t-learner",
+    "seed": 23,
+    "n_test": 279592,
+    "fit_seconds": 19.891,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 31,
+      "validation_qini": 0.0016498979512894352
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002151765670792209,
+        "low": 0.0013929643912214571,
+        "high": 0.002757928924741387,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.16926509059022052,
+        "low": 0.13482291595164114,
+        "high": 0.20101923767355007,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05011818416489486,
+        "low": 0.037089223962052234,
+        "high": 0.06399854866064549,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03461607875249459,
+        "low": 0.026787810194815232,
+        "high": 0.04191245396519662,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.026133728695838007,
+        "low": 0.02025542020603849,
+        "high": 0.03155894029359569,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.4531937610687255,
+        "low": 0.2856227789103093,
+        "high": 0.5990245348723156,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.008162214861944832,
+        "low": 0.006849668868315012,
+        "high": 0.010427698706703547,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "x-learner",
+    "seed": 23,
+    "n_test": 279592,
+    "fit_seconds": 29.564,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.0023930849031183372
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.003089518802494507,
+        "low": 0.002355226091676452,
+        "high": 0.0038084406891457073,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.19326948868646188,
+        "low": 0.1580479144907357,
+        "high": 0.22539387065403874,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.06328400232290832,
+        "low": 0.049566362859172174,
+        "high": 0.07887713592654742,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.04036775722792363,
+        "low": 0.03174785024649014,
+        "high": 0.04799159995764055,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.028338757241712642,
+        "low": 0.0223271166578118,
+        "high": 0.03437541200124668,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.8220856918903492,
+        "low": 0.6183461738977704,
+        "high": 1.0492150695548066,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.0027664276442809026,
+        "low": 0.0017203814788311366,
+        "high": 0.004846852643395047,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "dr-learner",
+    "seed": 23,
+    "n_test": 279592,
+    "fit_seconds": 100.832,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.0015254396782670926
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0025736949529377743,
+        "low": 0.0018005133729231994,
+        "high": 0.0033458650928523746,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.17992623040835704,
+        "low": 0.14500321613133246,
+        "high": 0.2153267927767152,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05723245603766805,
+        "low": 0.04290597828319731,
+        "high": 0.07324825391655054,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03893880844783576,
+        "low": 0.030401274191862886,
+        "high": 0.04742042291100635,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.026821970091993247,
+        "low": 0.021046327517859693,
+        "high": 0.0330946498678674,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.7360533414684071,
+        "low": 0.4997836618853211,
+        "high": 0.9573798079647556,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.003957883495007511,
+        "low": 0.0026337741331977143,
+        "high": 0.005993026454644849,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "r-learner",
+    "seed": 23,
+    "n_test": 279592,
+    "fit_seconds": 28.043,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.0011255066015451749
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0029991764047782614,
+        "low": 0.002193284636856863,
+        "high": 0.0037447300021345126,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.19091540769869159,
+        "low": 0.15597547287606392,
+        "high": 0.2218185013222689,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.06234905380152711,
+        "low": 0.04772611650848589,
+        "high": 0.07749331433177255,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.04183256613327349,
+        "low": 0.03331926815033513,
+        "high": 0.04988072801147884,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.02925470592479197,
+        "low": 0.02306370336316367,
+        "high": 0.03582285246000578,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.8338548597570495,
+        "low": 0.6331290995175572,
+        "high": 1.0485158632771239,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.0028247924482472406,
+        "low": 0.0022331485709379743,
+        "high": 0.005211369530554535,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "outcome-ranking",
+    "seed": 23,
+    "n_test": 279592,
+    "fit_seconds": 12.788,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.003017441340721799
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0031116484277590407,
+        "low": 0.0024631806420702604,
+        "high": 0.00378413333549253,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1939931414612622,
+        "low": 0.15791078713832862,
+        "high": 0.22910202903960317,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.052529930116971435,
+        "low": 0.03695816645383726,
+        "high": 0.06932353689735098,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03840620966277636,
+        "low": 0.02981717398565477,
+        "high": 0.047075779532746095,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.029647378509526257,
+        "low": 0.023987242376639042,
+        "high": 0.0353724196779648,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "random-200",
+    "seed": 23,
+    "n_test": 279592,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": 3.8589827814786e-06,
+        "low": -0.0004433719180098549,
+        "high": 0.00047125770897798097,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.11399405921800859,
+        "low": 0.10237731862263573,
+        "high": 0.12609510713198963,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.010486658677896386,
+        "low": 0.004159973063739399,
+        "high": 0.016095225490637126,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.01038918303428086,
+        "low": 0.0060962908499786915,
+        "high": 0.014686624689933238,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.010357929279988954,
+        "low": 0.007219637382235623,
+        "high": 0.013148392590484692,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "s-learner",
+    "seed": 37,
+    "n_test": 279592,
+    "fit_seconds": 14.603,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.0026898139579677903
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.003288066868401652,
+        "low": 0.0026507262539058173,
+        "high": 0.004024605526171968,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.19849087039381513,
+        "low": 0.1638259843314043,
+        "high": 0.23532188942531382,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05768103632676014,
+        "low": 0.0411957966704421,
+        "high": 0.07265420062151111,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.040335369975273816,
+        "low": 0.03262965856482951,
+        "high": 0.04953576453389358,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.029602798149534648,
+        "low": 0.023845404438096757,
+        "high": 0.03605356225422967,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 1.0355087561348468,
+        "low": 0.7587451274336425,
+        "high": 1.3015164225445939,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.0011815117719814595,
+        "low": 0.0010664792398528435,
+        "high": 0.003321733374358226,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "t-learner",
+    "seed": 37,
+    "n_test": 279592,
+    "fit_seconds": 13.36,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.001357682675573033
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0019266773465371105,
+        "low": 0.0013000486158912636,
+        "high": 0.0026330698839148966,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1633736528548506,
+        "low": 0.13306127581856553,
+        "high": 0.1932278409166194,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05332745148803,
+        "low": 0.04055298498487401,
+        "high": 0.0670186328845891,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.033664410761703345,
+        "low": 0.02581181627122038,
+        "high": 0.04250349469493707,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.023319731803051233,
+        "low": 0.018420564875842683,
+        "high": 0.028436926592273155,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.5477094768681281,
+        "low": 0.3820145323730937,
+        "high": 0.7292517443006311,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.006769920292080342,
+        "low": 0.00513561323715036,
+        "high": 0.008499337233887308,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "x-learner",
+    "seed": 37,
+    "n_test": 279592,
+    "fit_seconds": 32.279,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.0014385660857395757
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002063985146370853,
+        "low": 0.0012310860503161347,
+        "high": 0.0027624603031745363,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1670825618512067,
+        "low": 0.1358499258643208,
+        "high": 0.19722540558085572,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05627695786994333,
+        "low": 0.0425530456257522,
+        "high": 0.0687825618268598,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03384631009352965,
+        "low": 0.02588432937550973,
+        "high": 0.04131977029299596,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.02551198263365302,
+        "low": 0.020735046423556176,
+        "high": 0.03083063170949004,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.5783798894831735,
+        "low": 0.41163642946221735,
+        "high": 0.727827177618261,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.006527643889824368,
+        "low": 0.00516923952101528,
+        "high": 0.008590374602166358,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "dr-learner",
+    "seed": 37,
+    "n_test": 279592,
+    "fit_seconds": 98.998,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.001177660784426062
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002067586854785381,
+        "low": 0.001396287163423411,
+        "high": 0.002748982293523881,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.16707054827812473,
+        "low": 0.1321931589369513,
+        "high": 0.19801337655014395,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05548855650910206,
+        "low": 0.04048421348304464,
+        "high": 0.06977580173969325,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.033088724089695015,
+        "low": 0.02537081970653161,
+        "high": 0.04211747550769239,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.02600099197724219,
+        "low": 0.01989995257189143,
+        "high": 0.03218548000182472,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.6534822455425017,
+        "low": 0.41492167104680777,
+        "high": 0.8435739173286921,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.004395602248590855,
+        "low": 0.0032438127427173434,
+        "high": 0.006408912034142859,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "r-learner",
+    "seed": 37,
+    "n_test": 279592,
+    "fit_seconds": 27.343,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.001172464601090181
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002072792147737878,
+        "low": 0.0013643304884115167,
+        "high": 0.002731275443494002,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1673390656465171,
+        "low": 0.13324545049367234,
+        "high": 0.1978504836499255,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05260937283355069,
+        "low": 0.03811919873966191,
+        "high": 0.06633115695817184,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03417605513983546,
+        "low": 0.02659113982582007,
+        "high": 0.04308887090448138,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.025541271486955522,
+        "low": 0.020128106697154133,
+        "high": 0.031281122309443445,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.6645074853521193,
+        "low": 0.4557814702615368,
+        "high": 0.8393448996877269,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.004659264703951332,
+        "low": 0.0038364400858846956,
+        "high": 0.0071635207391024264,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "outcome-ranking",
+    "seed": 37,
+    "n_test": 279592,
+    "fit_seconds": 9.456,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.0031307110266725648
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.003228400891754266,
+        "low": 0.0026024995347872074,
+        "high": 0.00398035987261309,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.19711077155299223,
+        "low": 0.16222467633274723,
+        "high": 0.23425551407743972,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.06259919575532552,
+        "low": 0.04662887138200057,
+        "high": 0.07884216146974857,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.04015052753260037,
+        "low": 0.030671516835604432,
+        "high": 0.04919224308234606,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.030419358555279413,
+        "low": 0.02452699799777585,
+        "high": 0.03707992503378814,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "random-200",
+    "seed": 37,
+    "n_test": 279592,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": 8.074052432419422e-06,
+        "low": -0.0004584558659416662,
+        "high": 0.00043278043589262615,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.11411899002912942,
+        "low": 0.10199343639955462,
+        "high": 0.1251066409258401,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.01063736211778365,
+        "low": 0.004881873965487734,
+        "high": 0.015843052115381357,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.010512347723496353,
+        "low": 0.006821624970940313,
+        "high": 0.014627935540860094,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.010449323380680648,
+        "low": 0.007611701232187159,
+        "high": 0.013258246862547939,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "s-learner",
+    "seed": 53,
+    "n_test": 279592,
+    "fit_seconds": 14.732,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.002336464494578888
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.003288706998886372,
+        "low": 0.002484709984721176,
+        "high": 0.0039800170893535295,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1985402616183764,
+        "low": 0.157101664712619,
+        "high": 0.23839931943977904,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05688787856486999,
+        "low": 0.03868647405450382,
+        "high": 0.07042802104292485,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.040642264778033704,
+        "low": 0.02976386214953734,
+        "high": 0.049781426299920696,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.03074770369142843,
+        "low": 0.02359480279901902,
+        "high": 0.03723258844087026,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 1.0800973636368179,
+        "low": 0.7712608351995164,
+        "high": 1.3629173994158812,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.0012310871857767638,
+        "low": 0.0008294999896659921,
+        "high": 0.0036056431946712843,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "t-learner",
+    "seed": 53,
+    "n_test": 279592,
+    "fit_seconds": 16.703,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.0010957213757577218
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002822800712380694,
+        "low": 0.0021927958366597636,
+        "high": 0.0034787794794982918,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.18651303078953632,
+        "low": 0.15113592925854996,
+        "high": 0.22072109438701018,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.06417405475347873,
+        "low": 0.050059116742577764,
+        "high": 0.07761521974670652,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03901982165122364,
+        "low": 0.03032173382237996,
+        "high": 0.047251329046771096,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.02915810688632718,
+        "low": 0.023063993162808914,
+        "high": 0.034859082439843224,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.7509881089762939,
+        "low": 0.5710291478831865,
+        "high": 0.921977898875763,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.00403669884177723,
+        "low": 0.0031274584108178737,
+        "high": 0.00646443729077037,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "x-learner",
+    "seed": 53,
+    "n_test": 279592,
+    "fit_seconds": 35.726,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.0009183126895270545
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002385843476130939,
+        "low": 0.0015385766254911771,
+        "high": 0.0030956779431936137,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.17527186213854073,
+        "low": 0.1343800288459471,
+        "high": 0.2105801556256583,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05751344487568208,
+        "low": 0.04187544060656525,
+        "high": 0.07039254073681313,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.037294658441659356,
+        "low": 0.028205051636824328,
+        "high": 0.04526375268233022,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.02707247965082485,
+        "low": 0.020762291591522833,
+        "high": 0.0330305280071713,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.604071911887795,
+        "low": 0.40669551085705596,
+        "high": 0.7487956219247673,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.005786627407653688,
+        "low": 0.004560148181174226,
+        "high": 0.008261483042243185,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "dr-learner",
+    "seed": 53,
+    "n_test": 279592,
+    "fit_seconds": 113.038,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.0007472699784390972
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002632709087950694,
+        "low": 0.0017768361905992588,
+        "high": 0.003249161380416819,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.181613126056707,
+        "low": 0.13852219324871548,
+        "high": 0.21678479659986014,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.0582963858375212,
+        "low": 0.04306322050272207,
+        "high": 0.07015415466553279,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03544320228628581,
+        "low": 0.025342453000661794,
+        "high": 0.04473527098628434,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.026083485145310004,
+        "low": 0.018315273827712482,
+        "high": 0.03199520338922405,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.8281982388720757,
+        "low": 0.5592558059494471,
+        "high": 1.0104348326294723,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.0026526106408074723,
+        "low": 0.002431791473430643,
+        "high": 0.005437510864870262,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "r-learner",
+    "seed": 53,
+    "n_test": 279592,
+    "fit_seconds": 36.941,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 31,
+      "validation_qini": 0.0003421309365930396
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0027195726913875,
+        "low": 0.0018861530313762827,
+        "high": 0.0034183368791495163,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.18396524173728335,
+        "low": 0.14085292948844935,
+        "high": 0.21999725070119178,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.06391084096101055,
+        "low": 0.04875675024786367,
+        "high": 0.0773595002743063,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03810026718970999,
+        "low": 0.027673658451867575,
+        "high": 0.0471092626425439,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.027038409672470745,
+        "low": 0.020147317995498935,
+        "high": 0.03320158386479179,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.8279027367097044,
+        "low": 0.5943360946771986,
+        "high": 1.000117809790267,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.003316959535631344,
+        "low": 0.0025752188871593024,
+        "high": 0.00597882991244676,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "outcome-ranking",
+    "seed": 53,
+    "n_test": 279592,
+    "fit_seconds": 11.763,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 15,
+      "validation_qini": 0.002978978266561832
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.003224877794665862,
+        "low": 0.002431317003360176,
+        "high": 0.003984554966321483,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.1970242395095778,
+        "low": 0.15662224417662657,
+        "high": 0.23701208815807173,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.060196994182938,
+        "low": 0.04447294373513864,
+        "high": 0.07461864057626587,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.040988067824994756,
+        "low": 0.03072250632125019,
+        "high": 0.050772829395760284,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.030160218840907388,
+        "low": 0.02338728473859881,
+        "high": 0.03754913636726405,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "random-200",
+    "seed": 53,
+    "n_test": 279592,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": -1.086656082915829e-05,
+        "low": -0.00046916393298826486,
+        "high": 0.00043936052631184146,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.11359009473734098,
+        "low": 0.1016737479034359,
+        "high": 0.12521173599796429,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.010112007113933105,
+        "low": 0.003914378936214525,
+        "high": 0.016093852981073575,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.010168272055118095,
+        "low": 0.0060089302944169145,
+        "high": 0.014230042911426414,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.010287704758513093,
+        "low": 0.007419657591379947,
+        "high": 0.013170699768412446,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "s-learner",
+    "seed": 71,
+    "n_test": 279592,
+    "fit_seconds": 18.504,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 31,
+      "validation_qini": 0.002532167325591017
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.003206691521896219,
+        "low": 0.0025199577007951144,
+        "high": 0.0037764522990478403,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.19626002035948234,
+        "low": 0.1574063403867479,
+        "high": 0.2255824685961904,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05547013718578325,
+        "low": 0.03953519251421963,
+        "high": 0.06832975057466545,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03861402797156793,
+        "low": 0.028669745937255617,
+        "high": 0.04626528773824524,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.029492417078303093,
+        "low": 0.0228829887996541,
+        "high": 0.034960809697710836,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.959726839585986,
+        "low": 0.7132829443139719,
+        "high": 1.1876655105624239,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.001041667580418812,
+        "low": 0.0009507559998044302,
+        "high": 0.0033377846759333864,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "t-learner",
+    "seed": 71,
+    "n_test": 279592,
+    "fit_seconds": 20.551,
+    "selection": {
+      "min_child_samples": 5,
+      "num_leaves": 31,
+      "validation_qini": 0.002296149907477568
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0020407413584304307,
+        "low": 0.0014204095032759568,
+        "high": 0.0026329842058245507,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.16621471518869116,
+        "low": 0.1358557054572237,
+        "high": 0.19253087866656834,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.05582635319940207,
+        "low": 0.04255064266613899,
+        "high": 0.06745331069544357,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03249502324650366,
+        "low": 0.02459001313594539,
+        "high": 0.038993054634111096,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.024407241879412053,
+        "low": 0.019139706645606023,
+        "high": 0.029096234127046816,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.4798758984450206,
+        "low": 0.33499852638797484,
+        "high": 0.6009557073090003,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.00787830575297007,
+        "low": 0.006555156055198055,
+        "high": 0.009874337182243117,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "x-learner",
+    "seed": 71,
+    "n_test": 279592,
+    "fit_seconds": 36.737,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 31,
+      "validation_qini": 0.0020558663510051173
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002341679302404905,
+        "low": 0.001609097554029742,
+        "high": 0.0030554394995675298,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.17391780966891382,
+        "low": 0.14250824109136462,
+        "high": 0.20175631233407915,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.053315607887684024,
+        "low": 0.04031100429186794,
+        "high": 0.06653466096939568,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03484430345748346,
+        "low": 0.026936374715121437,
+        "high": 0.04218141079267364,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.024756532108243356,
+        "low": 0.019334438704897514,
+        "high": 0.029956570505761455,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.5320806661748868,
+        "low": 0.3768071940351741,
+        "high": 0.6938125358074423,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.006572169999385218,
+        "low": 0.00505796584396736,
+        "high": 0.00846395345764309,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "dr-learner",
+    "seed": 71,
+    "n_test": 279592,
+    "fit_seconds": 133.872,
+    "selection": {
+      "min_child_samples": 60,
+      "num_leaves": 15,
+      "validation_qini": 0.0013504297739032334
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.002425248721312484,
+        "low": 0.001782147777187973,
+        "high": 0.003039299325464738,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.17605902406454627,
+        "low": 0.14421920549035006,
+        "high": 0.20524830982858677,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.053265792171208026,
+        "low": 0.040245338040979066,
+        "high": 0.06617732640372424,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.036110244079672255,
+        "low": 0.02842922018356668,
+        "high": 0.04331067537494556,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.02678448118547265,
+        "low": 0.021191376318529652,
+        "high": 0.03156737641620954,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.6752783647622114,
+        "low": 0.513592349743865,
+        "high": 0.8604445890706988,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.003955194056335936,
+        "low": 0.002813290822224096,
+        "high": 0.0060124353489866824,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "r-learner",
+    "seed": 71,
+    "n_test": 279592,
+    "fit_seconds": 33.785,
+    "selection": {
+      "min_child_samples": 200,
+      "num_leaves": 15,
+      "validation_qini": 0.001524903809811854
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0025107709982986745,
+        "low": 0.0017927363231176377,
+        "high": 0.0032288773640118803,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.17834406970123445,
+        "low": 0.1477143502065887,
+        "high": 0.2064005574514023,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.04930650168589243,
+        "low": 0.03632004654405007,
+        "high": 0.06261003734031025,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.035521002944982116,
+        "low": 0.02795198284046888,
+        "high": 0.04185055831396516,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.0264600680329196,
+        "low": 0.021630299797068,
+        "high": 0.03144419412284426,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_slope": {
+        "value": 0.6529521683845058,
+        "low": 0.45008647434866855,
+        "high": 0.8158119792437847,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "calibration_error": {
+        "value": 0.0042769156698837145,
+        "low": 0.0030164485047918643,
+        "high": 0.006595347534593037,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "outcome-ranking",
+    "seed": 71,
+    "n_test": 279592,
+    "fit_seconds": 10.61,
+    "selection": {
+      "min_child_samples": 20,
+      "num_leaves": 15,
+      "validation_qini": 0.00295723415130846
+    },
+    "metrics": {
+      "qini": {
+        "value": 0.0030503393289846824,
+        "low": 0.0023256956878760222,
+        "high": 0.0036737238097353754,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.19234818924807065,
+        "low": 0.15458028132398383,
+        "high": 0.2245189025640685,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.055310228303254216,
+        "low": 0.04201268665683422,
+        "high": 0.06846829242620078,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.03999825444159624,
+        "low": 0.030210708186895998,
+        "high": 0.04806778782688004,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.028070125338204216,
+        "low": 0.021698940403326508,
+        "high": 0.034391366158508546,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  },
+  {
+    "dataset": "criteo-10pct-visit",
+    "estimator": "random-200",
+    "seed": 71,
+    "n_test": 279592,
+    "fit_seconds": 0.0,
+    "selection": null,
+    "metrics": {
+      "qini": {
+        "value": 1.3844017640652377e-05,
+        "low": -0.00048096943170773817,
+        "high": 0.0005531696965583875,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "auuc": {
+        "value": 0.11423779041727912,
+        "low": 0.10137325527122887,
+        "high": 0.1282337234227904,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@10%": {
+        "value": 0.010413343884907566,
+        "low": 0.005463026666249363,
+        "high": 0.015583495641818226,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@20%": {
+        "value": 0.010368054818172151,
+        "low": 0.006542383802798455,
+        "high": 0.014501078010939326,
+        "level": 0.95,
+        "n_resamples": 200
+      },
+      "uplift@30%": {
+        "value": 0.010442727190631646,
+        "low": 0.0076707244101420075,
+        "high": 0.01332957467626548,
+        "level": 0.95,
+        "n_resamples": 200
+      }
+    }
+  }
+]

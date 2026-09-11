@@ -150,8 +150,8 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 | 1 | Sep 7 - 13 | Repo scaffold (`uv`, `ruff`, `mypy --strict`, `pytest`, CI); data loaders with checksums for Hillstrom and IHDP; `UpliftEstimator` protocol; S-learner end to end on Hillstrom | **Done 2026-09-10.** Ruff, `mypy --strict` and 161 tests green (152 of them needing no download); Qini curves plotted for both datasets; results table generated into the README; ahead of plan: PEHE and ATE error (week 3) landed early because the IHDP loader is untestable without them |
 | 2 | Sep 14 - 20 | T and X learners; metrics module (Qini, AUUC, uplift at k, bootstrap); random and outcome-ranking baselines; synthetic-data tests | **Done 2026-09-10.** Three estimators with intervals on Hillstrom and IHDP, both baselines beaten on both; the metrics module and baselines had already landed in week 1, so the week also bought the validation grid from section 4 and a controlled demonstration of which meta-learner wins when. 212 tests |
 | 3 | Sep 21 - 27 | DR and R learners via EconML/CausalML wrappers; IHDP and ACIC loaders; PEHE and ATE error; calibration plot | **Done 2026-09-11.** Five estimators with ground-truth metrics on IHDP and ACIC; calibration slope, calibration error and the decile plot; the CausalML build risk did not materialise, and the week instead turned up a real defect in the propensity model (change 14). 302 tests |
-| 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | `itx benchmark --all` runs end to end on a laptop overnight |
-| 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset | Policy value table with both baselines |
+| 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | **Done 2026-09-11**, except the Lenta table, which moves to week 5. Both loaders, both cards, `itx benchmark --all`, and a covariate-balance leak detector that caught two contaminated Lenta columns. The week's real cost was discovering the tuning protocol did not scale (change 30) and its real result was Criteo showing the outcome-ranking trap is conditional (change 32). 398 tests |
+| 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset; `itx diagnose`, the risk-decile table of change 32; the Lenta benchmark | Policy value table with both baselines |
 | 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; Dragonnet in PyTorch; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | Sensitivity section with numbers; Dragonnet in the table; write-up drafted |
 | 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; Azure Static Web Apps at targeting.peterparker.ca | Demo live, slider re-ranks |
 | 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | Definition of done all checked |
@@ -496,3 +496,27 @@ Criteo get a cheaper CI job that loads them, checks the row counts, the arm bala
 no post-treatment column reached the features, without refitting anything. That job answers
 "is the pipeline still correct", which is what CI can afford to ask; "are the numbers still the
 numbers" is answered locally against the committed results with `itx compare`.
+
+**32. Criteo says the outcome-ranking trap is conditional, and the README now says so**
+(week 4). Section 1 frames the project around the intervention list not being the risk list.
+On Criteo it is: outcome ranking scores a Qini of 0.0031 (0.0024, 0.0038) against the best
+estimator's 0.0032 (0.0025, 0.0038), and buys 0.0576 at a 10% budget against 0.0586, on
+279,592 held-out rows where the intervals are tight enough for a real gap to show. Uplift
+modelling buys nothing there. On ACIC the same baseline is worse than random by a factor of
+ten. Both are now reported side by side rather than the second being the headline and the
+first an inconvenience.
+
+The mechanism is measurable and makes the pair interpretable rather than contradictory.
+Absolute uplift is baseline risk times the relative effect, so risk ranking approximates
+uplift ranking whenever the spread in risk dominates the spread in the multiplier. Criteo's
+risk spans about 1,500x across deciles against a multiplier moving about 2x; Hillstrom's
+spans about 6x against a multiplier moving about 2.8x, and its outcome ranking lands about
+two thirds of the way; ACIC's effect runs against risk entirely. The claim the project can
+defend is therefore narrower than the one it started with and more useful: the two lists
+differ by an amount nobody can guess in advance and anybody can measure cheaply, and the cost
+of assuming they agree runs from zero to ten times worse than doing nothing.
+
+That decile table should become a command, since it decides whether the rest of the
+repository is worth running on a given problem and costs one outcome model. It belongs with
+the policy work in week 5 rather than bolted onto the week 4 loaders, and it is listed in
+section 6 there.

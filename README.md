@@ -7,12 +7,14 @@ goes to people who would have behaved the same way regardless, and this finds th
 shows the intervention list changing as the budget moves.
 
 **Status: week 4 of 8.** Loaders for all five datasets, and five estimators of the seven
-benchmarked on three of them. Lenta and Criteo have their loaders, their dataset cards and
-their findings below, but not yet their results tables: the first attempt at running them
-showed the tuning protocol did not scale to datasets this size, and the fix, along with the
-measurement showing it costs nothing, landed in the same commit as this sentence
-([docs/estimators.md](docs/estimators.md), PLAN.md change 30). The numbers below are real and
-reproducible; the table is not finished. Build plan: [PLAN.md](PLAN.md).
+benchmarked on four of them; Lenta's table is the one still missing. The numbers below are
+real and reproducible; the table is not finished. Build plan: [PLAN.md](PLAN.md).
+
+Criteo changed what this project claims. On 14 million randomised rows the outcome-ranking
+baseline, which is the thing the repository was built to catch out, matches every uplift model
+in the table. On ACIC the same baseline is ten times worse than random targeting. Both results
+are below, with the one-table diagnostic that says in advance which of the two situations you
+are in.
 
 ## Results
 
@@ -207,8 +209,75 @@ The volume test. Twelve anonymous features, a 4.7% visit rate, arms split 85/15,
 rows that nothing here is small-sample noise.
 
 <!-- itx:table:criteo -->
-_Not generated yet. The loader, the card and the subsample checks below are done; the results table is week 5, after the tuning cap of PLAN.md change 30 made a run affordable._
+| Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% | Calibration slope | Calibration error |
+|---|---|---|---|---|---|---|---|
+| `s-learner` | 0.0032 (0.0025, 0.0038) | 0.1951 (0.1568, 0.2306) | 0.0556 (0.0387, 0.0700) | 0.0392 (0.0298, 0.0478) | 0.0296 (0.0233, 0.0358) | 0.9900 (0.7151, 1.2500) | 0.0012 (0.0010, 0.0035) |
+| `t-learner` | 0.0022 (0.0016, 0.0029) | 0.1716 (0.1385, 0.2027) | 0.0565 (0.0430, 0.0695) | 0.0346 (0.0265, 0.0424) | 0.0256 (0.0200, 0.0310) | 0.5491 (0.3862, 0.7014) | 0.0069 (0.0056, 0.0090) |
+| `x-learner` | 0.0025 (0.0018, 0.0032) | 0.1792 (0.1442, 0.2102) | 0.0585 (0.0443, 0.0721) | 0.0368 (0.0284, 0.0445) | 0.0266 (0.0210, 0.0322) | 0.6445 (0.4643, 0.8125) | 0.0053 (0.0040, 0.0075) |
+| `dr-learner` | 0.0024 (0.0017, 0.0031) | 0.1768 (0.1396, 0.2099) | 0.0558 (0.0415, 0.0696) | 0.0356 (0.0270, 0.0441) | 0.0263 (0.0200, 0.0323) | 0.6958 (0.4737, 0.8917) | 0.0039 (0.0029, 0.0062) |
+| `r-learner` | 0.0026 (0.0019, 0.0033) | 0.1813 (0.1455, 0.2138) | 0.0586 (0.0443, 0.0727) | 0.0376 (0.0292, 0.0458) | 0.0271 (0.0212, 0.0329) | 0.7735 (0.5600, 0.9586) | 0.0035 (0.0028, 0.0060) |
+| `outcome-ranking` | 0.0031 (0.0024, 0.0038) | 0.1946 (0.1563, 0.2309) | 0.0576 (0.0426, 0.0730) | 0.0397 (0.0303, 0.0486) | 0.0295 (0.0232, 0.0360) | - | - |
+| `random-200` | 0.0000 (-0.0005, 0.0005) | 0.1141 (0.1022, 0.1262) | 0.0104 (0.0044, 0.0160) | 0.0104 (0.0064, 0.0145) | 0.0104 (0.0075, 0.0132) | - | - |
+
+Selected on the validation split from the committed grid:
+
+- `s-learner`: min_child_samples=200, num_leaves=15 (3 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
+- `t-learner`: min_child_samples=60, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
+- `x-learner`: min_child_samples=200, num_leaves=31 (4 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds)
+- `dr-learner`: min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds)
+- `r-learner`: min_child_samples=200, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
+- `outcome-ranking`: min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=200, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:criteo -->
+
+**This is the dataset where the outcome-ranking trap does not happen, and it is the most
+useful result in the project.**
+
+| Criteo | Qini | uplift at a 10% budget |
+|---|---|---|
+| `s-learner` | 0.0032 (0.0025, 0.0038) | 0.0556 |
+| `r-learner` | 0.0026 (0.0019, 0.0033) | 0.0586 |
+| **Outcome ranking** | **0.0031 (0.0024, 0.0038)** | **0.0576** |
+| Random targeting | 0.0000 (-0.0005, 0.0005) | 0.0104 |
+
+On 279,592 held-out rows, ranking by predicted risk matches every uplift model in the table.
+Its interval overlaps the best estimator's almost exactly. Compare that with ACIC above, where
+the same baseline has a *negative* Qini and buys a tenth of what picking names out of a hat
+buys. Same baseline, same code, opposite verdict.
+
+The reason is visible in one table. Ranking the test rows by predicted risk and reading the
+two arms inside each decile:
+
+| Decile by risk | Control rate | Treated rate | Absolute uplift | Ratio |
+|---|---|---|---|---|
+| 1 (highest risk) | 0.3166 | 0.3743 | **+0.0577** | 1.18 |
+| 2 | 0.0571 | 0.0684 | +0.0113 | 1.20 |
+| 3 | 0.0172 | 0.0192 | +0.0020 | 1.12 |
+| ... | | | | |
+| 10 (lowest risk) | 0.0002 | 0.0007 | +0.0004 | 2.82 |
+
+Baseline risk falls by a factor of about 1,500 from the top decile to the bottom. The
+multiplier the treatment applies moves by a factor of about 2, and not even reliably. So the
+absolute uplift, which is risk times multiplier, is almost entirely decided by the risk.
+Ranking by risk and ranking by uplift are nearly the same ordering, and the trap cannot spring.
+
+That gives a rule worth more than the trap on its own: **risk ranking works when the spread in
+baseline risk dwarfs the spread in relative effect, and fails when it does not.** The three
+datasets are three points on that spectrum, and the same decile table separates them:
+
+| | Risk spread across deciles | Uplift follows risk | Outcome ranking |
+|---|---|---|---|
+| Criteo | about 1,500x | -0.60 | at parity with the best |
+| Hillstrom | about 6x | -0.24 | roughly two thirds of the way |
+| ACIC 2016 | effect runs against risk | positive | worse than random |
+
+So the honest claim this project can make is not "the intervention list is never the risk
+list". It is that the two lists differ by an amount you cannot guess in advance and can
+measure cheaply, and that the cost of assuming they agree runs from nothing to ten times worse
+than doing nothing. On a fraud queue or a clinical follow-up list, where the most at-risk
+cases are often the least movable, ACIC is the relevant picture. On an advertising set where
+the high-risk group is a hundred times more likely to act, Criteo is. Building an uplift model
+is worth it in the first case and close to pointless in the second, and a decile table like
+the one above says which one you are in before anybody fits a meta-learner.
 
 The table is the committed 10% stratified subsample, 1,397,958 rows. Stratifying on the arm
 crossed with both outcomes holds every cell at exactly a tenth of itself, so the subsample's
@@ -237,9 +306,14 @@ noncompliance question this project does not ask.
   told their own use of that dataset is permitted. See
   [docs/data/lenta.md](docs/data/lenta.md).
 - **The Criteo table is a 10% subsample**, 1,397,958 of 13,979,592 rows, drawn once with a
-  committed seed and stratified so the arm and event rates are preserved exactly. The full
-  file is fitted once for the headline number and the two are labelled differently
-  throughout. The reason is wall-clock time, not memory: see PLAN.md change 23.
+  committed seed and stratified so the arm and event rates are preserved exactly. The reason
+  is wall-clock time, not memory: see PLAN.md change 23. The headline fit on the full file is
+  not done yet.
+- **Hyperparameters are selected on at most 50,000 training rows**, with the winner then
+  fitted on all of them. That cap does not bind on Hillstrom, IHDP or ACIC. It changes which
+  configuration Criteo picks and, measured on Hillstrom, changes what the pick is worth by
+  -0.00015 in Qini against intervals about 0.004 wide. PLAN.md change 30 and
+  [docs/estimators.md](docs/estimators.md) carry the numbers and the prediction they refuted.
 
 ## Install and run
 

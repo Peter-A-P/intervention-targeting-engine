@@ -7,6 +7,10 @@ at week 6 (PLAN.md section 6). Every claim here has a number behind it from
 Estimators in the table so far: S, T, X, DR and R learners. Baselines: outcome ranking,
 random targeting.
 
+The single most useful thing in this file is in the outcome-ranking section: risk ranking
+matches every uplift model on Criteo and is worse than random on ACIC, and one decile table
+says in advance which of those a given problem is.
+
 ---
 
 ## Which learner wins depends on the shape of the problem, and it is checkable
@@ -402,6 +406,62 @@ available return on the table, it is ten times worse than not thinking about it 
 is what happens when the people most likely to have the outcome are the people least
 susceptible to the intervention, which is the normal shape of a fraud queue or a clinical
 follow-up list and the reason this project exists.
+
+**On Criteo it is as good as everything else, and that is the result that makes the rest of
+this file mean something.** 14 million randomised rows, 279,592 of them held out:
+
+| Criteo | Qini | Uplift at 10% |
+|---|---|---|
+| `s-learner` | 0.0032 (0.0025, 0.0038) | 0.0556 |
+| `r-learner` | 0.0026 (0.0019, 0.0033) | 0.0586 |
+| Outcome ranking | **0.0031 (0.0024, 0.0038)** | **0.0576** |
+| Random targeting | 0.0000 (-0.0005, 0.0005) | 0.0104 |
+
+The baseline this repository exists to catch out is statistically indistinguishable from the
+best estimator in the table, on the largest and best-powered dataset here, where the intervals
+are tight enough that a real gap would show. Uplift modelling buys nothing on Criteo.
+
+**Why, and the rule that falls out of it.** Rank the test rows by predicted risk and read both
+arms inside each decile:
+
+| Decile by risk | Control | Treated | Absolute uplift | Ratio |
+|---|---|---|---|---|
+| 1 (highest) | 0.3166 | 0.3743 | **+0.0577** | 1.18 |
+| 2 | 0.0571 | 0.0684 | +0.0113 | 1.20 |
+| 3 | 0.0172 | 0.0192 | +0.0020 | 1.12 |
+| 4 | 0.0095 | 0.0078 | -0.0016 | 0.83 |
+| 5 | 0.0043 | 0.0050 | +0.0006 | 1.15 |
+| 10 (lowest) | 0.0002 | 0.0007 | +0.0004 | 2.82 |
+
+Baseline risk falls by about 1,500x from the top decile to the bottom. The multiplier moves by
+about 2x, and not monotonically. Absolute uplift is risk times multiplier, so on this data it
+is essentially risk, and the two rankings coincide.
+
+Hillstrom is the same table with a much flatter risk column: 0.1695 down to 0.0275, a spread
+of about 6x, against a ratio moving from 0.96 to 2.68. There the multiplier's variation is
+comparable to the risk's, so risk ranking captures part of the ordering and not all of it,
+which is exactly the two-thirds-of-the-way result above. Correlation between decile risk and
+realised uplift is -0.60 on Criteo and -0.24 on Hillstrom.
+
+So the three datasets are three points on one spectrum, and the honest generalisation is
+narrower and more useful than "risk ranking is a trap":
+
+| | Risk spread | Uplift follows risk | Outcome ranking lands at |
+|---|---|---|---|
+| Criteo | about 1,500x | -0.60 | parity with the best estimator |
+| Hillstrom | about 6x | -0.24 | about two thirds of the way |
+| ACIC 2016 | effect runs against risk | positive | worse than random targeting |
+
+**Ranking by risk approximates ranking by uplift exactly when the spread in baseline risk
+dwarfs the spread in relative effect.** That is checkable before any meta-learner is fitted,
+from one decile table on a randomised sample, and it decides whether the rest of this
+repository is worth running on a given problem. Saying so costs the project its simplest
+headline and is the finding most likely to be of use to somebody.
+
+A caveat that belongs next to it: the decile table is only available where assignment is
+random or credibly ignorable. On IHDP, where it is neither, the same table would be measuring
+confounding rather than effect heterogeneity, which is the first of the two failure modes
+described above. The diagnostic inherits every assumption the estimators do.
 
 **Why it gets no PEHE or calibration.** Its scores are predicted outcomes, on the outcome's
 scale, not effects. Running them through PEHE produces a large number that reads like a bad
