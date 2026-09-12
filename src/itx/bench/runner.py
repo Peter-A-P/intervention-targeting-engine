@@ -26,6 +26,7 @@ from itx.bench.seeds import (
     SEEDS,
     TIE_SEED,
     bootstrap_seed_for,
+    nuisance_seed_for,
 )
 from itx.data.acic import load_acic
 from itx.data.criteo import load_criteo
@@ -46,7 +47,7 @@ from itx.estimators.r_learner import RLearner
 from itx.estimators.s_learner import SLearner
 from itx.estimators.t_learner import TLearner
 from itx.estimators.x_learner import XLearner
-from itx.metrics.baselines import random_ranking_reference
+from itx.metrics.baselines import random_ranking_references
 from itx.metrics.bootstrap import (
     DEFAULT_LEVEL,
     DEFAULT_RESAMPLES,
@@ -56,6 +57,7 @@ from itx.metrics.bootstrap import (
 from itx.metrics.calibration import calibration_error, calibration_slope
 from itx.metrics.ground_truth import ate_error, pehe
 from itx.metrics.qini import ranking_metrics
+from itx.policy.policy_value import Nuisances, fit_nuisances, policy_metrics
 
 if TYPE_CHECKING:
     from itx.types import FloatArray, IntArray, Split, UpliftDataset
@@ -178,6 +180,23 @@ class BenchmarkRow:
         return self.metrics.get(metric)
 
 
+def nuisances_for(split: Split) -> Nuisances:
+    """The policy-value referee for one split: fitted on train, applied to test.
+
+    One per split rather than one per row. The propensity and the two outcome models are
+    properties of the data, not of the estimator being scored, and fitting them separately
+    inside each row would score each estimator against a different referee
+    (:mod:`itx.policy.policy_value`).
+
+    Args:
+        split: The partition.
+
+    Returns:
+        Nuisances aligned with ``split.test``.
+    """
+    return fit_nuisances(split.train, split.test, seed=nuisance_seed_for(split.seed))
+
+
 def evaluate(
     estimator: BaseUpliftEstimator,
     split: Split,
@@ -187,6 +206,7 @@ def evaluate(
     level: float = DEFAULT_LEVEL,
     tie_seed: int = TIE_SEED,
     selection: Selection | None = None,
+    nuisances: Nuisances | None = None,
 ) -> BenchmarkRow:
     """Fit an estimator on the train split and measure it on the test split.
 
@@ -201,6 +221,9 @@ def evaluate(
         tie_seed: Seed for tie-breaking inside rankings.
         selection: The selection that produced this estimator's configuration, recorded on
             the row so the table says what was fitted rather than leaving it implied.
+        nuisances: The policy-value referee for this split. Fitted here if omitted, which
+            is convenient for a single call and wasteful in a sweep, so :func:`run` fits
+            it once per split and passes it to every row.
 
     Returns:
         The finished row.
@@ -215,6 +238,7 @@ def evaluate(
         _statistics(
             test,
             scores,
+            nuisances if nuisances is not None else nuisances_for(split),
             budgets=budgets,
             tie_seed=tie_seed,
             with_ground_truth=estimator.estimates_effect,
@@ -249,6 +273,7 @@ def random_reference_row(
     n_rankings: int = 200,
     level: float = DEFAULT_LEVEL,
     tie_seed: int = TIE_SEED,
+    nuisances: Nuisances | None = None,
 ) -> BenchmarkRow:
     """The random-targeting baseline, averaged over many rankings rather than fitted once.
 
@@ -262,20 +287,24 @@ def random_reference_row(
         n_rankings: Random rankings to draw.
         level: Nominal coverage.
         tie_seed: Seed for tie-breaking inside rankings.
+        nuisances: The policy-value referee for this split, fitted here if omitted.
 
     Returns:
         A row named ``random-200``, carrying the last drawn ranking as its scores.
     """
     test = split.test
-    metrics: dict[str, Estimate] = {}
-    for name in _metric_names_for(test, budgets):
-        metrics[name] = random_ranking_reference(
-            _one_metric_of_scores(test, name, budgets=budgets, tie_seed=tie_seed),
-            test.n_units,
-            n_rankings=n_rankings,
-            level=level,
-            seed=RANDOM_BASELINE_SEED + split.seed,
-        )
+    metrics: dict[str, Estimate] = random_ranking_references(
+        _metrics_of_scores(
+            test,
+            nuisances if nuisances is not None else nuisances_for(split),
+            budgets=budgets,
+            tie_seed=tie_seed,
+        ),
+        test.n_units,
+        n_rankings=n_rankings,
+        level=level,
+        seed=RANDOM_BASELINE_SEED + split.seed,
+    )
     rng = np.random.default_rng(RANDOM_BASELINE_SEED + split.seed)
     return BenchmarkRow(
         dataset=test.name,
@@ -358,9 +387,11 @@ def run(
     reused = 0
 
     for seed in seeds:
-        # Built only when this seed still has work. Splitting Lenta costs a minute, and a
-        # resumed run should not pay it for the seeds it is skipping past.
+        # Both built only when this seed still has work. Splitting Lenta costs a minute and
+        # its nuisance models cost more, and a resumed run should not pay either for the
+        # seeds it is skipping past.
         split: Split | None = None
+        nuisances: Nuisances | None = None
 
         for name in names:
             finished = already.get((name, seed))
@@ -374,6 +405,8 @@ def run(
 
             if split is None:
                 split = stratified_split(data, seed)
+            if nuisances is None:
+                nuisances = nuisances_for(split)
             step = time.perf_counter()
             factory = ESTIMATORS[name]
             selection = (
@@ -387,6 +420,7 @@ def run(
                 budgets=budgets,
                 n_resamples=n_resamples,
                 selection=selection,
+                nuisances=nuisances,
             )
             rows.append(row)
             done += 1
@@ -404,7 +438,11 @@ def run(
             if reference is None:
                 if split is None:
                     split = stratified_split(data, seed)
-                reference = random_reference_row(split, budgets=budgets)
+                if nuisances is None:
+                    nuisances = nuisances_for(split)
+                reference = random_reference_row(
+                    split, budgets=budgets, nuisances=nuisances
+                )
                 if on_row is not None:
                     on_row(reference)
             rows.append(reference)
@@ -477,6 +515,7 @@ def refit_seed(
 def _statistics(
     test: UpliftDataset,
     scores: FloatArray,
+    nuisances: Nuisances,
     *,
     budgets: Sequence[float],
     tie_seed: int,
@@ -491,6 +530,10 @@ def _statistics(
     effect on the outcome's scale. Calibration is dropped on the same condition as the
     second of those, and for the same reason: asking whether a risk score is the right size
     to be a treatment effect is not a question about the score.
+
+    The policy gains are computed for every row including the baselines, because what they
+    measure is what the ranking buys, and a ranking that is not an effect estimate still
+    buys something. That is the whole point of carrying the outcome-ranking baseline.
     """
     outcome, treatment = test.outcome, test.treatment
     truth = test.true_effect if with_ground_truth else None
@@ -502,6 +545,16 @@ def _statistics(
             scores[index],
             budgets=budgets,
             seed=tie_seed,
+        )
+        values.update(
+            policy_metrics(
+                outcome[index],
+                treatment[index],
+                scores[index],
+                nuisances.take(index),
+                budgets=budgets,
+                seed=tie_seed,
+            )
         )
         if with_calibration:
             values["calibration_slope"] = calibration_slope(
@@ -518,40 +571,40 @@ def _statistics(
     return statistics
 
 
-def _metric_names_for(test: UpliftDataset, budgets: Sequence[float]) -> list[str]:
-    """Names of the ranking metrics reported for a dataset.
-
-    Ground-truth metrics are deliberately absent: a random ranking has the same PEHE as
-    any other constant-free score vector, so averaging one over random draws would put a
-    meaningless number in the baseline row.
-    """
-    return ["qini", "auuc", *[_budget_key(budget) for budget in budgets]]
-
-
-def _one_metric_of_scores(
+def _metrics_of_scores(
     test: UpliftDataset,
-    metric: str,
+    nuisances: Nuisances,
     *,
     budgets: Sequence[float],
     tie_seed: int,
-) -> Callable[[FloatArray], float]:
-    """One metric as a function of a score vector, for the random-targeting reference.
+) -> Callable[[FloatArray], dict[str, float]]:
+    """Every baseline-comparable metric as a function of a score vector.
 
-    The sample is fixed here and the ranking is what varies, the exact opposite of a
-    bootstrap.
+    For the random-targeting reference, where the sample is fixed and the ranking is what
+    varies: the exact opposite of a bootstrap.
+
+    Ground-truth and calibration metrics are deliberately absent. A random ranking has the
+    same PEHE as any other score vector on the wrong scale, so averaging one over random
+    draws would put a meaningless number in the baseline row.
     """
 
-    def statistic(candidate: FloatArray) -> float:
-        return ranking_metrics(
+    def statistics(candidate: FloatArray) -> dict[str, float]:
+        values = ranking_metrics(
             test.outcome, test.treatment, candidate, budgets=budgets, seed=tie_seed
-        )[metric]
+        )
+        values.update(
+            policy_metrics(
+                test.outcome,
+                test.treatment,
+                candidate,
+                nuisances,
+                budgets=budgets,
+                seed=tie_seed,
+            )
+        )
+        return values
 
-    return statistic
-
-
-def _budget_key(budget: float) -> str:
-    """Metric name for a budget, for example ``uplift@20%``."""
-    return f"uplift@{budget:.0%}"
+    return statistics
 
 
 def metric_names(rows: Sequence[BenchmarkRow]) -> list[str]:

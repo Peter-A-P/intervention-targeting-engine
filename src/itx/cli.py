@@ -255,8 +255,9 @@ def _benchmark_one(
     from itx.bench.plots import plot_calibration, plot_qini_curves
     from itx.bench.runner import DATASETS, resamples_for, run
     from itx.bench.table import (
+        policy_table,
+        results_table,
         selected_configurations,
-        to_markdown,
         update_markdown_file,
         write_json,
     )
@@ -282,13 +283,16 @@ def _benchmark_one(
         completed=completed,
         on_row=bank,
     )
-    table = to_markdown(rows)
+    table = results_table(rows)
     chosen = selected_configurations(rows)
     if chosen:
         note = "Selected on the validation split from the committed grid:"
         table = "\n".join([table, note, "", chosen])
+    policy = policy_table(rows)
     typer.echo("")
     typer.echo(table)
+    if policy:
+        typer.echo(policy)
 
     json_path = results_dir / f"{dataset}.json"
     write_json(rows, json_path)
@@ -300,6 +304,8 @@ def _benchmark_one(
 
     if update_markdown_file(readme, dataset, table):
         typer.echo(f"results block updated: {readme}")
+    if policy and update_markdown_file(readme, f"{dataset}-policy", policy):
+        typer.echo(f"policy block updated: {readme}")
 
     if plot:
         first_seed = seed_values[0]
@@ -337,9 +343,10 @@ def report(
 ) -> None:
     """Redraw a results table from a finished run, without refitting anything."""
     from itx.bench.table import (
+        policy_table,
         read_json,
+        results_table,
         selected_configurations,
-        to_markdown,
         update_markdown_file,
     )
 
@@ -349,15 +356,20 @@ def report(
         raise typer.Exit(code=1)
 
     rows = read_json(path)
-    table = to_markdown(rows)
+    table = results_table(rows)
     chosen = selected_configurations(rows)
     if chosen:
         note = "Selected on the validation split from the committed grid:"
         table = "\n".join([table, note, "", chosen])
+    policy = policy_table(rows)
     typer.echo("")
     typer.echo(table)
+    if policy:
+        typer.echo(policy)
     if update_markdown_file(readme, dataset, table):
         typer.echo(f"results block updated: {readme}")
+    if policy and update_markdown_file(readme, f"{dataset}-policy", policy):
+        typer.echo(f"policy block updated: {readme}")
 
 
 @app.command("compare")

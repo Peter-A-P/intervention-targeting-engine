@@ -219,7 +219,29 @@ class PropensityModel:
         if self._model is None:
             msg = "propensity: fit before predicting"
             raise RuntimeError(msg)
-        return np.clip(self._raw(features), self.clip, 1.0 - self.clip)
+        return np.clip(self.predict_unclipped(features), self.clip, 1.0 - self.clip)
+
+    def predict_unclipped(self, features: pl.DataFrame) -> FloatArray:
+        """Model output before the bound is applied.
+
+        For callers that have to report what the clipping did. :meth:`predict` clips on the
+        way out, so a caller that only has that number cannot tell a propensity of 0.01
+        from one of 0.0001, and any count of clipped units built from it is always zero.
+
+        Args:
+            features: Feature matrix.
+
+        Returns:
+            One raw probability per row.
+
+        Raises:
+            RuntimeError: If called before :meth:`fit`, or on a dataset whose propensity is
+                known by design and therefore was never modelled.
+        """
+        if self._model is None:
+            msg = "propensity: fit before predicting, and only a fitted model has a raw output"
+            raise RuntimeError(msg)
+        return self._raw(features)
 
     def _out_of_fold(self, matrix: FloatArray, target: FloatArray) -> FloatArray:
         """Predict every training row from a model that was not shown it.

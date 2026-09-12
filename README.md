@@ -27,6 +27,16 @@ split from a grid that is identical for every estimator, and the test split is n
 touched until the numbers below are computed. There are no bare point estimates here by
 design: a Qini without an interval is treated in this repository as a defect.
 
+Each dataset carries two tables. The first is the ranking metrics: how good the ordering is.
+The second is **what each ranking buys**, which is the question a budget holder is actually
+asking. Its numbers are the extra outcome per head of the whole population from treating the
+top b% rather than treating nobody, estimated two ways: by inverse-probability weighting,
+which relies only on knowing how treatment was assigned, and by a doubly robust estimator,
+which adds outcome models and survives either one of the two being wrong. Both are reported
+because a disagreement between them is worth seeing. On a binary outcome a gain of 0.017
+means seventeen extra events per thousand people in the population, and at a budget of 100%
+the number is the average treatment effect.
+
 ### Hillstrom, 42,693 customers, randomised email campaign
 
 <!-- itx:table:hillstrom -->
@@ -49,6 +59,11 @@ Selected on the validation split from the committed grid:
 - `r-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds)
 - `outcome-ranking`: min_child_samples=200, num_leaves=31 (2 of 5 seeds), min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:hillstrom -->
+
+**What each ranking buys.**
+
+<!-- itx:table:hillstrom-policy -->
+<!-- itx:end:hillstrom-policy -->
 
 The outcome ranking is the ordinary way this job is done: model who is likely to respond,
 spend the budget from the top of that list. Its Qini interval contains zero, so on this
@@ -93,6 +108,20 @@ Selected on the validation split from the committed grid:
 - `r-learner`: min_child_samples=60, num_leaves=15 (3 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
 - `outcome-ranking`: min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:ihdp -->
+
+**What each ranking buys.**
+
+<!-- itx:table:ihdp-policy -->
+| Estimator | IPW gain at 10% | DR gain at 10% | IPW gain at 20% | DR gain at 20% | IPW gain at 30% | DR gain at 30% |
+|---|---|---|---|---|---|---|
+| `s-learner` | 1.7187 (-0.1976, 4.7082) | 0.2030 (-0.3699, 0.7049) | 3.5632 (-0.2197, 9.5374) | 1.0295 (0.0006, 2.2763) | 4.7288 (0.1931, 11.8471) | 1.5607 (0.4896, 2.9262) |
+| `t-learner` | 1.4916 (-0.1783, 4.8095) | 0.2627 (-0.2684, 0.6710) | 2.6797 (0.0485, 9.4154) | 0.5708 (-0.1205, 2.1799) | 7.2076 (0.7112, 15.1902) | 1.5599 (0.3319, 3.0994) |
+| `x-learner` | 0.8674 (-0.2321, 3.0907) | 0.2087 (-0.3856, 0.5935) | 2.1143 (0.1205, 5.0318) | 0.6860 (-0.0159, 1.1697) | 4.4602 (0.5047, 10.5713) | 1.1157 (0.2666, 1.8676) |
+| `dr-learner` | 1.3281 (-0.3865, 4.8262) | 0.2673 (-0.0358, 0.6035) | 3.1214 (-0.0152, 7.8435) | 0.7127 (0.0599, 1.1518) | 4.6005 (0.6226, 10.9085) | 0.9238 (0.2014, 1.7903) |
+| `r-learner` | 1.7822 (-0.2609, 4.7336) | 0.4317 (-0.0340, 0.7649) | 2.5409 (-0.2897, 8.0141) | 0.8280 (0.2038, 1.2858) | 4.3654 (-0.0626, 11.2947) | 1.1517 (0.4078, 1.8167) |
+| `outcome-ranking` | 1.6706 (-0.8145, 6.1431) | 0.3756 (-0.0438, 1.0499) | 3.4835 (-0.6902, 9.4589) | 0.8084 (0.2226, 1.6685) | 4.5607 (-0.4979, 12.7002) | 1.2868 (0.5625, 2.3125) |
+| `random-200` | 2.2266 (-0.2722, 7.9707) | 0.5154 (0.0215, 1.4131) | 4.4459 (-0.0230, 11.1432) | 1.0135 (0.2956, 2.0037) | 6.7272 (0.5701, 14.1585) | 1.5292 (0.6507, 2.6437) |
+<!-- itx:end:ihdp-policy -->
 
 The true average effect here is about 4.0, and PEHE is the per-unit error against an effect
 somebody wrote down, so lower is better and only the simulated datasets can report it. Which
@@ -143,6 +172,11 @@ Selected on the validation split from the committed grid:
 - `r-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
 - `outcome-ranking`: min_child_samples=5, num_leaves=31 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=60, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:acic -->
+
+**What each ranking buys.**
+
+<!-- itx:table:acic-policy -->
+<!-- itx:end:acic-policy -->
 
 This is where the trap is at its worst, and it is worth reading the two baseline rows
 against the estimators:
@@ -201,6 +235,11 @@ Selected on the validation split from the committed grid:
 - `r-learner`: min_child_samples=5, num_leaves=15 (3 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=200, num_leaves=31 (1 of 5 seeds)
 - `outcome-ranking`: min_child_samples=60, num_leaves=31 (2 of 5 seeds), min_child_samples=200, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds)
 <!-- itx:end:lenta -->
+
+**What each ranking buys.**
+
+<!-- itx:table:lenta-policy -->
+<!-- itx:end:lenta-policy -->
 
 **Nothing here beats random targeting, and that is the result.** Every Qini interval in the
 table above contains zero, for all five estimators and for both baselines. On the Qini they
@@ -285,6 +324,11 @@ Selected on the validation split from the committed grid:
 - `r-learner`: min_child_samples=200, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
 - `outcome-ranking`: min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=200, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:criteo -->
+
+**What each ranking buys.**
+
+<!-- itx:table:criteo-policy -->
+<!-- itx:end:criteo-policy -->
 
 **This is the dataset where the outcome-ranking trap does not happen, and it is the most
 useful result in the project.**

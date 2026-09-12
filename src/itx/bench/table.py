@@ -123,6 +123,48 @@ def to_markdown(
     return "\n".join(lines) + "\n"
 
 
+#: Prefix marking a metric as a realised policy value rather than a ranking metric.
+POLICY_PREFIX = "gain_"
+
+
+def results_table(rows: Sequence[BenchmarkRow], *, digits: int = 4) -> str:
+    """The ranking table: every metric except the policy gains.
+
+    Args:
+        rows: Rows for a single dataset.
+        digits: Decimal places.
+
+    Returns:
+        A markdown table.
+    """
+    return to_markdown(
+        rows,
+        metrics=[m for m in metric_names(rows) if not m.startswith(POLICY_PREFIX)],
+        digits=digits,
+    )
+
+
+def policy_table(rows: Sequence[BenchmarkRow], *, digits: int = 4) -> str:
+    """The policy-value table: what each ranking buys, and nothing else.
+
+    Its own block rather than six more columns on the results table, for the same reason
+    the results table is generated at all: a table nobody can read across is not reporting
+    anything. The two tables carry the same estimators in the same order, so a reader
+    compares them line for line.
+
+    Args:
+        rows: Rows for a single dataset.
+        digits: Decimal places.
+
+    Returns:
+        A markdown table, empty if these rows carry no policy metrics.
+    """
+    columns = [m for m in metric_names(rows) if m.startswith(POLICY_PREFIX)]
+    if not columns:
+        return ""
+    return to_markdown(rows, metrics=columns, digits=digits)
+
+
 def selected_configurations(rows: Sequence[BenchmarkRow]) -> str:
     """A markdown list of which configuration each estimator was given, and how often.
 
@@ -403,4 +445,7 @@ def _column_label(metric: str) -> str:
         "calibration_slope": "Calibration slope",
         "calibration_error": "Calibration error",
     }
+    if metric.startswith(POLICY_PREFIX):
+        estimator, _, budget = metric[len(POLICY_PREFIX) :].partition("@")
+        return f"{estimator.upper()} gain at {budget}"
     return labels.get(metric, metric)

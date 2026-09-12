@@ -595,3 +595,55 @@ tolerance. One limitation is real and is announced rather than worked around: a 
 from a checkpoint carries its metrics but not its per-unit scores, which are large and are not
 serialised, so a resumed run writes its table and skips its figures and says to run
 `itx figures`, which refits a single seed.
+**36. The reported policy number is the gain against treating nobody, not the level** (week
+5). Section 4 asks for "expected outcome under the policy", estimated by IPW and by a doubly
+robust estimator. Both estimators are here and both report that level on request, but what
+the results table carries is the difference between the policy's value and the value of
+treating nobody.
+
+The reason is variance, not taste. The level is dominated by the baseline outcome rate,
+which every policy on a dataset shares: on Hillstrom it is around 0.15 while the differences
+between policies are around 0.01, so bootstrap intervals on the levels overlap almost
+completely even where the differences between them are firm. In the difference, every unit
+the policy leaves alone cancels exactly and what is left is an estimate over the targeted set
+only. It is the same information with readable intervals, it is on the scale of outcome per
+head of population, and at a budget of 100% it is the average treatment effect, which is what
+the tests assert.
+
+It also sits next to `uplift@k` without duplicating it, and the difference between the two is
+worth knowing. `uplift@k` compares the arms inside the targeted prefix and divides by the arm
+counts in that prefix. The IPW gain divides by the arm probabilities in the population. Under
+a randomised design they agree only when the prefix happens to carry the population's treated
+share; the first is what a practitioner can compute without a propensity, the second is what
+is unbiased for the quantity that gets deployed.
+
+**37. The policy-value nuisance models are fitted once per split, not once per row** (week
+5). Not in section 5's package diagram, which is silent on where they live. The propensity
+and the two outcome models are properties of the split rather than of the estimator being
+scored, so `itx.bench.runner.nuisances_for` fits them once per seed and hands the same arrays
+to every row including both baselines. Fitting them inside each row would score each estimator
+against a different referee, and an estimator whose nuisance models happened to be optimistic
+would be rewarded for it. They are fitted on train and applied to test, so no cross-fitting
+arises: the rows being scored were never seen by the models scoring them.
+
+**38. The propensity diagnostics could not report clipping, and on IHDP that mattered** (week
+5). A defect, found by reading a diagnostic line that said something impossible.
+`PropensityModel.predict` clips on the way out, so the policy-value code built its
+`PropensityFit` from an already-clipped array and `n_clipped` counted the units whose clipped
+value differed from their clipped value: always zero. The overlap problem was invisible in
+the one place it had to be visible. `predict_unclipped` now exists and the fit is built from
+it.
+
+What it was hiding is the explanation of an entire table. IHDP's treatment assignment is
+observational and its propensity is estimated, and on the test split the raw values run down
+to 0.0007 with 17.3% of rows against the 0.01 bound. Those rows carry inverse weights of 100
+each, which is why IHDP's IPW policy gains have intervals spanning a factor of twenty while
+its DR gains do not. The number that explains the table was one line away from being printed
+and was being printed as a zero.
+
+**39. The random-targeting reference draws one set of rankings for every metric** (week 5).
+`random_ranking_references` replaces a loop that called the single-metric version once per
+metric. Numerically identical, because each of those calls rebuilt its generator from the
+same seed and therefore drew the same rankings; the results file is unchanged by it. What
+changes is that a thirteen-metric table stops drawing and sorting 2,600 rankings to look at
+200.

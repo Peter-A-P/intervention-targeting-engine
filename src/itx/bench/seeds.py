@@ -39,3 +39,22 @@ def bootstrap_seed_for(split_seed: int) -> int:
         A seed unique to that split.
     """
     return BOOTSTRAP_SEED + split_seed
+
+
+#: Base seed for the policy-value nuisance models. They are fitted once per split and shared
+#: by every estimator in that split's rows, so they need a seed of their own: reusing the
+#: split seed would tie the referee's models to a particular estimator's, and reusing the
+#: bootstrap seed would tie them to the resampling.
+NUISANCE_SEED = 5_150
+
+
+def nuisance_seed_for(split_seed: int) -> int:
+    """Seed for the nuisance models of a given split.
+
+    Args:
+        split_seed: The seed the split was made with.
+
+    Returns:
+        A seed unique to that split.
+    """
+    return NUISANCE_SEED + split_seed
