@@ -1,0 +1,234 @@
+"""The risk-decile diagnostic, on data built so that the right answer is known in advance.
+
+The table's job is to decide whether ranking by risk approximates ranking by uplift, so the
+tests build three populations where that question has a known answer and check that the
+verdict is the right one: an effect proportional to risk, an effect running against risk,
+and no effect at all. A diagnostic that cannot tell those three apart is worse than no
+diagnostic, because it would be consulted.
+
+The fourth test is the one that matters most, and it checks a refusal rather than an answer.
+It takes the same against-risk population, weakens the effect to a twentieth of its size, and
+requires the table to say it cannot tell. Announcing a direction from ten noisy bands is
+precisely the mistake this repository was built to demonstrate, so a diagnostic that made it
+would be worse than none.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import polars as pl
+import pytest
+
+from itx.estimators.baselines import OutcomeRanking
+from itx.metrics.bootstrap import Estimate
+from itx.metrics.risk_deciles import (
+    RiskDecileTable,
+    _rank_correlation,
+    risk_deciles,
+    risk_scores,
+)
+from itx.types import UpliftDataset
+
+
+def population(
+    n: int, *, effect: str, seed: int = 0, share: float = 0.5, strength: float = 1.0
+) -> UpliftDataset:
+    """A binary-outcome population whose risk and effect are related as asked.
+
+    ``driver`` sets the baseline risk. The three effect shapes are the three cases the
+    diagnostic exists to distinguish, and ``strength`` scales the effect down so that a
+    shape the table would resolve easily at full size can be made too faint to resolve.
+    """
+    rng = np.random.default_rng(seed)
+    driver = rng.uniform(0.0, 1.0, n)
+    noise = rng.normal(0.0, 0.3, n)
+    baseline = 0.02 + 0.6 * driver
+
+    if effect == "with-risk":
+        # A constant relative effect, so absolute uplift is proportional to risk.
+        uplift = strength * 0.4 * baseline
+    elif effect == "against-risk":
+        # The intervention helps the people least likely to have the outcome anyway.
+        uplift = strength * 0.3 * (1.0 - driver)
+    elif effect == "none":
+        uplift = np.zeros(n)
+    else:  # pragma: no cover - guarded by the callers
+        raise ValueError(effect)
+
+    treatment = (rng.random(n) < share).astype(np.int64)
+    probability = np.clip(baseline + treatment * uplift, 0.0, 1.0)
+    outcome = (rng.random(n) < probability).astype(np.float64)
+    return UpliftDataset(
+        name=f"synthetic-{effect}",
+        features=pl.DataFrame({"driver": driver, "noise": noise}),
+        treatment=treatment,
+        outcome=outcome,
+        propensity=np.full(n, share),
+        true_effect=uplift,
+    )
+
+
+def diagnose(
+    effect: str, n: int = 30_000, *, seed: int = 0, strength: float = 1.0, **kwargs
+) -> RiskDecileTable:
+    """Fit the diagnostic on one half of a population and measure it on the other."""
+    data = population(n, effect=effect, seed=seed, strength=strength)
+    half = n // 2
+    train = data.take(np.arange(half))
+    test = data.take(np.arange(half, n), name=data.name)
+    return risk_deciles(train, test, n_resamples=200, seed=seed, **kwargs)
+
+
+class TestTheThreeCases:
+    def test_an_effect_proportional_to_risk_is_called_agreement(self):
+        table = diagnose("with-risk")
+        assert table.correlation.low > 0.0
+        assert table.risk_dominates
+        assert "broadly agree" in table.verdict
+
+    def test_an_effect_running_against_risk_is_called_opposition(self):
+        table = diagnose("against-risk")
+        assert table.correlation.high < 0.0
+        assert "runs against risk" in table.verdict
+
+    def test_no_effect_at_all_is_called_undecidable(self):
+        table = diagnose("none")
+        assert not table.correlation.excludes_zero
+        assert "cannot tell" in table.verdict
+
+    def test_an_effect_too_faint_to_resolve_is_not_announced(self):
+        # The property the whole diagnostic rests on. This population's effect really does
+        # run against risk, at a twentieth of the size the test above uses, and the table
+        # has to decline to say so rather than report whichever ordering the noise left.
+        table = diagnose("against-risk", n=6_000, strength=0.05)
+        assert "cannot tell" in table.verdict
+
+
+class TestTheBands:
+    def test_the_bands_are_ordered_with_the_riskiest_first(self):
+        table = diagnose("with-risk")
+        risks = [band.predicted_risk for band in table.deciles]
+        assert risks == sorted(risks, reverse=True)
+        assert table.deciles[0].index == 0
+
+    def test_the_bands_partition_the_test_split(self):
+        table = diagnose("with-risk")
+        assert sum(band.n_units for band in table.deciles) == table.n_test
+        assert len(table.deciles) == 10
+
+    def test_the_bands_are_as_equal_as_they_divide(self):
+        table = diagnose("with-risk", n=30_001)
+        sizes = {band.n_units for band in table.deciles}
+        assert max(sizes) - min(sizes) <= 1
+
+    def test_a_different_number_of_bands_is_honoured(self):
+        table = diagnose("with-risk", bins=4)
+        assert len(table.deciles) == 4
+
+    def test_the_measured_risk_tracks_the_predicted_risk(self):
+        # If these came apart the model would be ranking on something other than risk, and
+        # every number below the table would be describing the wrong bands.
+        table = diagnose("with-risk")
+        assert table.deciles[0].control_rate > table.deciles[-1].control_rate
+
+    def test_a_constant_relative_effect_shows_as_a_flat_multiplier(self):
+        # The generator multiplies the baseline by 1.4 everywhere, so the spread in the
+        # multiplier should be small while the spread in risk is large. That gap is exactly
+        # what the verdict reads.
+        table = diagnose("with-risk")
+        assert table.risk_spread.value > 5.0
+        assert table.multiplier_spread.value < 2.0
+
+
+class TestTheRiskModel:
+    def test_it_is_fitted_on_the_control_rows_only(self):
+        # A risk score is a model of what happens when nobody intervenes. Fitting on
+        # everybody mixes the treated arm's elevated outcomes into the baseline, so its
+        # predictions sit above the real no-intervention rate.
+        data = population(8_000, effect="with-risk", seed=3)
+        train = data.take(np.arange(4_000))
+        test = data.take(np.arange(4_000, 8_000))
+
+        control_only = risk_scores(train, test, seed=0)
+        both_arms = OutcomeRanking(seed=0, fit_on="all")
+        both_arms.fit(train)
+        mixed = both_arms.predict_uplift(test.features)
+
+        # The control-only fit lands near the real no-intervention rate; the mixed fit sits
+        # above it, because it has averaged the treated arm's elevated outcomes in.
+        observed_baseline = float(test.outcome[test.treatment == 0].mean())
+        assert float(control_only.mean()) == pytest.approx(observed_baseline, abs=0.05)
+        assert float(mixed.mean()) > float(control_only.mean())
+
+    def test_it_returns_one_score_per_test_row(self):
+        data = population(2_000, effect="none", seed=1)
+        train = data.take(np.arange(1_000))
+        test = data.take(np.arange(1_000, 2_000))
+        assert risk_scores(train, test, seed=0).shape == (1_000,)
+
+
+class TestRefusals:
+    def test_fewer_than_two_bands_is_an_error(self):
+        data = population(400, effect="none")
+        with pytest.raises(ValueError, match="at least two bands"):
+            risk_deciles(data, data, bins=1, n_resamples=10)
+
+    def test_more_bands_than_rows_is_an_error(self):
+        data = population(400, effect="none")
+        tiny = data.take(np.arange(5))
+        with pytest.raises(ValueError, match="cannot cut 5 rows"):
+            risk_deciles(data, tiny, bins=10, n_resamples=10)
+
+
+class TestRankCorrelation:
+    def test_a_perfectly_ordered_pair_scores_one(self):
+        values = np.arange(10.0)
+        assert _rank_correlation(values, values) == pytest.approx(1.0)
+
+    def test_a_reversed_pair_scores_minus_one(self):
+        values = np.arange(10.0)
+        assert _rank_correlation(values, values[::-1]) == pytest.approx(-1.0)
+
+    def test_it_ignores_the_scale_and_reads_only_the_order(self):
+        risk = np.arange(10.0)
+        assert _rank_correlation(risk, np.exp(risk)) == pytest.approx(1.0)
+
+    def test_a_constant_input_scores_zero_rather_than_warning(self):
+        # SciPy returns NaN with a warning here. A band table where every band has the same
+        # uplift is an ordinary thing to measure and its answer is zero, not a warning.
+        assert _rank_correlation(np.arange(10.0), np.ones(10)) == pytest.approx(0.0)
+
+    def test_too_few_usable_bands_is_undefined(self):
+        assert np.isnan(_rank_correlation(np.array([1.0, 2.0]), np.array([1.0, 2.0])))
+
+    def test_bands_that_could_not_be_measured_are_dropped(self):
+        risk = np.array([1.0, 2.0, 3.0, 4.0, np.nan])
+        uplift = np.array([1.0, 2.0, 3.0, 4.0, 99.0])
+        assert _rank_correlation(risk, uplift) == pytest.approx(1.0)
+
+
+class TestRendering:
+    def test_the_markdown_has_a_row_per_band(self):
+        table = diagnose("with-risk", bins=5)
+        lines = table.to_markdown().strip().splitlines()
+        assert len(lines) == 7  # header, rule, five bands
+        assert lines[2].startswith("| 1 |")
+
+    def test_the_summary_carries_the_three_numbers_and_the_verdict(self):
+        table = diagnose("with-risk")
+        summary = table.summary()
+        for label in ("risk spread", "multiplier spread", "correlation"):
+            assert label in summary
+        assert table.verdict in summary
+
+    def test_a_band_with_no_control_events_reports_no_multiplier(self):
+        band = RiskDecileTable(
+            dataset="x",
+            n_test=10,
+            deciles=(),
+            risk_spread=Estimate(1.0, 1.0, 1.0),
+            multiplier_spread=Estimate(1.0, 1.0, 1.0),
+            correlation=Estimate(0.0, -1.0, 1.0),
+        )
+        assert not band.correlation.excludes_zero
+        assert "cannot tell" in band.verdict

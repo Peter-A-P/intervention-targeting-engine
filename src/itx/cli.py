@@ -450,6 +450,45 @@ def figures(
         typer.echo(f"figure: {calibration_path}")
 
 
+@app.command("diagnose")
+def diagnose(
+    dataset: Annotated[str, typer.Option(help="Dataset key to diagnose.")] = "hillstrom",
+    seed: Annotated[
+        int | None, typer.Option(help="Split seed; the first committed one if omitted.")
+    ] = None,
+    bins: Annotated[int, typer.Option(help="Bands to cut the population into.")] = 10,
+    resamples: Annotated[int, typer.Option(help="Bootstrap resamples.")] = 500,
+) -> None:
+    """Say whether uplift modelling is worth the work here, for the price of one model.
+
+    Cuts the population into bands of predicted risk and measures what the intervention did
+    in each. Whether ranking by risk approximates ranking by uplift is a property of the
+    data that varies enormously between problems, and this is the cheap way to find out
+    before fitting anything (PLAN.md change 32).
+    """
+    from itx.bench.runner import DATASETS
+    from itx.bench.seeds import SEEDS
+    from itx.data.splits import stratified_split
+    from itx.metrics.risk_deciles import risk_deciles
+
+    if dataset not in DATASETS:
+        typer.echo(f"unknown dataset {dataset!r}; known: {', '.join(sorted(DATASETS))}")
+        raise typer.Exit(code=1)
+
+    say = _printer()
+    split = stratified_split(DATASETS[dataset](), SEEDS[0] if seed is None else seed)
+    say(f"{dataset}: one outcome model on {split.train.n_units:,} training rows")
+    table = risk_deciles(
+        split.train, split.test, bins=bins, seed=split.seed, n_resamples=resamples
+    )
+
+    typer.echo("")
+    typer.echo(f"Risk bands on {table.dataset}, {table.n_test:,} test rows, band 1 riskiest")
+    typer.echo("")
+    typer.echo(table.to_markdown())
+    typer.echo(table.summary())
+
+
 @app.command("demo")
 def demo() -> None:
     """Build the static budget-slider demo. Arrives in week 7 (PLAN.md section 6)."""

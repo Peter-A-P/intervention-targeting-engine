@@ -647,3 +647,21 @@ metric. Numerically identical, because each of those calls rebuilt its generator
 same seed and therefore drew the same rankings; the results file is unchanged by it. What
 changes is that a thirteen-metric table stops drawing and sorting 2,600 rankings to look at
 200.
+
+**40. `itx diagnose` lives in `itx/metrics/risk_deciles.py`** (week 5). Section 5's package
+diagram has no home for it. It sits with the metrics rather than in the policy package
+because it measures a property of a dataset rather than allocating a budget, and
+`metrics/balance.py`, the covariate-balance leak detector, is already there on the same
+argument. It is what change 32 asked for: one outcome model, fitted on the control rows
+because that is what a churn or fraud score actually is, ten bands of predicted risk, and
+what the intervention did in each.
+
+Three summary numbers come out of it: the spread in baseline risk across bands, the spread
+in the relative effect, and the rank correlation between a band's risk and its uplift. The
+verdict reads the third. Every one of them carries a bootstrap interval drawn from the same
+resamples as the bands, and the two confident verdicts are gated on that interval rather than
+on the point estimate. That gate is not decoration: on a synthetic population whose effect
+runs against risk at a twentieth of full strength, the point estimate happily reports the
+right direction and the interval covers zero, and a diagnostic that announced a direction
+from ten noisy bands would be committing the exact error the rest of this repository exists
+to demonstrate. There is a test for it.
