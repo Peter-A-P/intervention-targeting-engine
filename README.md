@@ -415,7 +415,19 @@ uv run itx report  --dataset hillstrom   # redraw the table from results/, no fi
 uv run itx figures --dataset hillstrom   # redraw the figures, refitting only the first seed
 ```
 
-A third checks that a rerun still produces the committed numbers, which is what CI asserts
+Long runs bank every finished fit as they go, so an interruption costs one fit rather than
+the lot. A killed run leaves a checkpoint beside its results file, and `--resume` picks it up:
+
+```bash
+uv run itx benchmark --dataset lenta --resume
+```
+
+Resuming is opt-in rather than automatic, because a checkpoint written by an older version of
+this package looks exactly like one written by the current version, and nobody wants a results
+table whose rows came from two builds. A finished run deletes its checkpoint, so one on disk
+always means an interrupted run.
+
+A third command checks that a rerun still produces the committed numbers, which is what CI asserts
 after each scheduled benchmark. It is not a file diff: the results file records how long
 each fit took, and wall-clock time never reproduces, so a diff would fail every run for a
 reason that has nothing to do with the numbers.

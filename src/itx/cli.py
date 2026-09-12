@@ -16,7 +16,9 @@ import typer
 from itx import __version__
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Callable, Sequence
+
+    from itx.bench.runner import BenchmarkRow
 
 app = typer.Typer(
     name="itx",
@@ -45,6 +47,56 @@ def _printer() -> Callable[[str], None]:
         sys.stdout.flush()
 
     return say
+
+
+def checkpoint_path(results_dir: Path, dataset: str) -> Path:
+    """Where a run banks its finished rows.
+
+    Args:
+        results_dir: Where the final results file goes.
+        dataset: The dataset key.
+
+    Returns:
+        A sibling of the results file, distinguishable from it by name so that nobody
+        mistakes a half-finished run for a result. It is deleted when the run completes.
+    """
+    return results_dir / f"{dataset}.checkpoint.json"
+
+
+def _resume_from(
+    checkpoint: Path, dataset: str, *, resume: bool, say: Callable[[str], None]
+) -> Sequence[BenchmarkRow]:
+    """Rows to reuse from an interrupted run, and the warnings that go with them.
+
+    Resuming is opt-in rather than automatic. A checkpoint written by different code is
+    indistinguishable from one written by this code, and silently mixing the two would
+    produce a results table whose rows came from two versions of the package. Requiring
+    the flag puts that judgement with the person who knows whether anything changed.
+
+    Args:
+        checkpoint: The checkpoint file, which may not exist.
+        dataset: The dataset key, for the message.
+        resume: Whether the caller asked to resume.
+        say: Progress printer.
+
+    Returns:
+        The rows to reuse, empty unless resuming from a checkpoint that exists.
+    """
+    from itx.bench.table import read_json
+
+    if not checkpoint.is_file():
+        return ()
+    if not resume:
+        say(
+            f"note: {checkpoint} exists from an interrupted run and is being ignored. "
+            f"Pass --resume to reuse it, but only if nothing has changed since it was "
+            f"written; it will be overwritten as this run proceeds."
+        )
+        return ()
+
+    rows = read_json(checkpoint)
+    say(f"{dataset}: resuming, {len(rows)} rows from {checkpoint}")
+    return rows
 
 
 @app.callback(invoke_without_command=True)
@@ -151,6 +203,10 @@ def benchmark(
     readme: Annotated[
         Path, typer.Option(help="Markdown file whose results block is regenerated.")
     ] = DEFAULT_README,
+    resume: Annotated[
+        bool,
+        typer.Option(help="Reuse finished rows from an interrupted run's checkpoint."),
+    ] = False,
 ) -> None:
     """Fit, evaluate and report, with intervals and both baselines.
 
@@ -178,6 +234,7 @@ def benchmark(
             plot=plot,
             tune=tune,
             readme=readme,
+            resume=resume,
         )
 
 
@@ -192,6 +249,7 @@ def _benchmark_one(
     plot: bool,
     tune: bool,
     readme: Path,
+    resume: bool,
 ) -> None:
     """Run one dataset: fit, evaluate, then write the JSON, the table and the figures."""
     from itx.bench.plots import plot_calibration, plot_qini_curves
@@ -204,13 +262,25 @@ def _benchmark_one(
     )
     from itx.data.splits import stratified_split
 
+    say = _printer()
+    checkpoint = checkpoint_path(results_dir, dataset)
+    completed = _resume_from(checkpoint, dataset, resume=resume, say=say)
+    banked: list[BenchmarkRow] = list(completed)
+
+    def bank(row: BenchmarkRow) -> None:
+        """Append a finished row to the checkpoint, so an interruption costs one fit."""
+        banked.append(row)
+        write_json(banked, checkpoint)
+
     rows = run(
         dataset,
         estimators=estimator_keys,
         seeds=seed_values,
         n_resamples=resamples if resamples is not None else resamples_for(dataset),
         tune=tune,
-        progress=_printer(),
+        progress=say,
+        completed=completed,
+        on_row=bank,
     )
     table = to_markdown(rows)
     chosen = selected_configurations(rows)
@@ -224,13 +294,27 @@ def _benchmark_one(
     write_json(rows, json_path)
     typer.echo(f"per-seed results: {json_path}")
 
+    # The run finished, so the half-finished copy is no longer something anyone wants to
+    # resume from, and leaving it would make the next run print a stale warning.
+    checkpoint.unlink(missing_ok=True)
+
     if update_markdown_file(readme, dataset, table):
         typer.echo(f"results block updated: {readme}")
 
     if plot:
         first_seed = seed_values[0]
-        split = stratified_split(DATASETS[dataset](), first_seed)
         seed_rows = [row for row in rows if row.seed == first_seed]
+        # A row read back from a checkpoint carries its metrics but not its per-unit
+        # scores, which are large and are not serialised. The tables need the metrics and
+        # the figures need the scores, so a resumed run can write the first and not the
+        # second. Refitting one seed is what `itx figures` is for.
+        if any(row.scores.size == 0 for row in seed_rows):
+            typer.echo(
+                f"figures skipped: seed {first_seed} came from the checkpoint, which does "
+                f"not carry per-unit scores. Run 'itx figures --dataset {dataset}'."
+            )
+            return
+        split = stratified_split(DATASETS[dataset](), first_seed)
         qini_path = plot_qini_curves(seed_rows, split.test, figure_dir / f"qini-{dataset}.png")
         typer.echo(f"figure: {qini_path}")
         effect_rows = [row for row in seed_rows if "calibration_slope" in row.metrics]

@@ -151,7 +151,7 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 | 2 | Sep 14 - 20 | T and X learners; metrics module (Qini, AUUC, uplift at k, bootstrap); random and outcome-ranking baselines; synthetic-data tests | **Done 2026-09-10.** Three estimators with intervals on Hillstrom and IHDP, both baselines beaten on both; the metrics module and baselines had already landed in week 1, so the week also bought the validation grid from section 4 and a controlled demonstration of which meta-learner wins when. 212 tests |
 | 3 | Sep 21 - 27 | DR and R learners via EconML/CausalML wrappers; IHDP and ACIC loaders; PEHE and ATE error; calibration plot | **Done 2026-09-11.** Five estimators with ground-truth metrics on IHDP and ACIC; calibration slope, calibration error and the decile plot; the CausalML build risk did not materialise, and the week instead turned up a real defect in the propensity model (change 14). 302 tests |
 | 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | **Done 2026-09-12.** All five tables measured. Both loaders, both cards, `itx benchmark --all`, and a covariate-balance leak detector that caught two contaminated Lenta columns. The week's real cost was discovering the tuning protocol did not scale (change 30); its results were Criteo showing the outcome-ranking trap is conditional (change 32) and Lenta showing nothing at all (change 33). Not overnight, because this machine reboots itself nightly (change 34): the Criteo and Lenta runs are 50 minutes and 4h41m and both must start in the morning. 398 tests |
-| 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset; `itx diagnose`, the risk-decile table of change 32; checkpointing so a killed run costs one fit (change 34) | Policy value table with both baselines |
+| 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset; `itx diagnose`, the risk-decile table of change 32 | Policy value table with both baselines |
 | 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; Dragonnet in PyTorch; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | Sensitivity section with numbers; Dragonnet in the table; write-up drafted |
 | 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; Azure Static Web Apps at targeting.peterparker.ca | Demo live, slider re-ranks |
 | 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | Definition of done all checked |
@@ -577,4 +577,21 @@ attempt was killed by it about four hours in and lost everything, because the be
 its results file only after the last fit. "Runs overnight" is therefore not available as a
 strategy here, and the week 4 acceptance criterion in section 6 quietly assumed it was. Two
 consequences: long runs start in the morning, and the runner needs to checkpoint so that a
-killed run costs one fit rather than all of them. The second is the next commit.
+killed run costs one fit rather than all of them. The second is change 35.
+
+**35. The benchmark checkpoints, and resuming is opt-in** (week 4). Not in section 5. Every
+finished row is written to `results/<dataset>.checkpoint.json` as it completes, and
+`itx benchmark --resume` reuses what is there instead of refitting it. The file is deleted
+when the run finishes, so a checkpoint on disk always means an interrupted run.
+
+Resuming is a flag rather than automatic behaviour on purpose. A checkpoint written by an
+older version of this package is indistinguishable from one written by the current version,
+and silently mixing the two would produce a results table whose rows came from two different
+builds. The flag puts that judgement with the person who knows whether anything changed.
+
+Verified by doing it: a six-fit run killed after four fits, then resumed, finishes in 4.0s
+instead of 9.4s and `itx compare` reports the result identical to an uninterrupted run at zero
+tolerance. One limitation is real and is announced rather than worked around: a row read back
+from a checkpoint carries its metrics but not its per-unit scores, which are large and are not
+serialised, so a resumed run writes its table and skips its figures and says to run
+`itx figures`, which refits a single seed.

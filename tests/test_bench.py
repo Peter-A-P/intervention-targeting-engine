@@ -858,3 +858,141 @@ class TestDuration:
     )
     def test_it_formats(self, seconds, expected):
         assert _duration(seconds) == expected
+
+
+class TestCheckpointing:
+    """A killed run has to cost one fit, not all of them (PLAN.md change 34)."""
+
+    def test_on_row_is_called_once_per_finished_row(self, binary_data, monkeypatch):
+        monkeypatch.setattr("itx.bench.runner.DATASETS", {"probe": lambda: binary_data})
+        seen: list[str] = []
+        rows = run(
+            "probe",
+            estimators=["s-learner", "outcome-ranking"],
+            seeds=(11, 23),
+            n_resamples=10,
+            tune=False,
+            on_row=lambda row: seen.append(f"{row.estimator}:{row.seed}"),
+        )
+        assert len(seen) == len(rows)
+        assert "s-learner:11" in seen
+        # The averaged random baseline is banked too: it is cheap, but leaving it out
+        # would mean a resumed run silently redrew 200 rankings with a different draw.
+        assert "random-200:11" in seen
+
+    def test_completed_rows_are_reused_and_not_refitted(self, binary_data, monkeypatch):
+        monkeypatch.setattr("itx.bench.runner.DATASETS", {"probe": lambda: binary_data})
+        first = run(
+            "probe", estimators=["s-learner"], seeds=(11, 23), n_resamples=10, tune=False
+        )
+        # Hand back everything from seed 11 and nothing from seed 23.
+        banked = [row for row in first if row.seed == 11]
+
+        refitted: list[str] = []
+        second = run(
+            "probe",
+            estimators=["s-learner"],
+            seeds=(11, 23),
+            n_resamples=10,
+            tune=False,
+            completed=banked,
+            on_row=lambda row: refitted.append(f"{row.estimator}:{row.seed}"),
+        )
+        assert all(":11" not in entry for entry in refitted)
+        assert "s-learner:23" in refitted
+        reused = next(r for r in second if r.seed == 11 and r.estimator == "s-learner")
+        original = next(r for r in first if r.seed == 11 and r.estimator == "s-learner")
+        assert reused is original
+
+    def test_a_resumed_run_reproduces_an_uninterrupted_one(self, binary_data, monkeypatch):
+        # The property that matters: resuming must not change a single number.
+        monkeypatch.setattr("itx.bench.runner.DATASETS", {"probe": lambda: binary_data})
+        whole = run(
+            "probe", estimators=["s-learner"], seeds=(11, 23), n_resamples=10, tune=False
+        )
+        resumed = run(
+            "probe",
+            estimators=["s-learner"],
+            seeds=(11, 23),
+            n_resamples=10,
+            tune=False,
+            completed=[row for row in whole if row.seed == 11],
+        )
+        assert compare_results(whole, resumed, tolerance=0.0) == []
+
+    def test_progress_says_which_rows_came_from_the_checkpoint(self, binary_data, monkeypatch):
+        monkeypatch.setattr("itx.bench.runner.DATASETS", {"probe": lambda: binary_data})
+        first = run(
+            "probe", estimators=["s-learner"], seeds=(11, 23), n_resamples=10, tune=False
+        )
+        lines: list[str] = []
+        run(
+            "probe",
+            estimators=["s-learner"],
+            seeds=(11, 23),
+            n_resamples=10,
+            tune=False,
+            completed=[row for row in first if row.seed == 11],
+            progress=lines.append,
+        )
+        assert any("from checkpoint" in line for line in lines)
+        assert lines[-1].endswith("1 from checkpoint")
+
+
+class TestCheckpointFile:
+    """The CLI end of it: the file, the opt-in, and the cleanup."""
+
+    def test_the_path_is_a_sibling_nobody_mistakes_for_a_result(self, tmp_path):
+        path = cli.checkpoint_path(tmp_path, "lenta")
+        assert path.name == "lenta.checkpoint.json"
+        assert path.name != "lenta.json"
+
+    def test_a_finished_run_leaves_no_checkpoint_behind(
+        self, tmp_path, binary_data, monkeypatch
+    ):
+        monkeypatch.setattr("itx.bench.runner.DATASETS", {"probe": lambda: binary_data})
+        result = runner.invoke(
+            app,
+            [
+                "benchmark",
+                "--dataset",
+                "probe",
+                "--no-tune",
+                "--no-plot",
+                "--seeds",
+                "11",
+                "--resamples",
+                "10",
+                "--results-dir",
+                str(tmp_path),
+                "--readme",
+                str(tmp_path / "r.md"),
+            ],
+        )
+        assert result.exit_code == 0, result.stdout
+        assert (tmp_path / "probe.json").is_file()
+        assert not cli.checkpoint_path(tmp_path, "probe").exists()
+
+    def test_a_stale_checkpoint_is_ignored_and_announced_without_resume(self, tmp_path, rows):
+        checkpoint = cli.checkpoint_path(tmp_path, "probe")
+        write_json(rows, checkpoint)
+        lines: list[str] = []
+        reused = cli._resume_from(checkpoint, "probe", resume=False, say=lines.append)
+        assert reused == ()
+        assert "--resume" in lines[0]
+
+    def test_with_resume_the_rows_come_back(self, tmp_path, rows):
+        checkpoint = cli.checkpoint_path(tmp_path, "probe")
+        write_json(rows, checkpoint)
+        lines: list[str] = []
+        reused = cli._resume_from(checkpoint, "probe", resume=True, say=lines.append)
+        assert len(reused) == len(rows)
+        assert "resuming" in lines[0]
+
+    def test_no_checkpoint_is_silent(self, tmp_path):
+        lines: list[str] = []
+        reused = cli._resume_from(
+            cli.checkpoint_path(tmp_path, "probe"), "probe", resume=True, say=lines.append
+        )
+        assert reused == ()
+        assert lines == []

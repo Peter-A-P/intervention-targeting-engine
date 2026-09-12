@@ -237,6 +237,11 @@ def evaluate(
     )
 
 
+#: The estimator name the averaged random-targeting row carries. Named here rather than
+#: spelled inline, because the resume path has to recognise it in a checkpoint.
+RANDOM_REFERENCE_NAME = "random-200"
+
+
 def random_reference_row(
     split: Split,
     *,
@@ -293,6 +298,8 @@ def run(
     include_random_reference: bool = True,
     tune: bool = True,
     progress: Callable[[str], None] | None = None,
+    completed: Sequence[BenchmarkRow] = (),
+    on_row: Callable[[BenchmarkRow], None] | None = None,
 ) -> list[BenchmarkRow]:
     """Run one dataset across estimators and seeds.
 
@@ -312,6 +319,13 @@ def run(
             indistinguishable from a hung one. That is not hypothetical: the first Criteo
             run was started with no idea whether it was thirty minutes from finishing or
             three hours, and there was no way to find out from outside.
+        completed: Rows from an earlier, interrupted run. Any row whose estimator and seed
+            appear here is taken from it instead of being refitted.
+        on_row: Called with each row as it is finished, so a caller can persist it. The
+            CLI writes a checkpoint file from this, and PLAN.md change 34 is the reason:
+            a four hour Lenta run was killed by a scheduled reboot with most of its work
+            done and left nothing behind, because results were written only after the last
+            fit. Neither argument changes a number; they change what an interruption costs.
 
     Returns:
         Every row, in dataset-then-seed-then-estimator order.
@@ -338,11 +352,28 @@ def run(
             f"{len(names)} estimators over {len(seeds)} {seed_word}, {total} fits"
         )
 
+    already = {(row.estimator, row.seed): row for row in completed}
     rows: list[BenchmarkRow] = []
     done = 0
+    reused = 0
+
     for seed in seeds:
-        split = stratified_split(data, seed)
+        # Built only when this seed still has work. Splitting Lenta costs a minute, and a
+        # resumed run should not pay it for the seeds it is skipping past.
+        split: Split | None = None
+
         for name in names:
+            finished = already.get((name, seed))
+            if finished is not None:
+                rows.append(finished)
+                done += 1
+                reused += 1
+                if progress is not None:
+                    progress(f"  [{done}/{total}] seed {seed} {name}: from checkpoint")
+                continue
+
+            if split is None:
+                split = stratified_split(data, seed)
             step = time.perf_counter()
             factory = ESTIMATORS[name]
             selection = (
@@ -359,16 +390,28 @@ def run(
             )
             rows.append(row)
             done += 1
+            if on_row is not None:
+                on_row(row)
             if progress is not None:
                 progress(
                     f"  [{done}/{total}] seed {seed} {name}: "
                     f"{_duration(time.perf_counter() - step)}, "
                     f"elapsed {_duration(time.perf_counter() - started)}"
                 )
+
         if include_random_reference:
-            rows.append(random_reference_row(split, budgets=budgets))
+            reference = already.get((RANDOM_REFERENCE_NAME, seed))
+            if reference is None:
+                if split is None:
+                    split = stratified_split(data, seed)
+                reference = random_reference_row(split, budgets=budgets)
+                if on_row is not None:
+                    on_row(reference)
+            rows.append(reference)
+
     if progress is not None:
-        progress(f"{dataset}: finished in {_duration(time.perf_counter() - started)}")
+        note = f", {reused} from checkpoint" if reused else ""
+        progress(f"{dataset}: finished in {_duration(time.perf_counter() - started)}{note}")
     return rows
 
 
