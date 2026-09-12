@@ -18,6 +18,7 @@ from itx import __version__
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from itx.bench.grid import Selection
     from itx.bench.runner import BenchmarkRow
 
 app = typer.Typer(
@@ -487,6 +488,87 @@ def diagnose(
     typer.echo("")
     typer.echo(table.to_markdown())
     typer.echo(table.summary())
+
+
+@app.command("selection")
+def selection(
+    dataset: Annotated[
+        str, typer.Option(help="Dataset key to run both rules on.")
+    ] = "hillstrom",
+    seeds: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated split seeds; the committed five if omitted."),
+    ] = None,
+    estimators: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated estimator keys; the default set if omitted."),
+    ] = None,
+) -> None:
+    """Select hyperparameters both ways and report where the two rules disagree.
+
+    PLAN.md change 9 promised this comparison once realised policy value existed. The
+    default rule scores candidates on the validation Qini; the alternative scores them on
+    what the ranking would buy at the operating budget. Whether that changes the chosen
+    configuration is the thing worth reporting, and it is measured here rather than argued.
+    """
+    from itx.bench.grid import (
+        OPERATING_BUDGET,
+        policy_value_rule,
+        qini_rule,
+        select_config,
+    )
+    from itx.bench.runner import DATASETS, DEFAULT_ESTIMATORS, ESTIMATORS, UNTUNED
+    from itx.bench.seeds import SEEDS
+    from itx.data.splits import stratified_split
+
+    if dataset not in DATASETS:
+        typer.echo(f"unknown dataset {dataset!r}; known: {', '.join(sorted(DATASETS))}")
+        raise typer.Exit(code=1)
+
+    say = _printer()
+    seed_values = [int(s) for s in seeds.split(",")] if seeds else list(SEEDS)
+    names = (
+        [e.strip() for e in estimators.split(",")] if estimators else list(DEFAULT_ESTIMATORS)
+    )
+    names = [name for name in names if name not in UNTUNED]
+
+    data = DATASETS[dataset]()
+    say(f"{dataset}: {len(names)} estimators over {len(seed_values)} seeds, both rules")
+
+    lines = [
+        f"| Estimator | Seed | On Qini | On policy value at {OPERATING_BUDGET:.0%} | Same? |",
+        "|---|---|---|---|---|",
+    ]
+    agreements = 0
+    total = 0
+    for seed in seed_values:
+        split = stratified_split(data, seed)
+        by_policy = policy_value_rule(split, seed=seed)
+        for name in names:
+            factory = ESTIMATORS[name]
+            on_qini = select_config(factory, split, seed=seed, rule=qini_rule())
+            on_policy = select_config(factory, split, seed=seed, rule=by_policy)
+            same = on_qini.config == on_policy.config
+            agreements += same
+            total += 1
+            lines.append(
+                f"| `{name}` | {seed} | {_config_label(on_qini)} | "
+                f"{_config_label(on_policy)} | {'yes' if same else 'no'} |"
+            )
+            say(f"  seed {seed} {name}: {'same' if same else 'differs'}")
+
+    typer.echo("")
+    typer.echo("\n".join(lines))
+    typer.echo("")
+    typer.echo(
+        f"The two rules chose the same configuration in {agreements} of {total} cases "
+        f"({agreements / total:.0%})."
+    )
+
+
+def _config_label(chosen: Selection) -> str:
+    """The winning settings of a selection, as ``min_child_samples/num_leaves``."""
+    return f"{chosen.config.min_child_samples}/{chosen.config.num_leaves}"
 
 
 @app.command("demo")

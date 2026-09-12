@@ -46,9 +46,17 @@ here: it is made on the test split, against both baselines, and from week 5 on t
 policy value rather than the curve.
 
 The alternative, selecting on realised policy value at the operating budget, is better
-aligned with the decision and is not available until week 5. When it is, this module gets a
-second selection rule and the two are compared, because whether it changes the chosen
-configurations is itself worth reporting.
+aligned with the decision. It arrived in week 5 as :func:`policy_value_rule`, and it is
+available rather than default. Which of the two a run used is recorded on the selection, and
+`itx selection` fits both on a dataset and reports where they disagree.
+
+The default did not move, and the reason is worth stating rather than assuming. The policy
+value at a single budget reads one cutoff of the validation ranking, so it is a noisier
+signal than a coefficient integrating the whole curve, and on the small validation splits
+this benchmark uses that noise is the dominant term. The argument for selecting on the
+decision rather than the curve is a good one about bias, made against a variance cost that
+happens to be larger here. What settles it is the measurement in `docs/estimators.md`, not
+the argument.
 
 ## Candidates a dataset cannot support are removed before selection
 
@@ -79,12 +87,13 @@ from itx.bench.seeds import TIE_SEED
 from itx.data.splits import stratified_subsample
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig
 from itx.metrics.qini import qini_coefficient
+from itx.policy.policy_value import fit_nuisances, gain_key, policy_metrics
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from itx.estimators.base import BaseUpliftEstimator
-    from itx.types import Split
+    from itx.types import FloatArray, Split, UpliftDataset
 
 #: Candidate leaf sizes. 5 is small enough for IHDP's 448 training rows to split at all;
 #: 200 is heavy enough to hold the DR-learner's final stage back from chasing the variance
@@ -162,6 +171,89 @@ def applicable_grid(
     )
 
 
+#: Budget the policy-value selection rule scores at. The middle of the three the results
+#: table reports (PLAN.md section 1): a rule that selects on the decision has to select on
+#: one decision, and a budget covering a fifth of the population is the one a reader of that
+#: table is most likely to be imagining.
+OPERATING_BUDGET = 0.2
+
+
+@dataclass(frozen=True, slots=True)
+class SelectionRule:
+    """What a candidate is scored on, so that the two rules can be run against each other.
+
+    Attributes:
+        name: Short identifier, recorded on the selection so a table says what chose it.
+        score: Takes the validation split and a candidate's predictions on it, and returns
+            a number to be maximised.
+    """
+
+    name: str
+    score: Callable[[UpliftDataset, FloatArray], float]
+
+
+def qini_rule(*, tie_seed: int = TIE_SEED) -> SelectionRule:
+    """Select on the validation-split Qini coefficient. The default, defended above.
+
+    Args:
+        tie_seed: Seed for tie-breaking inside the scoring ranking.
+
+    Returns:
+        The rule.
+    """
+
+    def score(validation: UpliftDataset, predictions: FloatArray) -> float:
+        return qini_coefficient(
+            validation.outcome, validation.treatment, predictions, seed=tie_seed
+        )
+
+    return SelectionRule(name="qini", score=score)
+
+
+def policy_value_rule(
+    split: Split,
+    *,
+    budget: float = OPERATING_BUDGET,
+    seed: int = 0,
+    tie_seed: int = TIE_SEED,
+) -> SelectionRule:
+    """Select on what the candidate's ranking would actually buy at the operating budget.
+
+    The rule change 9 promised. It scores the decision rather than the curve, using the
+    doubly robust gain because the validation splits here are small and it is the
+    lower-variance of the two estimators.
+
+    The nuisance models are fitted once, on the training split, and applied to the
+    validation split. Every candidate is then scored against the same referee, which is the
+    same argument as in :mod:`itx.policy.policy_value`: a candidate must not be allowed to
+    supply the models that score it.
+
+    Args:
+        split: The partition. Nuisances are fitted on ``split.train`` and applied to
+            ``split.validation``; ``split.test`` is not touched.
+        budget: Share of the population the score is read at.
+        seed: Seed for the nuisance models.
+        tie_seed: Seed for tie-breaking inside the scoring ranking.
+
+    Returns:
+        The rule, carrying its fitted nuisances.
+    """
+    nuisances = fit_nuisances(split.train, split.validation, seed=seed)
+    key = gain_key("dr", budget)
+
+    def score(validation: UpliftDataset, predictions: FloatArray) -> float:
+        return policy_metrics(
+            validation.outcome,
+            validation.treatment,
+            predictions,
+            nuisances,
+            budgets=(budget,),
+            seed=tie_seed,
+        )[key]
+
+    return SelectionRule(name=f"policy-value@{budget:.0%}", score=score)
+
+
 @dataclass(frozen=True, slots=True)
 class Selection:
     """Which configuration was chosen for one estimator on one split, and what it scored.
@@ -171,12 +263,15 @@ class Selection:
         score: Its validation score.
         scores: Every candidate's validation score, in grid order, for inspection.
         tuned: False when selection was skipped and the default was used.
+        rule: Which rule produced the score. Two rules exist and they do not measure the
+            same thing, so a bare number would not say what it was.
     """
 
     config: BaseLearnerConfig
     score: float
     scores: tuple[float, ...]
     tuned: bool = True
+    rule: str = "qini"
 
     def describe(self) -> str:
         """One line naming the winning settings."""
@@ -185,7 +280,7 @@ class Selection:
         return (
             f"min_child_samples={self.config.min_child_samples}, "
             f"num_leaves={self.config.num_leaves} "
-            f"(validation qini {self.score:+.5f})"
+            f"(validation {self.rule} {self.score:+.5f})"
         )
 
 
@@ -197,6 +292,7 @@ def select_config(
     grid: Sequence[BaseLearnerConfig] = GRID,
     tie_seed: int = TIE_SEED,
     rows_cap: int = TUNING_ROWS_CAP,
+    rule: SelectionRule | None = None,
 ) -> Selection:
     """Choose a configuration by fitting each candidate on train and scoring on validation.
 
@@ -209,6 +305,8 @@ def select_config(
         tie_seed: Seed for tie-breaking inside the scoring ranking.
         rows_cap: Most training rows any candidate is fitted on. See
             :data:`TUNING_ROWS_CAP`.
+        rule: What to score candidates on; :func:`qini_rule` if omitted. The alternative is
+            :func:`policy_value_rule`, and ``itx selection`` reports where they disagree.
 
     Returns:
         The winning configuration and every candidate's score.
@@ -219,6 +317,7 @@ def select_config(
     if not grid:
         msg = "cannot select from an empty grid"
         raise ValueError(msg)
+    scoring = rule if rule is not None else qini_rule(tie_seed=tie_seed)
     # Computed from the full training split, not the capped one: what a candidate has to
     # be able to fit is the data the winner will finally be fitted on.
     grid = applicable_grid(split.train.n_units, grid)
@@ -230,14 +329,15 @@ def select_config(
         estimator = factory(config, seed)
         estimator.fit(train)
         predictions = estimator.predict_uplift(validation.features)
-        scores.append(
-            qini_coefficient(
-                validation.outcome, validation.treatment, predictions, seed=tie_seed
-            )
-        )
+        scores.append(scoring.score(validation, predictions))
 
     best = max(range(len(grid)), key=lambda index: scores[index])
-    return Selection(config=grid[best], score=scores[best], scores=tuple(scores))
+    return Selection(
+        config=grid[best],
+        score=scores[best],
+        scores=tuple(scores),
+        rule=scoring.name,
+    )
 
 
 def default_selection() -> Selection:

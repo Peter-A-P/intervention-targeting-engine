@@ -665,3 +665,23 @@ runs against risk at a twentieth of full strength, the point estimate happily re
 right direction and the interval covers zero, and a diagnostic that announced a direction
 from ten noisy bands would be committing the exact error the rest of this repository exists
 to demonstrate. There is a test for it.
+
+**41. The second selection rule exists and is not the default** (week 5, closing change 9).
+Change 9 promised that once realised policy value existed, `itx/bench/grid.py` would gain a
+second selection rule and the two would be compared. `policy_value_rule` scores each
+candidate on the doubly robust gain its ranking would buy at the operating budget, 20%, on
+the validation split; `qini_rule` is the existing behaviour, made explicit. Every selection
+now records which rule produced its number, and the results files carry it, because two
+rules that do not measure the same thing cannot share an unlabelled column.
+
+The default did not move, and that is a result rather than an omission. `itx selection`
+fits both rules on a dataset and reports where they disagree; `docs/estimators.md` carries
+the table. The argument for selecting on the decision rather than the curve is a real one
+about bias, and it is made against a variance cost: the policy value at a single budget reads
+one cutoff of the validation ranking, where the Qini integrates the whole of it, and on
+validation splits this size the noise is the dominant term.
+
+The nuisance models for the rule are fitted on the training split and applied to the
+validation split, once per split rather than once per candidate, for the same reason as in
+change 37: a candidate must not supply the models that score it. There is a test that
+corrupting the test split changes nothing about what the rule chooses.

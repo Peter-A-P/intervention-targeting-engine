@@ -16,14 +16,18 @@ from itx.bench.grid import (
     GRID,
     MIN_CHILD_SAMPLES,
     NUM_LEAVES,
+    OPERATING_BUDGET,
     Selection,
     applicable_grid,
     default_selection,
+    policy_value_rule,
+    qini_rule,
     select_config,
 )
 from itx.bench.plots import plot_qini_curves
 from itx.bench.runner import (
     BENCHMARK_DATASETS,
+    BUDGETS,
     DATASETS,
     DEFAULT_ESTIMATORS,
     ESTIMATORS,
@@ -996,3 +1000,122 @@ class TestCheckpointFile:
         )
         assert reused == ()
         assert lines == []
+
+
+class TestSelectionRules:
+    """The second selection rule PLAN.md change 9 promised, and what it is allowed to do.
+
+    The rule that ships as default did not change. What these check is that the alternative
+    exists, scores something different, is honest about which rule produced a number, and
+    obeys the same boundary every other part of selection obeys: the test split is not read.
+    """
+
+    def test_the_default_rule_is_the_qini_one(self, binary_data):
+        split = stratified_split(binary_data, 11)
+        selection = select_config(
+            lambda config, seed: SLearner(config, seed=seed),
+            split,
+            seed=11,
+            grid=(DEFAULT_CONFIG,),
+        )
+        assert selection.rule == "qini"
+        assert "validation qini" in selection.describe()
+
+    def test_the_policy_value_rule_names_the_budget_it_scored_at(self, binary_data):
+        split = stratified_split(binary_data, 11)
+        rule = policy_value_rule(split, seed=11, budget=0.2)
+        assert rule.name == "policy-value@20%"
+
+        selection = select_config(
+            lambda config, seed: SLearner(config, seed=seed),
+            split,
+            seed=11,
+            grid=(DEFAULT_CONFIG,),
+            rule=rule,
+        )
+        assert selection.rule == "policy-value@20%"
+        assert "validation policy-value@20%" in selection.describe()
+
+    def test_the_two_rules_score_candidates_differently(self, binary_data):
+        # If they produced the same numbers there would be nothing to compare and change 9
+        # would have been satisfied by an alias.
+        split = stratified_split(binary_data, 11)
+        grid = (DEFAULT_CONFIG.with_(min_child_samples=5), DEFAULT_CONFIG.with_(num_leaves=15))
+
+        def factory(config, seed):
+            return SLearner(config, seed=seed)
+
+        on_qini = select_config(factory, split, seed=11, grid=grid, rule=qini_rule())
+        on_policy = select_config(
+            factory, split, seed=11, grid=grid, rule=policy_value_rule(split, seed=11)
+        )
+        assert on_qini.scores != pytest.approx(on_policy.scores)
+
+    def test_the_policy_value_rule_never_reads_the_test_split(self, binary_data):
+        # Selection is allowed the training and validation rows and nothing else. A rule
+        # that needs nuisance models is the easiest place to break that by accident, since
+        # the obvious place to fit them is wherever the data happens to be.
+        split = stratified_split(binary_data, 11)
+        grid = (DEFAULT_CONFIG.with_(min_child_samples=5), DEFAULT_CONFIG.with_(num_leaves=15))
+
+        def factory(config, seed):
+            return SLearner(config, seed=seed)
+
+        clean = select_config(
+            factory, split, seed=11, grid=grid, rule=policy_value_rule(split, seed=11)
+        )
+        object.__setattr__(split.test, "outcome", np.zeros(split.test.n_units))
+        after = select_config(
+            factory, split, seed=11, grid=grid, rule=policy_value_rule(split, seed=11)
+        )
+        assert clean.config == after.config
+        assert clean.scores == pytest.approx(after.scores)
+
+    def test_the_operating_budget_is_one_the_results_table_reports(self):
+        # A rule that selected on a budget the table never shows would be optimising for a
+        # decision nobody is looking at.
+        assert OPERATING_BUDGET in BUDGETS
+
+    def test_the_results_file_says_which_rule_chose(self, binary_data, tmp_path):
+        rows = run(
+            "synthetic-binary",
+            estimators=["s-learner"],
+            seeds=(11,),
+            n_resamples=10,
+            include_random_reference=False,
+            tune=True,
+        )
+        path = tmp_path / "rules.json"
+        write_json(rows, path)
+        assert json.loads(path.read_text(encoding="utf-8"))[0]["selection"]["rule"] == "qini"
+        restored = read_json(path)
+        assert restored[0].selection is not None
+        assert restored[0].selection.rule == "qini"
+
+    def test_a_results_file_written_before_the_second_rule_still_reads(self, tmp_path):
+        # Every committed results file predates the rule field, and they are all qini by
+        # construction because no other rule existed when they were written.
+        path = tmp_path / "old.json"
+        path.write_text(
+            json.dumps(
+                [
+                    {
+                        "dataset": "synthetic-binary",
+                        "estimator": "s-learner",
+                        "seed": 11,
+                        "n_test": 100,
+                        "fit_seconds": 1.0,
+                        "selection": {
+                            "min_child_samples": 20,
+                            "num_leaves": 31,
+                            "validation_qini": 0.01,
+                        },
+                        "metrics": {},
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
+        restored = read_json(path)
+        assert restored[0].selection is not None
+        assert restored[0].selection.rule == "qini"

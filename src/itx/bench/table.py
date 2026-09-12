@@ -219,6 +219,11 @@ def write_json(rows: Sequence[BenchmarkRow], path: Path) -> None:
                 "min_child_samples": row.selection.config.min_child_samples,
                 "num_leaves": row.selection.config.num_leaves,
                 "validation_qini": row.selection.score,
+                # Two selection rules exist and they do not measure the same thing, so the
+                # file has to say which one produced the number above it. The key keeps its
+                # old name so that results files committed before the second rule existed
+                # still read, and those files are all "qini" by construction.
+                "rule": row.selection.rule,
             },
             "metrics": {
                 name: {
@@ -286,6 +291,7 @@ def read_json(path: Path) -> list[BenchmarkRow]:
                     ),
                     score=selection["validation_qini"],
                     scores=(),
+                    rule=selection.get("rule", "qini"),
                 ),
             )
         )
