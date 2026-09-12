@@ -2,7 +2,7 @@
 
 Split from ``test_data.py`` because these two are the ones with a download measured in
 hundreds of megabytes. The stratified subsample is tested on a tiny CSV built here, so the
-part with the arithmetic in it runs in a fast pass; the loaders themselves are marked slow.
+part with the arithmetic in it runs in a fast pass; the loaders themselves are marked large.
 """
 
 from __future__ import annotations
@@ -16,18 +16,19 @@ import polars as pl
 import pytest
 
 from itx.data.criteo import (
-    EXPECTED_ROWS as CRITEO_ROWS,
-)
-from itx.data.criteo import (
-    FEATURES as CRITEO_FEATURES,
-)
-from itx.data.criteo import (
+    _STRATA_COLUMNS,
     KNOWN_PROPENSITY,
     SUBSAMPLE_FRACTION,
     SUBSAMPLE_SEED,
     _stratified_indices,
     load_criteo,
     subsample_path,
+)
+from itx.data.criteo import (
+    EXPECTED_ROWS as CRITEO_ROWS,
+)
+from itx.data.criteo import (
+    FEATURES as CRITEO_FEATURES,
 )
 from itx.data.criteo import (
     POST_TREATMENT as CRITEO_POST_TREATMENT,
@@ -244,7 +245,7 @@ class TestLentaColumnSelection:
         assert feature_names(columns) == ["z", "a", "m"]
 
 
-@pytest.mark.slow
+@pytest.mark.large
 class TestCriteo:
     def test_it_loads_the_committed_subsample(self):
         data = load_criteo()
@@ -263,7 +264,14 @@ class TestCriteo:
         assert data.outcome[~treated].mean() == pytest.approx(0.038201, abs=5e-4)
 
     def test_the_subsample_is_a_tenth_of_the_published_row_count(self):
-        assert load_criteo().n_units == round(CRITEO_ROWS * SUBSAMPLE_FRACTION)
+        # Not exactly a tenth, and it cannot be. Each stratum rounds its own share, so the
+        # total is a sum of rounded numbers rather than a rounded total: here all six
+        # occupied strata round down and the sample lands one row under round(N * 0.1).
+        # The gap is bounded by half a row per stratum, which is what this asserts. The
+        # exact committed count is asserted above, where a change to it should fail.
+        strata = 2 ** len(_STRATA_COLUMNS)
+        expected = round(CRITEO_ROWS * SUBSAMPLE_FRACTION)
+        assert load_criteo().n_units == pytest.approx(expected, abs=strata / 2)
 
     def test_the_features_are_balanced_enough_to_believe_the_design(self):
         # Not perfectly: the worst is about 0.047, real at this sample size but well under
@@ -276,7 +284,7 @@ class TestCriteo:
         assert subsample_path(SUBSAMPLE_FRACTION, SUBSAMPLE_SEED).is_file()
 
 
-@pytest.mark.slow
+@pytest.mark.large
 class TestLenta:
     def test_it_loads_every_row(self):
         data = load_lenta()

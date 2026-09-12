@@ -376,6 +376,7 @@ cd data/raw && sha256sum -c ../../src/itx/data/checksums.sha256
 ```bash
 uv run pytest               # fast tests, synthetic data only
 uv run pytest --run-slow    # adds the tests that need a real download
+uv run pytest --run-large   # adds Criteo and Lenta: 435 MB, and slower again
 uv run ruff check . && uv run mypy
 ```
 

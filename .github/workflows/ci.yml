@@ -83,8 +83,14 @@ jobs:
           key: raw-${{ hashFiles('src/itx/data/checksums.sha256') }}
 
       - name: Pull and verify the datasets these jobs need
-        run: uv run itx data pull hillstrom ihdp-train ihdp-test acic-x acic-zymu-1
+        run: >-
+          uv run itx data pull hillstrom ihdp-train ihdp-test acic-x
+          acic-zymu-1 acic-zymu-2 acic-zymu-3 acic-zymu-4
 
+      # --run-slow and not --run-large. The large-dataset tests call load_criteo and
+      # load_lenta, and fetch() downloads on a cache miss rather than failing, so an
+      # unscoped --run-slow pulled 435 MB here and rebuilt the Criteo subsample: the exact
+      # work the header says this job does not do (PLAN.md change 33).
       - name: Tests that need real data
         run: uv run pytest -q --run-slow
 
@@ -194,4 +200,4 @@ jobs:
       # the full file, gender coding, missingness left alone, and that neither dataset's
       # post-treatment columns reached the feature matrix.
       - name: The loaders still produce the datasets the cards describe
-        run: uv run pytest tests/test_large_datasets.py -q --run-slow
+        run: uv run pytest tests/test_large_datasets.py -q --run-large

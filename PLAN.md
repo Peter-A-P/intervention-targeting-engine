@@ -520,3 +520,34 @@ That decile table should become a command, since it decides whether the rest of 
 repository is worth running on a given problem and costs one outcome model. It belongs with
 the policy work in week 5 rather than bolted onto the week 4 loaders, and it is listed in
 section 6 there.
+
+**33. Criteo and Lenta need their own test marker, not a degree of slowness** (week 4). CI
+was red from the commit that added the two loaders. Two faults, one in the tests and one in
+the workflow.
+
+The test fault: `test_the_subsample_is_a_tenth_of_the_published_row_count` asserted
+`n_units == round(13,979,592 * 0.1)`, which is 1,397,959. The sampler rounds inside each
+stratum and sums, and all six occupied strata round down, so it returns 1,397,958. Twenty
+lines above, `test_it_loads_the_committed_subsample` asserts that same 1,397,958, so the two
+tests contradicted each other and no sampler could satisfy both. The loader is right:
+1,397,958 is the count `results/criteo.json` and change 32 are built on. A sum of rounded
+shares is not a rounded total, and the test now asserts the property its name claims, within
+the half a row per stratum that stratifying costs.
+
+The workflow fault, which is why the benchmark job reached that assertion at all: its test
+step was an unscoped `pytest --run-slow`, which collects the Criteo and Lenta classes, and
+`fetch` downloads on a cache miss rather than failing. So the job that change 31 says must
+not touch the large datasets was pulling 435 MB and rescanning fourteen million rows on
+every push, past its own `itx data pull` list. Marking those two classes `slow` was never
+enough, because `slow` is what the benchmark job asks for by definition. They are now
+`large`, behind `--run-large`, which only the scheduled Lenta and Criteo job passes. The
+same audit found `TestAcic` loading three replicates past the pull list: 1 and 3 by name, and
+2 through `load_acic_replicates(3)`, which yields 0 to 2. Replicate `r` is file `zymu_{r+1}`,
+so `acic-zymu-2`, `-3` and `-4` are now in the list and every download in that job is still
+checksum-verified up front.
+
+One thing this does not fix, recorded here because it costs more than the bug did: both
+jobs spend about forty minutes on a cache-cold `uv sync`, because causalml 0.17.0 publishes
+no cp313 wheel and gets built from Cython sources. The comment in `pyproject.toml` files
+this under Windows; it is Python 3.13, and it lands on Linux CI too. The "about a minute"
+checks job took 44:14. Left open.
