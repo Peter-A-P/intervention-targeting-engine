@@ -304,16 +304,17 @@ def risk_deciles(
         seed=seed,
     )
 
-    full = np.arange(test.n_units)
-    point = _statistics(test.outcome, test.treatment, band_of, bins)(full)
+    # The rates come off the estimates rather than from a second pass over the bands.
+    # An Estimate's value is the statistic on the full sample, which is exactly what a
+    # band's observed rate is, so recomputing it would be a chance for the two to differ.
     deciles = tuple(
         Decile(
             index=band,
             n_units=int((band_of == band).sum()),
             n_treated=int(((band_of == band) & (test.treatment == 1)).sum()),
             predicted_risk=float(scores[band_of == band].mean()),
-            control_rate=point[f"control@{band}"],
-            treated_rate=point[f"treated@{band}"],
+            control_rate=estimates[f"control@{band}"].value,
+            treated_rate=estimates[f"treated@{band}"].value,
             uplift=estimates[f"uplift@{band}"],
         )
         for band in range(bins)

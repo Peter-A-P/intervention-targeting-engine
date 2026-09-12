@@ -19,6 +19,7 @@ estimators recover the right one.
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -448,4 +449,120 @@ class TestRefusals:
         with pytest.raises(ValueError, match="empty sample"):
             ipw_value(
                 empty_float, np.zeros(0, dtype=np.int64), np.zeros(0, dtype=bool), empty_float
+            )
+
+
+@pytest.mark.slow
+class TestAgainstGroundTruthOnAcic:
+    """The estimators, checked against effects that were written down rather than inferred.
+
+    Everywhere else in this file the truth is a quantity the test constructs. ACIC 2016 is
+    the real thing: a public benchmark whose individual treatment effects are known because
+    the outcomes were simulated from them, and whose covariates and assignment mechanism are
+    not simulated at all. So the policy gains the README reports can be compared with what
+    the policies actually bought, which is the only check that cannot be gamed by an
+    implementation agreeing with itself.
+
+    Two claims rest on this and both are asserted here. The first is the project's headline:
+    on ACIC, spending a 10% budget on the highest-risk cases buys a *negative* amount of
+    outcome, so the ordinary way of doing this job is worse than doing nothing. The second
+    is about which estimator to believe, and it matters because the two disagree by a factor
+    of three: 46% of ACIC's test rows sit against the propensity clipping bound, the
+    diagnostic says so before any truth is consulted, and the truth then confirms that IPW
+    is the one that fell over.
+    """
+
+    @pytest.fixture(scope="class")
+    def measured(self) -> tuple[
+        dict[tuple[str, float], float], dict[tuple[str, float, str], float], list[bool]
+    ]:
+        """True, DR and IPW policy gains per estimator and budget, averaged over the seeds.
+
+        Class-scoped, because it is twenty-five refits of ACIC and the three tests below all
+        read the same numbers.
+        """
+        from itx.bench.runner import nuisances_for, refit_seed
+        from itx.bench.seeds import SEEDS, TIE_SEED
+        from itx.bench.table import read_json
+
+        results = Path("results/acic.json")
+        if not results.is_file():  # pragma: no cover - needs a finished benchmark
+            pytest.skip("needs results/acic.json from a finished benchmark run")
+
+        rows = read_json(results)
+        budgets = (0.1, 0.2, 0.3)
+        truth: dict[tuple[str, float], list[float]] = {}
+        estimated: dict[tuple[str, float, str], list[float]] = {}
+        overlap: list[bool] = []
+
+        for seed in SEEDS:
+            selections = {
+                row.estimator: row.selection
+                for row in rows
+                if row.seed == seed and row.selection is not None
+            }
+            refitted, split = refit_seed("acic", seed, selections=selections)
+            effects = split.test.require_true_effect()
+            nuisances = nuisances_for(split)
+            overlap.append(nuisances.propensity_fit.has_overlap_problem)
+
+            for row in refitted:
+                metrics = policy_metrics(
+                    split.test.outcome,
+                    split.test.treatment,
+                    row.scores,
+                    nuisances,
+                    budgets=budgets,
+                    seed=TIE_SEED,
+                )
+                for budget in budgets:
+                    treated = rank_and_cut(row.scores, budget, seed=TIE_SEED)
+                    truth.setdefault((row.estimator, budget), []).append(
+                        float((effects * treated).mean())
+                    )
+                    for name in ("ipw", "dr"):
+                        estimated.setdefault((row.estimator, budget, name), []).append(
+                            metrics[gain_key(name, budget)]
+                        )
+
+        return (
+            {key: float(np.mean(values)) for key, values in truth.items()},
+            {key: float(np.mean(values)) for key, values in estimated.items()},
+            overlap,
+        )
+
+    def test_the_risk_ranking_really_does_buy_negative_outcome(self, measured):
+        true_gain, estimated, _ = measured
+        # Not "worse than random", which the ranking table could already suggest and whose
+        # interval there contains zero. Worse than treating nobody at all, against effects
+        # that were written down before any model saw them.
+        assert true_gain[("outcome-ranking", 0.1)] < 0.0
+        assert estimated[("outcome-ranking", 0.1, "dr")] < 0.0
+        for estimator in ("s-learner", "t-learner", "x-learner", "dr-learner", "r-learner"):
+            assert true_gain[(estimator, 0.1)] > 0.0
+            assert true_gain[(estimator, 0.1)] > true_gain[("outcome-ranking", 0.1)]
+
+    def test_the_doubly_robust_estimate_is_the_one_to_believe_here(self, measured):
+        true_gain, estimated, overlap = measured
+        errors = {
+            name: float(
+                np.mean(
+                    [
+                        abs(estimated[(estimator, budget, name)] - value)
+                        for (estimator, budget), value in true_gain.items()
+                    ]
+                )
+            )
+            for name in ("ipw", "dr")
+        }
+        # A factor of three on the levels, and far more than that on the error.
+        assert errors["dr"] < errors["ipw"] / 5.0
+        # And the propensity diagnostic said which one would fall over, without the truth.
+        assert all(overlap)
+
+    def test_every_doubly_robust_estimate_lands_near_the_truth(self, measured):
+        true_gain, estimated, _ = measured
+        for (estimator, budget), value in true_gain.items():
+            assert estimated[(estimator, budget, "dr")] == pytest.approx(value, abs=0.3), (
+                f"{estimator} at {budget:.0%}"
             )

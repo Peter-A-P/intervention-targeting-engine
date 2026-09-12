@@ -458,6 +458,14 @@ from one decile table on a randomised sample, and it decides whether the rest of
 repository is worth running on a given problem. Saying so costs the project its simplest
 headline and is the finding most likely to be of use to somebody.
 
+Week 5 made it a command. `uv run itx diagnose --dataset <name>` fits that one outcome model,
+prints the decile table, and reports the three numbers this paragraph is about with bootstrap
+intervals on each: the risk spread, the multiplier spread, and the correlation between a
+band's risk and its uplift. Both of its confident verdicts are gated on the correlation's
+interval rather than its point estimate, because ten bands on a few thousand rows will
+cheerfully produce a decisive-looking ordering out of nothing, and announcing a direction from
+one would be the exact error the rest of this file documents.
+
 A caveat that belongs next to it: the decile table is only available where assignment is
 random or credibly ignorable. On IHDP, where it is neither, the same table would be measuring
 confounding rather than effect heterogeneity, which is the first of the two failure modes
@@ -490,6 +498,126 @@ scale, not effects. Running them through PEHE produces a large number that reads
 error score and is really a units mismatch, and asking whether a risk score is the right size
 to be a treatment effect is not a question about the score. The benchmark leaves those cells
 empty (`estimates_effect = False`) rather than printing something meaningless.
+
+---
+
+## What the rankings actually buy
+
+Week 5 added the number the rest of this file has been reaching for: the realised policy
+value, or what a ranking is worth if you deploy it. Everything above compares rankings.
+This compares decisions.
+
+The quantity is the extra outcome per head of the whole population from treating the top b%
+rather than treating nobody, and it is estimated two ways, by inverse-probability weighting
+and doubly robustly. `itx/policy/policy_value.py` sets out the definitions and why the table
+reports the gain against doing nothing rather than the level.
+
+### It is not a tidier version of uplift at k. On confounded data it disagrees in sign
+
+`uplift@k` is the number a practitioner actually computes: run the campaign, compare the
+outcome rate of the treated and untreated people inside the targeted group, report the
+difference. On a randomised dataset it is fine. ACIC 2016 is not randomised, and ACIC 2016
+is the case that matters, because most targeting problems are observational.
+
+Take the outcome ranking's top 10% on ACIC, five seeds, and ask the same question three ways:
+
+| | Mean effect of the targeted decile |
+|---|---|
+| Naive arm difference inside the decile (`uplift@10%`) | **+0.34** |
+| Doubly robust estimate | **-1.97** |
+| The truth, from the effects ACIC was simulated from | **-2.46** |
+
+Per seed, the naive number is +0.30, +1.17, -0.16, -0.80, +1.20: scattered around zero and
+positive on average. Per seed, the truth is -2.72, -3.55, -1.95, -2.69, -1.38: negative every
+time, and never close to zero.
+
+So the metric a practitioner would compute says the risk-ranked campaign is helping. The
+truth is that it is harming, by about two and a half units of outcome per person treated. The
+adjustment does not sharpen the estimate, it reverses it.
+
+This is not a surprise to anybody who works on causal inference: comparing arms inside a
+non-randomly-assigned subgroup is confounded, and the people a risk model puts at the top are
+exactly the people whose assignment was least random. It is worth stating plainly anyway,
+because the naive comparison is what gets reported in practice, and here it is wrong by
+enough to invert the recommendation.
+
+### The consequence for the ACIC table
+
+The policy table resolves something the ranking table could not. In the ranking table, the
+outcome ranking's `uplift@10%` on ACIC is 0.3415 with an interval of (-1.59, 2.40): it
+contains zero, and it overlaps random targeting's interval, so nothing can be concluded from
+it. In the policy table the doubly robust gain at the same budget is -0.1971 with an interval
+of (-0.357, -0.032), and random targeting's is 0.2564 (0.104, 0.434). The two intervals do not
+overlap and the first is entirely below zero.
+
+Stated as a decision rather than a metric: on ACIC, spending a budget that covers a tenth of
+the population on the highest-risk tenth of the population is worse than spending nothing.
+Not worse than uplift modelling, not worse than picking names out of a hat. Worse than
+leaving the money in the account.
+
+Two honesty notes on that. The intervals compared are percentile bootstrap intervals on the
+same test rows, so reading two of them as a significance test is informal; the sharper
+version is a paired bootstrap of the difference on shared resamples, which the runner does
+not compute yet. And the whole comparison is on the dataset in this benchmark whose
+assumptions are weakest, which is the next section.
+
+### When the interventions cost different amounts
+
+Everything above spends a budget measured in people: treat the top 10%. That is the right
+rule when every intervention costs the same, and every dataset in this benchmark is one where
+it does. It stops being right the moment they differ, which is most of the time outside a
+benchmark: a fraud review costs an analyst an hour, a text message costs a fraction of a cent,
+a clinic visit costs more than either.
+
+`itx/policy/cost_aware.py` ranks by predicted effect per unit of cost and fills the budget
+from the top. Two things about that are worth knowing before using it.
+
+**It is a different list.** A unit with twice the effect and three times the cost sits below
+one with half the effect and a fifth of the cost. The two orderings coincide only when costs
+are uniform, and when they are, this reduces to `rank_and_cut` at the matching share exactly,
+which the tests assert rather than assume.
+
+**It reports its own optimality gap instead of quoting a bound.** The 0/1 knapsack is
+NP-hard, so the greedy ratio rule is an approximation, and the textbook guarantee is that it
+is within a factor of two of optimal. That is true and nearly useless, because a factor of two
+is enormous and the real gap on a targeting instance is nothing like it. Relaxing the problem
+to allow fractions of a unit makes it solvable exactly by the same ordering, and its value
+bounds anything an integer allocation could reach, so every allocation carries that bound and
+the distance to it. On ten thousand units the gap is under 0.01%. On three units where one
+costs five eighths of the budget, greedy is beaten by 30% and says so, which is the test that
+keeps the number from being decoration.
+
+It is not yet applied to a dataset. Costs are a property of the problem rather than of these
+five public datasets, and inventing a cost column to demonstrate the machinery on Hillstrom
+would be a picture of an assumption. The fraud worked case in week 7 is semi-synthetic and
+declares its cost function, which is where this gets used on something.
+
+### Which of the two estimators to believe, and how to tell without the truth
+
+They disagree on ACIC by a factor of three, and the truth says which is right:
+
+| Estimator | Mean absolute error against the true gain, over 6 rankings x 3 budgets |
+|---|---|
+| Doubly robust | **0.11** |
+| Inverse-probability weighted | **2.30** |
+
+IPW reports gains of 2.0 to 3.0 at a 10% budget where the truth is 0.65 to 0.70. It is not
+slightly noisy, it is wrong by a factor of three.
+
+The useful part is that this was predictable without any ground truth, from the propensity
+diagnostic alone. ACIC's assignment probabilities are not published with the data and have to
+be estimated, and on the test split 46% of rows sit against the 0.01 clipping bound with raw
+values down to 0.0001. Those rows carry inverse weights of 100 each. An estimator that divides
+by that number is resting on a handful of rows, and the diagnostic line says so before
+anything is fitted. IHDP is the same story at 17.3% clipped, and its IPW gains have intervals
+spanning a factor of twenty.
+
+On the three randomised datasets the propensity is a design constant, nothing is clipped, and
+the two estimators agree closely. The rule that falls out is simple: read the clipped share
+first, and where it is large, read the doubly robust column.
+
+`tests/test_policy_value.py` carries all of this as assertions against ACIC rather than as a
+paragraph, because a claim this load-bearing should fail a test run if it stops being true.
 
 ---
 
@@ -657,6 +785,40 @@ moving from 0.0040 untuned to 0.0042 tuned. A reader entitled to ask why the pro
 that the protocol in PLAN.md section 4 commits to it and changing what is measured mid-build
 is worse than paying for it. Whether the grid earns its place is a question for week 8, and
 `docs/rejected.md` is where it will be answered either way.
+
+**The second selection rule changes almost every choice, which is more of the same.** Week 5
+closed change 9 by adding the rule the Qini one was always measured against: score each
+candidate on what its ranking would buy at the operating budget, doubly robust, on the
+validation split. `uv run itx selection --dataset <name>` fits both and reports where they
+land differently. On ACIC, across six estimators and five seeds:
+
+| | Cases | Share |
+|---|---|---|
+| Two rules chose the same configuration | 4 of 30 | 13% |
+| Two rules disagreed | 26 of 30 | 87% |
+
+An 87% disagreement rate is the same story this section has been telling since week 4. Capping
+the tuning rows changed nearly every selection; scoring on the decision instead of the curve
+changes nearly every selection; the selections are not stable under anything. The reading is
+not that one rule is finding something the other misses, it is that both are choosing between
+configurations that are near-ties, and any change to the rule reshuffles a choice that was
+never carrying weight.
+
+**What is not yet measured, and it is the part that would settle it.** Disagreement says
+nothing on its own about whether the disagreement costs anything. The week 4 capping question
+was settled by fitting *both* choices on the full training split and scoring both on test,
+which turned a scary-looking 24-of-25 disagreement into a mean difference of -0.00015 and a
+coin flip. The same measurement for these two rules is the right one and it has not been run
+to completion: a partial pass over ACIC seed 11 suggested the differences may be larger here
+than they were for capping, in the policy rule's favour, which is interesting enough that
+reporting it from seven of thirty cases would be worse than reporting nothing. It is queued.
+
+Until it is done, the default stays on the Qini rule for the reason given in
+`itx/bench/grid.py`: the policy value at a single budget reads one cutoff of the validation
+ranking where the Qini integrates all of it, so it is the noisier signal on validation splits
+this size, and the protocol in PLAN.md section 4 commits to what is already there. Changing
+what the benchmark selects on, on the strength of an argument rather than a measurement, is
+exactly the move this repository spends its time objecting to.
 
 ---
 

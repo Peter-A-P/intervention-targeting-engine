@@ -20,6 +20,11 @@ dist/
 build/
 *.egg-info/
 
+# Interrupted benchmark runs. A checkpoint on disk means a run was killed and can be
+# resumed; it is never a result, so committing one would put a half-finished table in the
+# history and invite somebody to read it as a finished one.
+results/*.checkpoint.json
+
 # Demo build output
 demo/dist/
 

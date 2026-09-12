@@ -63,7 +63,29 @@ Selected on the validation split from the committed grid:
 **What each ranking buys.**
 
 <!-- itx:table:hillstrom-policy -->
+| Estimator | IPW gain at 10% | DR gain at 10% | IPW gain at 20% | DR gain at 20% | IPW gain at 30% | DR gain at 30% |
+|---|---|---|---|---|---|---|
+| `s-learner` | 0.0096 (0.0043, 0.0147) | 0.0088 (0.0039, 0.0135) | 0.0178 (0.0106, 0.0252) | 0.0168 (0.0100, 0.0234) | 0.0265 (0.0177, 0.0356) | 0.0242 (0.0161, 0.0324) |
+| `t-learner` | 0.0102 (0.0045, 0.0157) | 0.0096 (0.0045, 0.0147) | 0.0174 (0.0100, 0.0249) | 0.0155 (0.0087, 0.0224) | 0.0221 (0.0132, 0.0311) | 0.0201 (0.0119, 0.0282) |
+| `x-learner` | 0.0084 (0.0030, 0.0137) | 0.0080 (0.0032, 0.0128) | 0.0174 (0.0100, 0.0249) | 0.0158 (0.0090, 0.0227) | 0.0244 (0.0157, 0.0338) | 0.0224 (0.0146, 0.0309) |
+| `dr-learner` | 0.0089 (0.0034, 0.0145) | 0.0085 (0.0036, 0.0136) | 0.0158 (0.0082, 0.0234) | 0.0148 (0.0079, 0.0217) | 0.0239 (0.0149, 0.0330) | 0.0220 (0.0138, 0.0305) |
+| `r-learner` | 0.0104 (0.0049, 0.0160) | 0.0092 (0.0041, 0.0144) | 0.0165 (0.0090, 0.0240) | 0.0151 (0.0084, 0.0221) | 0.0237 (0.0148, 0.0325) | 0.0221 (0.0138, 0.0304) |
+| `outcome-ranking` | 0.0054 (-0.0006, 0.0116) | 0.0043 (-0.0011, 0.0099) | 0.0111 (0.0029, 0.0197) | 0.0103 (0.0028, 0.0183) | 0.0189 (0.0091, 0.0291) | 0.0171 (0.0083, 0.0263) |
+| `random-200` | 0.0045 (0.0001, 0.0088) | 0.0044 (0.0004, 0.0085) | 0.0091 (0.0030, 0.0150) | 0.0088 (0.0034, 0.0144) | 0.0137 (0.0069, 0.0204) | 0.0132 (0.0068, 0.0193) |
 <!-- itx:end:hillstrom-policy -->
+
+At a budget covering a tenth of the customers, the outcome ranking buys 0.0043 extra visits
+per customer in the population and random targeting buys 0.0044. On the tightest budget, the
+ordinary way of doing this job is worth exactly nothing over a coin flip, while every uplift
+model here buys about twice that and excludes zero. The gap narrows as the budget widens:
+measured as the share of the distance from random targeting to the best estimator, the
+outcome ranking covers none of it at 10%, about a fifth at 20% and about a third at 30%. The
+trap is worst exactly where budgets are tightest, which is where budgets usually are.
+
+The two estimators agree to within 0.001 everywhere in this table. They should: Hillstrom is
+randomised, its treatment probability is a design constant, and no unit is anywhere near the
+clipping bound. Where they disagree, as on ACIC below, that is information about the data
+rather than about the estimators.
 
 The outcome ranking is the ordinary way this job is done: model who is likely to respond,
 spend the budget from the top of that list. Its Qini interval contains zero, so on this
@@ -123,6 +145,21 @@ Selected on the validation split from the committed grid:
 | `random-200` | 2.2266 (-0.2722, 7.9707) | 0.5154 (0.0215, 1.4131) | 4.4459 (-0.0230, 11.1432) | 1.0135 (0.2956, 2.0037) | 6.7272 (0.5701, 14.1585) | 1.5292 (0.6507, 2.6437) |
 <!-- itx:end:ihdp-policy -->
 
+This table is mostly a warning about itself, and it is left at full size for that reason.
+
+Nothing in it separates. Every estimator's doubly robust gain at a 10% budget has an interval
+containing zero, and random targeting's is the largest point estimate on the page. The test
+split is 150 units; a policy value read off a tenth of it is being estimated from fifteen
+people, and no amount of bootstrapping fixes that.
+
+The IPW column is worse than uninformative and shows why the propensity diagnostic exists.
+IHDP's treatment was assigned observationally and its probabilities have to be estimated: on
+the test split they run down to 0.0007, and 17.3% of rows sit against the 0.01 clipping bound
+carrying inverse weights of 100 each. An estimate that divides by those numbers is resting on
+a handful of rows, which is what an interval of (-0.20, 4.71) around a point estimate of 1.72
+looks like. The doubly robust column is the one to read here, and it is reported next to the
+other because the disagreement between them is the finding.
+
 The true average effect here is about 4.0, and PEHE is the per-unit error against an effect
 somebody wrote down, so lower is better and only the simulated datasets can report it. Which
 estimator wins it is not a fact about the estimators: it depends on whether the treatment
@@ -176,7 +213,38 @@ Selected on the validation split from the committed grid:
 **What each ranking buys.**
 
 <!-- itx:table:acic-policy -->
+| Estimator | IPW gain at 10% | DR gain at 10% | IPW gain at 20% | DR gain at 20% | IPW gain at 30% | DR gain at 30% |
+|---|---|---|---|---|---|---|
+| `s-learner` | 2.1482 (0.7636, 3.9902) | 0.7037 (0.5091, 0.9152) | 3.9917 (1.7828, 6.7722) | 1.3192 (1.0052, 1.6811) | 4.9032 (2.4120, 7.7670) | 1.7791 (1.4418, 2.1563) |
+| `t-learner` | 2.0515 (0.7057, 3.7325) | 0.6739 (0.4368, 0.9041) | 3.2441 (1.4482, 5.6533) | 1.2102 (0.9219, 1.5393) | 4.5387 (2.1586, 7.3250) | 1.7099 (1.3660, 2.1032) |
+| `x-learner` | 3.0468 (1.0616, 5.5227) | 0.8445 (0.5519, 1.1757) | 4.3136 (1.8900, 7.1794) | 1.4155 (1.0740, 1.8027) | 5.0233 (2.5381, 7.9043) | 1.8360 (1.4866, 2.2478) |
+| `dr-learner` | 2.5187 (1.1620, 4.4216) | 0.7112 (0.5483, 0.9299) | 3.8450 (2.0130, 6.3262) | 1.2213 (0.9385, 1.5599) | 5.0669 (2.7208, 7.8254) | 1.6481 (1.2994, 2.0112) |
+| `r-learner` | 2.1321 (0.7008, 3.8682) | 0.7482 (0.5295, 0.9970) | 4.2858 (1.9351, 7.0874) | 1.3051 (0.9738, 1.6945) | 5.3101 (2.7519, 8.2539) | 1.7844 (1.4092, 2.1854) |
+| `outcome-ranking` | -0.2396 (-1.0804, 0.8699) | -0.1971 (-0.3565, -0.0320) | 0.8724 (-0.7233, 3.0931) | 0.0567 (-0.1965, 0.3177) | 2.2734 (0.2457, 4.8577) | 0.4205 (0.1226, 0.7651) |
+| `random-200` | 0.6073 (-0.0762, 1.7252) | 0.2564 (0.1040, 0.4336) | 1.2318 (0.1874, 2.6057) | 0.5075 (0.3018, 0.7321) | 1.8139 (0.5568, 3.4005) | 0.7587 (0.5256, 1.0176) |
 <!-- itx:end:acic-policy -->
+
+**This is the table the project was built to produce.** At a budget covering a tenth of the
+population, the outcome ranking buys **-0.1971 (-0.357, -0.032)**. Negative, with the whole
+interval below zero. Spending the budget on the highest-risk tenth of this population is
+worse than spending nothing at all: not worse than uplift modelling, not worse than picking
+names out of a hat, worse than leaving the money in the account. The five uplift models buy
+0.67 to 0.84 at the same budget, and random targeting buys 0.26.
+
+The ranking table above could not establish that. Its `uplift@10%` for the outcome ranking is
+0.3415 with an interval of (-1.59, 2.40), which contains zero and overlaps random targeting's.
+The reason is not precision, it is bias: ACIC's assignment is observational, so comparing the
+arms *inside* a risk-selected group compares people who were not exchangeable to begin with.
+Against the individual effects ACIC was simulated from, the true mean effect of that targeted
+decile is **-2.46**, negative on all five seeds, while the naive arm difference averages
+**+0.34**. Adjusting for the confounding does not sharpen the answer, it reverses it.
+[docs/estimators.md](docs/estimators.md) has the per-seed numbers and the ground-truth check,
+and `tests/test_policy_value.py` asserts it rather than asserting a paragraph.
+
+The two estimators disagree by a factor of three here and the truth says the doubly robust one
+is right, to a mean absolute error of 0.11 against IPW's 2.30. That was predictable without
+any ground truth: 46% of ACIC's test rows sit against the clipping bound, and `itx diagnose`
+and the propensity line both say so before anything is fitted.
 
 This is where the trap is at its worst, and it is worth reading the two baseline rows
 against the estimators:
