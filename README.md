@@ -6,15 +6,17 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
-**Status: week 4 of 8.** Loaders for all five datasets, and five estimators of the seven
-benchmarked on four of them; Lenta's table is the one still missing. The numbers below are
-real and reproducible; the table is not finished. Build plan: [PLAN.md](PLAN.md).
+**Status: week 4 of 8.** Five estimators of the seven, benchmarked on all five datasets. The
+numbers below are real and reproducible; two estimators and the policy, sensitivity and demo
+work are still to come. Build plan: [PLAN.md](PLAN.md).
 
-Criteo changed what this project claims. On 14 million randomised rows the outcome-ranking
-baseline, which is the thing the repository was built to catch out, matches every uplift model
-in the table. On ACIC the same baseline is ten times worse than random targeting. Both results
-are below, with the one-table diagnostic that says in advance which of the two situations you
-are in.
+Four datasets, four different answers, and that is the finding. On ACIC the ordinary approach
+of ranking by risk is ten times worse than picking names out of a hat. On Criteo's 14 million
+randomised rows it is as good as every uplift model here. On Hillstrom the uplift models win
+and risk ranking is ambiguous. On Lenta nothing, including the uplift models, is
+distinguishable from random at all. Whether any of this is worth building is a question about
+your data, and the [risk-decile diagnostic](#criteo-uplift-1398m-randomised-ad-impressions)
+below answers it in one table before anybody fits a model.
 
 ## Results
 
@@ -180,10 +182,65 @@ and realised uplift varies half as much again as it says.
 table.
 
 <!-- itx:table:lenta -->
-_Not generated yet. The loader, the card and the leak finding below are done; the results table is week 5, after the tuning cap of PLAN.md change 30 made a run affordable._
+| Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% | Calibration slope | Calibration error |
+|---|---|---|---|---|---|---|---|
+| `s-learner` | 0.0006 (-0.0003, 0.0016) | 0.0495 (0.0230, 0.0760) | 0.0184 (0.0008, 0.0357) | 0.0132 (0.0017, 0.0248) | 0.0118 (0.0031, 0.0207) | 0.7697 (-0.2513, 1.8054) | 0.0052 (0.0043, 0.0098) |
+| `t-learner` | 0.0002 (-0.0008, 0.0012) | 0.0431 (0.0179, 0.0682) | 0.0159 (-0.0013, 0.0330) | 0.0114 (0.0007, 0.0227) | 0.0096 (0.0016, 0.0178) | 0.0568 (-0.1061, 0.2219) | 0.0193 (0.0166, 0.0234) |
+| `x-learner` | 0.0002 (-0.0009, 0.0012) | 0.0430 (0.0185, 0.0676) | 0.0113 (-0.0053, 0.0284) | 0.0118 (0.0012, 0.0227) | 0.0101 (0.0019, 0.0182) | 0.0789 (-0.2035, 0.3460) | 0.0120 (0.0099, 0.0163) |
+| `dr-learner` | 0.0004 (-0.0006, 0.0014) | 0.0460 (0.0207, 0.0704) | 0.0163 (-0.0003, 0.0337) | 0.0140 (0.0033, 0.0251) | 0.0113 (0.0032, 0.0196) | 0.0964 (-0.1011, 0.2946) | 0.0149 (0.0126, 0.0190) |
+| `r-learner` | 0.0003 (-0.0007, 0.0013) | 0.0455 (0.0212, 0.0701) | 0.0093 (-0.0083, 0.0263) | 0.0131 (0.0022, 0.0241) | 0.0117 (0.0035, 0.0200) | 0.0634 (-0.1823, 0.3037) | 0.0136 (0.0113, 0.0177) |
+| `outcome-ranking` | 0.0005 (-0.0005, 0.0014) | 0.0469 (0.0175, 0.0763) | 0.0075 (-0.0118, 0.0267) | 0.0096 (-0.0030, 0.0224) | 0.0095 (-0.0003, 0.0191) | - | - |
+| `random-200` | -0.0000 (-0.0008, 0.0007) | 0.0402 (0.0286, 0.0511) | 0.0073 (-0.0034, 0.0175) | 0.0074 (-0.0004, 0.0146) | 0.0074 (0.0019, 0.0125) | - | - |
+
+Selected on the validation split from the committed grid:
+
+- `s-learner`: min_child_samples=60, num_leaves=31 (2 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
+- `t-learner`: min_child_samples=60, num_leaves=31 (2 of 5 seeds), min_child_samples=20, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
+- `x-learner`: min_child_samples=200, num_leaves=15 (2 of 5 seeds), min_child_samples=60, num_leaves=31 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds)
+- `dr-learner`: min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=200, num_leaves=31 (1 of 5 seeds), min_child_samples=60, num_leaves=31 (1 of 5 seeds)
+- `r-learner`: min_child_samples=5, num_leaves=15 (3 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=200, num_leaves=31 (1 of 5 seeds)
+- `outcome-ranking`: min_child_samples=60, num_leaves=31 (2 of 5 seeds), min_child_samples=200, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds)
 <!-- itx:end:lenta -->
 
-Two of its columns never reach the model, and finding that out is the interesting part.
+**Nothing here beats random targeting, and that is the result.** Every Qini interval in the
+table above contains zero, for all five estimators and for both baselines. On the Qini they
+are indistinguishable from each other and from picking names out of a hat.
+
+| Lenta | Qini | uplift at a 10% budget |
+|---|---|---|
+| `s-learner` | 0.0006 (-0.0003, 0.0016) | 0.0184 (0.0008, 0.0357) |
+| `dr-learner` | 0.0004 (-0.0006, 0.0014) | 0.0163 (-0.0003, 0.0337) |
+| Outcome ranking | 0.0005 (-0.0005, 0.0014) | 0.0075 (-0.0118, 0.0267) |
+| Random targeting | -0.0000 (-0.0008, 0.0007) | 0.0073 (-0.0034, 0.0175) |
+
+There is exactly one thread worth pulling. The S-learner is the only estimator whose realised
+uplift excludes zero at every budget: 0.0184 at 10%, 0.0132 at 20%, 0.0118 at 30%, against
+random targeting's flat 0.0074. That is about two and a half times random at a tight budget,
+and it is consistent across all three budgets and all five seeds. But its interval overlaps
+random's heavily, and the Qini, which integrates the whole curve rather than one cut of it,
+declines to confirm anything. So it is a hint and it is reported as a hint.
+
+**Why this dataset cannot answer the question.** The average effect is 0.75 percentage points
+on a 10.3% base rate. The test split is 137,406 rows and only about a quarter of them are
+controls, so roughly 34,000 control rows carry the comparison. Detecting *heterogeneity*
+inside an effect that small, from that many controls, is a lot to ask. Criteo has twice the
+effect in absolute terms and twice the test rows with far more events, which is why its
+intervals are tight enough to separate things and Lenta's are not.
+
+This is worth more to the reader than a fifth win would have been. A benchmark where every
+dataset produces a clean answer is a benchmark that has quietly selected its datasets. Lenta
+is a real retail campaign of a perfectly ordinary size, and the honest finding is that uplift
+modelling on it buys nothing you could defend to a sceptical colleague. The four datasets now
+give four different answers, which is the actual state of this field:
+
+| | What the data supports |
+|---|---|
+| ACIC 2016 | Uplift models work; risk ranking is ten times worse than random |
+| Criteo | Uplift models work; risk ranking works just as well |
+| Hillstrom | Uplift models beat both baselines; risk ranking is ambiguous |
+| Lenta | Nothing is distinguishable from random |
+
+Two of its columns never reach the model, and that is the other half of the story here.
 `response_sms` and `response_viber` sit in the feature block with names that could plausibly
 mean "responded to an earlier campaign". Nothing in the documentation says either way. In a
 randomised trial the answer is checkable: a pre-treatment covariate has the same mean in both

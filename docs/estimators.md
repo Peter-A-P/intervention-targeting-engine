@@ -8,8 +8,8 @@ Estimators in the table so far: S, T, X, DR and R learners. Baselines: outcome r
 random targeting.
 
 The single most useful thing in this file is in the outcome-ranking section: risk ranking
-matches every uplift model on Criteo and is worse than random on ACIC, and one decile table
-says in advance which of those a given problem is.
+matches every uplift model on Criteo, is worse than random on ACIC, and on Lenta nothing
+separates from random at all. One decile table says in advance which of those a problem is.
 
 ---
 
@@ -462,6 +462,28 @@ A caveat that belongs next to it: the decile table is only available where assig
 random or credibly ignorable. On IHDP, where it is neither, the same table would be measuring
 confounding rather than effect heterogeneity, which is the first of the two failure modes
 described above. The diagnostic inherits every assumption the estimators do.
+
+**On Lenta nothing separates, including the estimators.** Every Qini interval in that table
+contains zero: five estimators, the outcome ranking, and random targeting all overlap.
+
+| Lenta | Qini | Uplift at 10% |
+|---|---|---|
+| `s-learner` | 0.0006 (-0.0003, 0.0016) | 0.0184 (0.0008, 0.0357) |
+| `dr-learner` | 0.0004 (-0.0006, 0.0014) | 0.0163 (-0.0003, 0.0337) |
+| Outcome ranking | 0.0005 (-0.0005, 0.0014) | 0.0075 (-0.0118, 0.0267) |
+| Random targeting | -0.0000 (-0.0008, 0.0007) | 0.0073 (-0.0034, 0.0175) |
+
+It is a power problem rather than a modelling one: a 0.75-point effect on a 10.3% base rate,
+137,406 test rows, about 34,000 of them controls. The only thread is that the S-learner's
+realised uplift excludes zero at all three budgets, 0.0184, 0.0132 and 0.0118 against random
+targeting's flat 0.0074, consistently across five seeds, while its Qini does not. A ranking
+metric that integrates the whole curve is less sensitive to a good short prefix than the
+budgeted number is, which is the argument for making realised policy value the headline and
+is why week 5 exists.
+
+Reported because a benchmark where every dataset gives a clean answer is a benchmark that
+picked its datasets. Lenta is an ordinary retail campaign of an ordinary size, and the honest
+answer on it is that uplift modelling buys nothing anyone could defend.
 
 **Why it gets no PEHE or calibration.** Its scores are predicted outcomes, on the outcome's
 scale, not effects. Running them through PEHE produces a large number that reads like a bad
