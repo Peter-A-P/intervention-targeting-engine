@@ -80,6 +80,7 @@ DEFAULT_BINS = 10
 #: plain risk model is already close to the right list.
 AGREEMENT = 0.6
 
+
 @dataclass(frozen=True, slots=True)
 class Decile:
     """One band of the population, ordered by predicted risk.
@@ -202,9 +203,7 @@ class RiskDecileTable:
             "|---|---|---|---|---|---|---|",
         ]
         for band in self.deciles:
-            multiplier = (
-                "-" if not np.isfinite(band.multiplier) else f"{band.multiplier:.2f}x"
-            )
+            multiplier = "-" if not np.isfinite(band.multiplier) else f"{band.multiplier:.2f}x"
             lines.append(
                 f"| {band.index + 1} | {band.n_units:,} | "
                 f"{band.predicted_risk:.{digits}f} | {band.control_rate:.{digits}f} | "
@@ -380,9 +379,7 @@ def _statistics(
 
         values["risk_spread"] = _spread(np.array(control_rates))
         values["multiplier_spread"] = _spread(np.array(multipliers))
-        values["correlation"] = _rank_correlation(
-            np.array(control_rates), np.array(uplifts)
-        )
+        values["correlation"] = _rank_correlation(np.array(control_rates), np.array(uplifts))
         return values
 
     return statistics

@@ -151,7 +151,7 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 | 2 | Sep 14 - 20 | T and X learners; metrics module (Qini, AUUC, uplift at k, bootstrap); random and outcome-ranking baselines; synthetic-data tests | **Done 2026-09-10.** Three estimators with intervals on Hillstrom and IHDP, both baselines beaten on both; the metrics module and baselines had already landed in week 1, so the week also bought the validation grid from section 4 and a controlled demonstration of which meta-learner wins when. 212 tests |
 | 3 | Sep 21 - 27 | DR and R learners via EconML/CausalML wrappers; IHDP and ACIC loaders; PEHE and ATE error; calibration plot | **Done 2026-09-11.** Five estimators with ground-truth metrics on IHDP and ACIC; calibration slope, calibration error and the decile plot; the CausalML build risk did not materialise, and the week instead turned up a real defect in the propensity model (change 14). 302 tests |
 | 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | **Done 2026-09-12.** All five tables measured. Both loaders, both cards, `itx benchmark --all`, and a covariate-balance leak detector that caught two contaminated Lenta columns. The week's real cost was discovering the tuning protocol did not scale (change 30); its results were Criteo showing the outcome-ranking trap is conditional (change 32) and Lenta showing nothing at all (change 33). Not overnight, because this machine reboots itself nightly (change 34): the Criteo and Lenta runs are 50 minutes and 4h41m and both must start in the morning. 398 tests |
-| 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset; `itx diagnose`, the risk-decile table of change 32 | Policy value table with both baselines |
+| 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset; `itx diagnose`, the risk-decile table of change 32 | **Done 2026-09-13.** All five policy tables measured with both baselines, from one `itx benchmark --all` taking 10h19m. The trap is demonstrated on every dataset and turns out to change sign across them: the same baseline buys -0.20 on ACIC and +0.0055 on Criteo at a 10% budget. Also closed change 9's second selection rule, and the cost-aware knapsack, which is built and tested but not applied until the fraud case in week 7. Three findings the week did not set out to get: the policy value reverses the sign of the ACIC recommendation where `uplift@k` cannot see it (change 36 and the ground-truth check), it turns Lenta's null into a signal (change 42), and a known propensity is not sufficient to trust IPW (change 43). 484 tests |
 | 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; Dragonnet in PyTorch; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | Sensitivity section with numbers; Dragonnet in the table; write-up drafted |
 | 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; Azure Static Web Apps at targeting.peterparker.ca | Demo live, slider re-ranks |
 | 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | Definition of done all checked |
@@ -713,3 +713,49 @@ Also visible here: every IPW interval on Lenta contains zero at every budget, in
 the methods the DR column separates. Lenta was randomised but does not publish its assignment
 probability, so section 3's decision to leave `propensity` as None and estimate it has a
 measurable cost, and the doubly robust column is what pays it back.
+
+**43. A known propensity is not enough to trust IPW, and Criteo is the counterexample**
+(week 5). The rule this week was heading towards was "read the clipped share, and where it is
+large read the doubly robust column". ACIC at 46% clipped and IHDP at 17.3% support it. Criteo
+refutes it, and the refutation is worth more than the rule.
+
+Criteo's propensity is the design constant 0.85, not one unit is clipped, and its IPW gain is
+still half again its DR gain, on every seed, ratio 1.35 to 1.77. The DR column agrees with the
+plain arm difference inside the prefix; IPW does not.
+
+Decomposed on seed 11 it is exact rather than approximate. The top 10% of the S-learner's
+ranking has a realised treated share of 0.8667 against the design value of 0.85, roughly eight
+standard errors out. Horvitz-Thompson divides the control arm by 1 - 0.85, so each control unit
+carries a weight of 6.67, and that 1.7-point shortfall predicts a gap of +0.003866 against an
+observed +0.003866.
+
+The reason a covariate ranking can move the treated share at all is that Criteo's arms are not
+quite balanced: all twelve covariates lean the same way and the largest standardised mean
+difference is 0.047, which on 1.4M rows is about twenty standard errors and still far below the
+conventional 0.1 threshold `itx/metrics/balance.py` tests against. The balance detector passes
+Criteo and is right to; an imbalance too small to fail a balance test is large enough to break
+an estimator that divides by 0.15.
+
+The corrected statement is about the shape of the design rather than about clipping.
+Horvitz-Thompson weighting is fragile whenever one arm is small, because a selected subset need
+not carry the population's treated share and the small arm's weight multiplies the difference.
+Both failure modes end in the same advice, which is to read the doubly robust column.
+
+Two consequences. The cheap diagnostic is to compare the realised treated share inside the
+targeted prefix against the design propensity; it costs one mean, it is not yet a column in the
+tables, and it belongs with the sensitivity work in week 6. And the claim in
+`itx/policy/policy_value.py` that the gap between `uplift@k` and the IPW gain is "the sampling
+noise in that share" was wrong: a ranking selects on covariates, so the concentration is
+systematic rather than random. Both places are corrected.
+
+**44. One Criteo fit took 1h27m against 4m16s for the same estimator on other seeds** (week 5).
+Recorded because it looked exactly like a hang and very nearly was reported as one. The
+R-learner on Criteo seed 37 took 1h27m; the identical estimator on seeds 11 and 23 took 4m16s,
+and the fit immediately after it took 1m23s, so the run neither degraded nor recovered, it had
+one pathological fit. What distinguished it from a hang, checked at the time, was that the
+parent process was blocked at 0.1s of CPU per minute while about twenty causalml worker
+processes underneath it were each burning 3 to 20 seconds per 25, with 32 GB of memory free.
+
+Not diagnosed further. It cost the run about 80 minutes, `itx benchmark --all` still finished
+in 10h19m end to end, and the cause matters only if it recurs. The note exists so that the next
+person to see a stalled Criteo log checks the worker processes before killing the run.

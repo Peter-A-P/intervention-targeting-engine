@@ -440,9 +440,7 @@ def run(
                     split = stratified_split(data, seed)
                 if nuisances is None:
                     nuisances = nuisances_for(split)
-                reference = random_reference_row(
-                    split, budgets=budgets, nuisances=nuisances
-                )
+                reference = random_reference_row(split, budgets=budgets, nuisances=nuisances)
                 if on_row is not None:
                     on_row(reference)
             rows.append(reference)

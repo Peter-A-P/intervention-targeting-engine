@@ -612,9 +612,29 @@ by that number is resting on a handful of rows, and the diagnostic line says so 
 anything is fitted. IHDP is the same story at 17.3% clipped, and its IPW gains have intervals
 spanning a factor of twenty.
 
-On the three randomised datasets the propensity is a design constant, nothing is clipped, and
-the two estimators agree closely. The rule that falls out is simple: read the clipped share
-first, and where it is large, read the doubly robust column.
+On Hillstrom the propensity is a design constant, nothing is clipped, and the two estimators
+agree to within 0.001. It is tempting to stop there with "read the clipped share, and where it
+is large read the doubly robust column".
+
+**Criteo refutes that, and the refutation is the more useful finding.** Nothing is clipped on
+Criteo either, its propensity is the design constant 0.85, and its IPW gain is still half again
+its DR gain on every seed. Decomposed on seed 11: the top 10% of the S-learner's ranking holds a
+realised treated share of 0.8667 against a design value of 0.85, about eight standard errors
+out, and since Horvitz-Thompson weights each control unit by 1/0.15 that 1.7-point shortfall
+predicts a gap of +0.003866 against an observed +0.003866.
+
+A covariate ranking can shift the treated share because Criteo's arms are not quite balanced:
+all twelve covariates lean one way, the largest standardised mean difference is 0.047, which on
+1.4M rows is roughly twenty standard errors and still far below the conventional 0.1 threshold
+that `itx/metrics/balance.py` tests against. The balance detector passes Criteo and is right to.
+
+So the rule is about the shape of the design rather than about clipping. Horvitz-Thompson
+weighting is fragile whenever one arm is small: that arm's weight is large, a selected subset
+need not carry the population's treated share, and the weight multiplies the difference. Both
+failure modes end in the same advice and it is worth stating once: read the doubly robust
+column. The cheap diagnostic for the second one, comparing the treated share inside the targeted
+prefix against the design propensity, costs a single mean and is not yet a column in these
+tables.
 
 `tests/test_policy_value.py` carries all of this as assertions against ACIC rather than as a
 paragraph, because a claim this load-bearing should fail a test run if it stops being true.

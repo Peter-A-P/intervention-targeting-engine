@@ -6,17 +6,23 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
-**Status: week 4 of 8.** Five estimators of the seven, benchmarked on all five datasets. The
-numbers below are real and reproducible; two estimators and the policy, sensitivity and demo
-work are still to come. Build plan: [PLAN.md](PLAN.md).
+**Status: week 5 of 8.** Five estimators of the seven, benchmarked on all five datasets, each
+one now reported with what its ranking actually buys at a budget rather than only how well it
+ranks. The numbers below are real and reproducible; two estimators, the sensitivity analysis,
+the fraud case and the demo are still to come. Build plan: [PLAN.md](PLAN.md).
 
-Four datasets, four different answers, and that is the finding. On ACIC the ordinary approach
-of ranking by risk is ten times worse than picking names out of a hat. On Criteo's 14 million
-randomised rows it is as good as every uplift model here. On Hillstrom the uplift models win
-and risk ranking is ambiguous. On Lenta nothing, including the uplift models, is
-distinguishable from random at all. Whether any of this is worth building is a question about
-your data, and the [risk-decile diagnostic](#criteo-uplift-1398m-randomised-ad-impressions)
-below answers it in one table before anybody fits a model.
+**The same baseline, the same code, opposite conclusions.** Ranking people by risk is how this
+job is usually done. At a budget covering a tenth of the population it buys **-0.20 on ACIC**
+and **+0.0055 on Criteo**, against random targeting's +0.26 and +0.0008. On ACIC it is worse
+than spending nothing at all, interval entirely below zero. On Criteo it matches every uplift
+model in this repository and beats random targeting sevenfold. On Hillstrom it is worth nothing
+over a coin flip at a tight budget and recovers about a third of the gap by a wide one. On
+Lenta nothing separates from random, including the uplift models.
+
+So risk ranking is not a trap and it is not safe: it is one or the other depending on the data,
+the difference is worth a change of sign, and nobody can guess which case they are in. Anybody
+can measure it. `uv run itx diagnose --dataset <name>` decides it for the price of one outcome
+model, before any of the rest of this is worth running.
 
 ## Results
 
@@ -429,7 +435,65 @@ Selected on the validation split from the committed grid:
 **What each ranking buys.**
 
 <!-- itx:table:criteo-policy -->
+| Estimator | IPW gain at 10% | DR gain at 10% | IPW gain at 20% | DR gain at 20% | IPW gain at 30% | DR gain at 30% |
+|---|---|---|---|---|---|---|
+| `s-learner` | 0.0087 (0.0071, 0.0103) | 0.0057 (0.0044, 0.0069) | 0.0097 (0.0079, 0.0117) | 0.0069 (0.0054, 0.0085) | 0.0100 (0.0081, 0.0119) | 0.0072 (0.0056, 0.0087) |
+| `t-learner` | 0.0078 (0.0064, 0.0092) | 0.0053 (0.0041, 0.0064) | 0.0082 (0.0066, 0.0099) | 0.0057 (0.0043, 0.0070) | 0.0085 (0.0068, 0.0102) | 0.0059 (0.0044, 0.0072) |
+| `x-learner` | 0.0080 (0.0065, 0.0095) | 0.0056 (0.0043, 0.0067) | 0.0087 (0.0070, 0.0103) | 0.0061 (0.0047, 0.0074) | 0.0088 (0.0071, 0.0105) | 0.0063 (0.0048, 0.0076) |
+| `dr-learner` | 0.0078 (0.0064, 0.0094) | 0.0054 (0.0041, 0.0067) | 0.0087 (0.0068, 0.0105) | 0.0061 (0.0046, 0.0075) | 0.0088 (0.0070, 0.0107) | 0.0064 (0.0048, 0.0078) |
+| `r-learner` | 0.0080 (0.0066, 0.0096) | 0.0055 (0.0043, 0.0068) | 0.0088 (0.0071, 0.0105) | 0.0062 (0.0049, 0.0075) | 0.0090 (0.0072, 0.0108) | 0.0065 (0.0051, 0.0079) |
+| `outcome-ranking` | 0.0082 (0.0065, 0.0101) | 0.0055 (0.0042, 0.0069) | 0.0098 (0.0080, 0.0118) | 0.0070 (0.0055, 0.0086) | 0.0100 (0.0081, 0.0120) | 0.0072 (0.0055, 0.0088) |
+| `random-200` | 0.0010 (0.0005, 0.0016) | 0.0008 (0.0003, 0.0013) | 0.0021 (0.0013, 0.0029) | 0.0015 (0.0009, 0.0022) | 0.0031 (0.0022, 0.0040) | 0.0023 (0.0015, 0.0030) |
 <!-- itx:end:criteo-policy -->
+
+**The mirror image of ACIC, measured the same way, and the reason this project reports a
+condition rather than a rule.** The outcome ranking buys 0.0055 at a 10% budget. The five
+uplift models buy 0.0053 to 0.0057. On the best-powered dataset here, with intervals tight
+enough that a real gap would show, the baseline this repository exists to catch out is
+indistinguishable from every estimator built to beat it, at every budget. Uplift modelling
+buys nothing on Criteo.
+
+What all six of them do buy is large: random targeting gets 0.0008, so any ranking at all is
+worth about seven times a coin flip here. The choice that matters on this dataset is whether
+to target, not what to target with.
+
+Put the two tables side by side and the whole argument is in one line. At a 10% budget the
+identical baseline, produced by the identical code, buys **-0.1971 on ACIC and +0.0055 on
+Criteo**, against random targeting's +0.2564 and +0.0008. Ranking by risk is not a trap and is
+not safe; it is one or the other depending on the data, the difference is worth a sign change,
+and `uv run itx diagnose --dataset <name>` decides which case a problem is in for the price of
+one outcome model.
+
+**The IPW column is half again as high as the DR column here, and that is a defect rather
+than noise.** It is worth setting out, because it refutes the tidy rule the rest of this page
+was heading towards.
+
+Criteo's propensity is a design constant of 0.85 and not one unit is clipped, so the overlap
+problem that wrecks IPW on ACIC and IHDP is absent. The gap is systematic all the same: the
+ratio is 1.35 to 1.77 across the five seeds, never below 1.3, and the doubly robust column
+agrees with the plain arm difference in the prefix to three decimal places while IPW does not.
+
+Decomposed on seed 11, it is exact. The top 10% of the S-learner's ranking has a realised
+treated share of **0.8667**, not 0.85: about eight standard errors away from the design value.
+Horvitz-Thompson divides the control arm by 1 - 0.85, so each control unit carries a weight of
+6.67, and a prefix that is short of control units by 1.7 points is an estimate short of the
+thing it subtracts. The arithmetic closes to the last digit: that deviation predicts a gap of
++0.003866 and the observed gap is +0.003866.
+
+The reason a covariate-based ranking can shift the treated share at all is that Criteo's arms
+are not quite balanced. Every one of its twelve covariates leans the same way, the largest
+standardised mean difference is 0.047, and on 1.4 million rows that is around twenty standard
+errors. It is far below the conventional 0.1 threshold and this repository's own balance
+detector passes it, correctly. It is still enough: a model ranking on those covariates
+concentrates treated units at the top, and an estimator dividing by 0.15 turns 1.7 points of
+concentration into 50% of the answer.
+
+So the rule is not "check the clipped share and otherwise trust IPW". Nothing is clipped here.
+The rule is that Horvitz-Thompson weighting is fragile whenever one arm is small, because that
+arm's weight is large and any gap between the assumed and the realised share inside a
+*selected* subset is multiplied by it. The cheap check is to compare the treated share inside
+the targeted prefix with the design propensity, which costs one mean and is not yet a column
+in these tables. Read the doubly robust column on Criteo.
 
 **This is the dataset where the outcome-ranking trap does not happen, and it is the most
 useful result in the project.**

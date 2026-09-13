@@ -473,9 +473,9 @@ class TestAgainstGroundTruthOnAcic:
     """
 
     @pytest.fixture(scope="class")
-    def measured(self) -> tuple[
-        dict[tuple[str, float], float], dict[tuple[str, float, str], float], list[bool]
-    ]:
+    def measured(
+        self,
+    ) -> tuple[dict[tuple[str, float], float], dict[tuple[str, float, str], float], list[bool]]:
         """True, DR and IPW policy gains per estimator and budget, averaged over the seeds.
 
         Class-scoped, because it is twenty-five refits of ACIC and the three tests below all

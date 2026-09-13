@@ -34,9 +34,8 @@ of 0.017 means seventeen extra events per thousand people in the population. At 
 done, by the probability of that arm. Unbiased whenever the propensity is right, which on a
 randomised dataset is a design constant and not a modelling assumption. Its weakness is
 variance: a unit with a propensity of 0.02 carries fifty times the weight of an average one,
-and on an observational dataset a handful of rows can carry the estimate. This is the
-estimator to believe wherever the propensity is a design constant, which on Hillstrom and
-Criteo it is.
+and on an observational dataset a handful of rows can carry the estimate. A known design
+propensity is necessary for believing it and, as Criteo turned out to show, not sufficient.
 
 **DR** adds outcome models for the two arms and reweights only their residuals. It is
 consistent if *either* the propensity or the outcome models are right, which is the property
@@ -56,7 +55,23 @@ whether that model stayed away from the bounds is a question rather than an assu
 and IHDP are the reverse case made concrete: 46% and 17.3% of their test rows sit against the
 0.01 bound, each carrying an inverse weight of 100, and their IPW gains are wrong by a factor
 of three and unusable respectively. :attr:`PropensityFit.clipped_share` is the number that
-sorts these cases, it costs nothing, and it is available before any policy value is computed.
+sorts those cases, it costs nothing, and it is available before any policy value is computed.
+
+**And the clipped share is not sufficient either.** On Criteo nothing is clipped, the
+propensity is a design constant, and the IPW gain is still half again the doubly robust one,
+consistently across every seed. The cause is that the design is lopsided: 85% treated, so each
+control unit is weighted by 1/0.15, and the top 10% of a fitted ranking turns out to hold 86.7%
+treated rather than 85%. Criteo's arms are not quite balanced, by far too little to fail a
+balance test and by more than enough for a model ranking on those covariates to concentrate
+treated units at the top. A weight of 6.67 turns 1.7 points of concentration into 50% of the
+answer (PLAN.md change 43).
+
+The general statement is that Horvitz-Thompson weighting is fragile whenever an arm is small,
+because a *selected* subset need not carry the population's treated share and the small arm's
+weight multiplies the difference. The cheap check is to compare the realised treated share
+inside the targeted prefix with the design propensity. The doubly robust estimator does not
+have this problem, because its outcome models carry the prediction and the weights touch only
+the residuals.
 
 ## The nuisance models are fitted once per split, not once per estimator
 
@@ -75,12 +90,18 @@ place where evaluating on held-out data makes a nuisance model easier rather tha
 
 They are different estimators of closely related quantities and it is worth saying which is
 which. ``uplift@k`` compares the arms *inside* the targeted prefix, dividing by the arm
-counts in that prefix. The IPW gain divides by the arm probabilities in the *population*.
-Under a randomised design they agree only when the prefix happens to have the population's
-treated share, and the difference between them is the sampling noise in that share. The IPW
-version is the one that is unbiased for the deployed quantity; the prefix version is the one
-a practitioner can compute without a propensity, and it is kept because it is what gets
-quoted.
+counts in that prefix, which makes it a ratio estimator of the Hajek kind. The IPW gain
+divides by the arm probabilities in the *population*, which makes it Horvitz-Thompson. They
+agree exactly when the prefix carries the population's treated share and diverge in
+proportion to how far it does not, multiplied by the smaller arm's weight.
+
+That divergence was described here as sampling noise in the prefix's share until Criteo
+showed it is not always noise. A ranking selects the prefix on covariates, so any association
+between covariates and assignment concentrates one arm there systematically rather than
+randomly, and 1.7 points of concentration against a control weight of 6.67 moved the estimate
+by half (change 43). Each is the honest answer to a slightly different question: the
+prefix version is what a practitioner can compute without knowing a propensity at all, and it
+is kept because it is what gets quoted.
 """
 
 from __future__ import annotations
