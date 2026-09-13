@@ -20,10 +20,11 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
-from itx.bench.grid import Selection
+from itx.bench.grid import OPERATING_BUDGET, Selection
 from itx.bench.runner import BenchmarkRow, group_by_estimator, metric_names
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG
 from itx.metrics.bootstrap import Estimate, bootstrap_over
+from itx.policy.policy_value import share_gap_key
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -126,6 +127,16 @@ def to_markdown(
 #: Prefix marking a metric as a realised policy value rather than a ranking metric.
 POLICY_PREFIX = "gain_"
 
+#: Prefix of the treated-share diagnostic, which belongs beside the gains rather than beside
+#: the ranking metrics: it says whether the IPW column next to it can be read at all.
+SHARE_PREFIX = "share_gap@"
+
+#: Budget the share gap is shown at. It is computed at every budget and stored at every
+#: budget in the results file; only one is rendered, because the policy table is already
+#: seven columns wide and three more of a diagnostic that moves slowly across budgets would
+#: cost more readability than it buys.
+SHARE_GAP_BUDGET = OPERATING_BUDGET
+
 
 def results_table(rows: Sequence[BenchmarkRow], *, digits: int = 4) -> str:
     """The ranking table: every metric except the policy gains.
@@ -139,7 +150,7 @@ def results_table(rows: Sequence[BenchmarkRow], *, digits: int = 4) -> str:
     """
     return to_markdown(
         rows,
-        metrics=[m for m in metric_names(rows) if not m.startswith(POLICY_PREFIX)],
+        metrics=[m for m in metric_names(rows) if not _is_policy(m)],
         digits=digits,
     )
 
@@ -159,8 +170,9 @@ def policy_table(rows: Sequence[BenchmarkRow], *, digits: int = 4) -> str:
     Returns:
         A markdown table, empty if these rows carry no policy metrics.
     """
-    columns = [m for m in metric_names(rows) if m.startswith(POLICY_PREFIX)]
-    if not columns:
+    shown = share_gap_key(SHARE_GAP_BUDGET)
+    columns = [m for m in metric_names(rows) if m.startswith(POLICY_PREFIX) or m == shown]
+    if not any(m.startswith(POLICY_PREFIX) for m in columns):
         return ""
     return to_markdown(rows, metrics=columns, digits=digits)
 
@@ -454,4 +466,11 @@ def _column_label(metric: str) -> str:
     if metric.startswith(POLICY_PREFIX):
         estimator, _, budget = metric[len(POLICY_PREFIX) :].partition("@")
         return f"{estimator.upper()} gain at {budget}"
+    if metric.startswith(SHARE_PREFIX):
+        return f"Treated share gap at {metric[len(SHARE_PREFIX) :]}"
     return labels.get(metric, metric)
+
+
+def _is_policy(metric: str) -> bool:
+    """True for the metrics that belong in the policy table rather than the ranking one."""
+    return metric.startswith((POLICY_PREFIX, SHARE_PREFIX))

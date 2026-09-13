@@ -8,6 +8,7 @@ from itx.estimators.base import (
 )
 from itx.estimators.baselines import OutcomeRanking, RandomRanking
 from itx.estimators.dr_learner import DRLearner
+from itx.estimators.dragonnet import DEFAULT_DRAGONNET, Dragonnet, DragonnetConfig
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, OutcomeLearner
 from itx.estimators.propensity import PropensityFit, PropensityModel
 from itx.estimators.r_learner import RLearner
@@ -18,9 +19,12 @@ from itx.estimators.x_learner import XLearner
 
 __all__ = [
     "DEFAULT_CONFIG",
+    "DEFAULT_DRAGONNET",
     "BaseLearnerConfig",
     "BaseUpliftEstimator",
     "DRLearner",
+    "Dragonnet",
+    "DragonnetConfig",
     "LightGBMClassifier",
     "LightGBMRegressor",
     "NotFittedError",

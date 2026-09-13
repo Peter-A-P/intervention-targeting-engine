@@ -68,10 +68,10 @@ answer (PLAN.md change 43).
 
 The general statement is that Horvitz-Thompson weighting is fragile whenever an arm is small,
 because a *selected* subset need not carry the population's treated share and the small arm's
-weight multiplies the difference. The cheap check is to compare the realised treated share
-inside the targeted prefix with the design propensity. The doubly robust estimator does not
-have this problem, because its outcome models carry the prediction and the weights touch only
-the residuals.
+weight multiplies the difference. The cheap check is ``share_gap@k``, computed by
+:func:`policy_metrics` and documented there. The doubly robust estimator does not have this
+problem, because its outcome models carry the prediction and the weights touch only the
+residuals.
 
 ## The nuisance models are fitted once per split, not once per estimator
 
@@ -489,6 +489,28 @@ def policy_metrics(
     policy value that belonged to a slightly different set of people than the curve next to
     it would be a very hard bug to see.
 
+    ## The treated-share gap, which says when to stop reading the IPW column
+
+    ``share_gap@k`` is the realised treated share inside the targeted prefix minus the mean
+    propensity of the same units. It is zero when the units a ranking selects were treated
+    at the rate the propensity model expected, and it costs one more cumulative sum.
+
+    It is here because of what week 5 found on Criteo (PLAN.md change 43). Criteo's
+    propensity is the design constant 0.85, not one unit is clipped, every overlap check
+    passes, and its IPW gain is still half again its DR gain on every seed. The top 10% of
+    one ranking turned out to hold 86.7% treated against the expected 85%, and since
+    Horvitz-Thompson divides the control arm by 0.15, that 1.7-point gap predicted the
+    discrepancy to the last digit. A ranking selects on covariates, so the concentration is
+    systematic rather than sampling noise, and an imbalance far too small to fail the
+    balance detector in :mod:`itx.metrics.balance` is large enough to break an estimator
+    that divides by a small number.
+
+    Comparing against the mean propensity rather than against a design constant is what
+    makes this work on the observational datasets too, where it doubles as a check that the
+    propensity model is calibrated on the units the policy actually picks. The gap carries a
+    bootstrap interval like everything else, and an interval excluding zero on a ranking is
+    the signal to read the doubly robust column and leave the IPW one alone.
+
     Args:
         outcome: Observed outcome per unit.
         treatment: Binary treatment indicator per unit.
@@ -498,7 +520,7 @@ def policy_metrics(
         seed: Seed for tie-breaking.
 
     Returns:
-        A ``gain_ipw@k`` and a ``gain_dr@k`` entry per budget.
+        A ``gain_ipw@k``, a ``gain_dr@k`` and a ``share_gap@k`` entry per budget.
     """
     n_units = outcome.size
     order = rank_order(scores, seed=seed)
@@ -506,13 +528,28 @@ def policy_metrics(
         "ipw": np.cumsum(ipw_contributions(outcome, treatment, nuisances.propensity)[order]),
         "dr": np.cumsum(dr_contributions(outcome, treatment, nuisances)[order]),
     }
+    realised = np.cumsum(treatment[order].astype(np.float64))
+    modelled = np.cumsum(nuisances.propensity[order])
 
     metrics: dict[str, float] = {}
     for budget in budgets:
         cut = n_targeted(n_units, budget)
         for estimator, running in cumulative.items():
             metrics[gain_key(estimator, budget)] = float(running[cut - 1]) / n_units
+        metrics[share_gap_key(budget)] = float(realised[cut - 1] - modelled[cut - 1]) / cut
     return metrics
+
+
+def share_gap_key(budget: str | float) -> str:
+    """Metric name for the treated-share gap at one budget, for example ``share_gap@20%``.
+
+    Args:
+        budget: Share of the population.
+
+    Returns:
+        The metric name used in results files and tables.
+    """
+    return f"share_gap@{budget:.0%}" if isinstance(budget, float) else f"share_gap@{budget}"
 
 
 def gain_key(estimator: str, budget: float) -> str:

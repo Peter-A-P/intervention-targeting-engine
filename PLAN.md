@@ -207,7 +207,8 @@ Mirrors the portfolio's definition for this project:
 - [ ] Qini and AUUC reported with bootstrap intervals, never as a bare number
 - [ ] Policy value at budget reported against random and outcome-ranking baselines
 - [ ] PEHE and ATE error on the ground-truth sets
-- [ ] Sensitivity section with Rosenbaum bounds and E-values
+- [x] Sensitivity section with Rosenbaum bounds and E-values (week 6; three datasets of
+      five, and none of the three is capable of failing it, which the section says)
 - [ ] Live budget-slider demo at targeting.peterparker.ca
 - [ ] README opens with the one-liner and the results table
 - [ ] `docs/estimators.md` written: where each estimator breaks
@@ -759,3 +760,136 @@ processes underneath it were each burning 3 to 20 seconds per 25, with 32 GB of 
 Not diagnosed further. It cost the run about 80 minutes, `itx benchmark --all` still finished
 in 10h19m end to end, and the cause matters only if it recurs. The note exists so that the next
 person to see a stalled Criteo log checks the worker processes before killing the run.
+
+**45. Dragonnet breaks the one-base-learner rule, and is untuned, and both are stated rather
+than smoothed over** (week 6). CLAUDE.md says the base learner is LightGBM everywhere so that
+differences in the table are differences between estimators. Dragonnet cannot honour that,
+because a neural architecture is the thing being tested. Its column therefore answers a
+different question from the other five, and the gap between it and the T-learner confounds
+"a network with a propensity head" with "two gradient-boosted trees". It is in the table
+because section 2's definition of done requires it, not because it is a clean experiment.
+
+It is also in `UNTUNED`. The committed grid is over `min_child_samples` and `num_leaves`,
+which are LightGBM's knobs and mean nothing to a network, so there was a choice between
+running Dragonnet at the paper's published defaults and giving it a grid of its own. A
+bespoke search for the one estimator that could not use the shared grid is a more visible
+thumb on the scale than no search at all, given that the grid is identical across estimators
+precisely so the estimator column does not become a compute column. So it runs at the
+defaults and the table says "not tuned" next to it, the same way it does for the random
+ranking.
+
+Three things had to be added around the paper, all consequences of real data. Categorical
+columns are one-hot encoded rather than passed through, because the loaders hand over integer
+codes and a dense layer reads a code as a magnitude. Features are standardised on the
+training rows. And there is a row cap of 200,000, because this is a CPU-only project by
+budget and Criteo's 1.4M rows at a hundred epochs is not a benchmark anyone reruns. The cap
+does not bind on IHDP, ACIC or Hillstrom, so those three are a control for what it does, and
+what it costs is not yet measured. Change 30 is the template and the same measurement is owed.
+
+**46. The E-value's continuous path produced 102 from five units, and the arm floor moved
+from five to ten** (week 6). The first run of `itx sensitivity` on IHDP reported a targeted
+group risk ratio of 51.6 and an E-value of 102.6, which reads as an overwhelming result and
+is nothing of the kind.
+
+Decomposed rather than assumed. IHDP's outcome is continuous, so there is no rate to divide
+and the ratio comes from VanderWeele and Ding's conversion, `RR ~ exp(0.91 * d)`. At a 20%
+budget the targeted group held 5 treated units against 25 controls, with a within-group
+pooled standard deviation of 1.00 against the whole test split's 2.13, because a targeted
+group is selected to be homogeneous. That gives `d` of 4.33, and the conversion is
+exponential in `d`.
+
+Two fixes, and the second is the more important. The arm floor rose from 5 to 10, which is
+the same floor the risk-decile table already uses for a band and for the same reason: a rate
+from five units is not a rate. IHDP at a 20% budget now reports no E-value at all, which is
+the honest answer. And `d` is now carried on the result and named in the summary, with the
+caveat that the conversion was built for smaller effect sizes, because an E-value from a
+continuous outcome looks exactly like one from a real rate and is a weaker object. ACIC gives
+`d` of 1.82 and a converted ratio of 5.24, already at the edge of what the approximation was
+meant for; the three datasets section 2 names for this measure, Hillstrom, Criteo and Lenta,
+are all binary and do not go through the conversion at all.
+
+**47. "Matched pairs" on a randomised dataset were not matched on anything, and fixing it
+made the number slightly worse** (week 6). Rosenbaum's bound is computed on matched pairs,
+and the first version matched on the propensity score because that is what the method is
+written around. On Hillstrom the design propensity is exactly 0.5 for all 42,693 rows. Every
+unit is equidistant from every other, the caliper is infinite, and propensity matching
+degenerates into pairing units in whatever order the greedy matcher happened to serve them.
+The output still said "833 matched pairs".
+
+The pairing is not invalid, because under randomisation any pairing gives a valid test, but
+the word was claiming something the code was not doing. So where the propensity has no spread
+the key now falls back to the prognostic score, the predicted outcome under control, and the
+key that was used is named in the output.
+
+The justification offered for that was power: pairs alike in baseline risk should carry more
+signal. Measured over twelve matching seeds on Hillstrom at a 20% budget, that is wrong.
+Arbitrary pairing gives Gamma 1.347 with a standard deviation of 0.043 on 833 pairs;
+prognostic-score matching gives 1.300 with a standard deviation of 0.038 on 788, the caliper
+having cost about forty-five pairs. No more stable, and slightly smaller. The fallback is
+kept for the naming and because its error is in the conservative direction, not because it
+works better, and the module says so.
+
+The same table carries a limit on how the Gamma should be read anywhere in this project. It
+moves by about 0.06 either way on nothing but the order the greedy matcher served units in,
+so it belongs to one decimal place. Quoting 1.32 against 1.41 as though the gap meant
+something would be reporting the matching seed.
+
+**48. The treated-share gap is a column now, and it compares against the model rather than
+against the design** (week 6, closing the loose end change 43 left). Change 43 ended with a
+cheap diagnostic described and not built: compare the realised treated share inside the
+targeted prefix against the propensity, because Criteo's IPW gain ran half again its doubly
+robust one with a design propensity of 0.85, nothing clipped, and every overlap check
+passing. It is now `share_gap@k`, computed inside `policy_metrics` from one more cumulative
+sum over the same sorted order the gains use, so it costs nothing and cannot describe a
+different set of people than the gains beside it.
+
+One thing about it changed on the way in. Change 43 proposed comparing against the design
+propensity, which only exists on the randomised datasets. Comparing against the *mean
+propensity of the units in the prefix* is the same number where a design constant exists and
+is defined everywhere else, and on the observational sets it doubles as a check that the
+propensity model is calibrated on the units the policy actually picks, which is the only
+place its calibration matters. So that is what it does.
+
+It is computed at every budget and stored at every budget, and only the one at the operating
+budget is rendered. The policy table is seven columns wide already and three more columns of
+a diagnostic that moves slowly across budgets would cost more readability than it buys.
+
+The column is empty until the next full benchmark run, because the results files were written
+before it existed. Rather than backfill them, it arrives with Dragonnet on the same run.
+
+**49. The second selection rule's cost is measured, and it is nothing** (week 6, closing the
+loose end change 41 left). Change 41 added the policy-value selection rule and measured only
+that it disagrees with the Qini rule on 26 of 30 ACIC cases. Disagreement is not a cost, and
+the measurement that settles it is the one week 4 used on the tuning-rows cap: fit both
+winning configurations on the full training split, score both on the held-out test split, and
+report the difference.
+
+All 26 disagreements, 2h40m. Changing from the Qini rule to the policy rule moves the true
+gain at a 20% budget by a mean of -0.0011, bootstrap interval (-0.0137, +0.0099), with the
+policy rule ahead in 15 of 26. ACIC's DR gain at that budget sits around 1.0 with a 95%
+interval about 0.62 wide. The Qini moves by -0.0016 against intervals about 0.115 wide. Every
+interval covers zero and every win rate is a coin flip. The rule changes 87% of the selections
+and buys nothing measurable.
+
+Two things are worth keeping out of it. First, ACIC is simulated, so the deciding row is the
+true gain rather than an estimate, which matters because the rule under test selects on the DR
+estimate and scoring it only on that would be marking its own homework. The DR row does favour
+the policy rule more than the truth row does, +0.0274 against -0.0011, which is the direction
+that suspicion predicts and is not evidence of it, since the DR interval is (-0.0241, +0.0856).
+
+Second, `docs/estimators.md` previously reported a partial pass over seven cases from one seed
+suggesting the differences might be larger here and in the policy rule's favour, and refused to
+publish a number off seven cases. Finishing it refuted the suggestion.
+
+The default stays on the Qini rule, but the reason in `itx/bench/grid.py` is downgraded from a
+decision to an argument. That reason was about variance, that a single-budget policy value
+reads one cutoff where the Qini integrates the whole curve. It may be right; it is not what
+decides this. What decides it is that neither rule is measurably better, so section 4's
+protocol keeps what is already there.
+
+That is now three measurements from three directions saying the same uncomfortable thing.
+Capping the tuning rows changes nearly every selection and costs nothing. Scoring on the
+decision rather than the curve changes 87% of the selections and costs nothing. The selections
+land somewhere different on nearly every partition of the same dataset. Roughly 89% of this
+benchmark's compute goes on a choice among near-ties. Whether the grid earns its place is a
+week 8 question for `docs/rejected.md`.

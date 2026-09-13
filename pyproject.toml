@@ -54,6 +54,7 @@ dev = [
   "mypy>=1.13,<2.0",
   "ruff>=0.8,<1.0",
   "pandas-stubs>=2.2,<3.0",
+  "scipy-stubs>=1.14,<2.0",  # week 6 sensitivity work calls scipy.stats directly
 ]
 
 [tool.hatch.build.targets.wheel]

@@ -632,9 +632,13 @@ So the rule is about the shape of the design rather than about clipping. Horvitz
 weighting is fragile whenever one arm is small: that arm's weight is large, a selected subset
 need not carry the population's treated share, and the weight multiplies the difference. Both
 failure modes end in the same advice and it is worth stating once: read the doubly robust
-column. The cheap diagnostic for the second one, comparing the treated share inside the targeted
-prefix against the design propensity, costs a single mean and is not yet a column in these
-tables.
+column. The cheap diagnostic for the second one is now the `Treated share gap` column in the
+policy tables: the realised treated share inside the targeted prefix minus the mean propensity
+of those same units, one more cumulative sum over the order the gains already use. Comparing
+against the modelled propensity rather than a design constant is what makes it defined on the
+observational sets too, where it doubles as a check that the propensity model is calibrated on
+the units a policy actually picks. An interval excluding zero is the signal to stop reading
+the IPW column (PLAN.md change 48).
 
 `tests/test_policy_value.py` carries all of this as assertions against ACIC rather than as a
 paragraph, because a claim this load-bearing should fail a test run if it stops being true.
@@ -824,26 +828,177 @@ not that one rule is finding something the other misses, it is that both are cho
 configurations that are near-ties, and any change to the rule reshuffles a choice that was
 never carrying weight.
 
-**What is not yet measured, and it is the part that would settle it.** Disagreement says
-nothing on its own about whether the disagreement costs anything. The week 4 capping question
-was settled by fitting *both* choices on the full training split and scoring both on test,
-which turned a scary-looking 24-of-25 disagreement into a mean difference of -0.00015 and a
-coin flip. The same measurement for these two rules is the right one and it has not been run
-to completion: a partial pass over ACIC seed 11 suggested the differences may be larger here
-than they were for capping, in the policy rule's favour, which is interesting enough that
-reporting it from seven of thirty cases would be worse than reporting nothing. It is queued.
+**And the disagreement costs nothing, which is the third time this section has said that.**
+Disagreement says nothing on its own about whether it matters. The week 4 capping question was
+settled by fitting *both* choices on the full training split and scoring both on the held-out
+test split, and the same measurement settles this one. All 26 ACIC disagreements, both
+configurations fitted on the full training split, both scored on test, 2h40m:
 
-Until it is done, the default stays on the Qini rule for the reason given in
-`itx/bench/grid.py`: the policy value at a single budget reads one cutoff of the validation
-ranking where the Qini integrates all of it, so it is the noisier signal on validation splits
-this size, and the protocol in PLAN.md section 4 commits to what is already there. Changing
-what the benchmark selects on, on the strength of an argument rather than a measurement, is
-exactly the move this repository spends its time objecting to.
+| Change from using the policy rule instead of the Qini rule | mean | median | worst | best | policy rule better |
+|---|---|---|---|---|---|
+| True gain at 20%, from ACIC's own effects | -0.0011 | +0.0041 | -0.0984 | +0.0484 | 15 of 26 |
+| DR gain at 20% | +0.0274 | +0.0026 | -0.1752 | +0.5157 | 14 of 26 |
+| Qini | -0.0016 | -0.0011 | -0.0282 | +0.0148 | 11 of 26 |
+
+Bootstrapped over the 26 cases, every mean covers zero: true gain (-0.0137, +0.0099), DR gain
+(-0.0241, +0.0856), Qini (-0.0051, +0.0017). For scale, ACIC's DR gain at 20% sits around
+1.0 with a 95% interval about 0.62 wide, and its Qini around 0.157 with an interval about
+0.115 wide. A mean difference of -0.0011 against a level of 1.2, with the policy rule ahead
+in 15 of 26, is a coin flip inside the noise. Changing the rule changes 87% of the
+selections and buys nothing.
+
+**This one has a column the capping measurement could not have.** ACIC is simulated, so the
+deciding row is the true gain from its own individual effects rather than an estimate of it.
+That matters here more than usual, because the thing under test is a rule that selects on the
+DR estimate, and scoring it only on the DR estimate would be marking its own homework. The
+two rows do differ in the direction that suspicion predicts, with the DR column favouring the
+policy rule by +0.0274 where the truth favours it by -0.0011. That is consistent with a rule
+flattering its own referee and it is not evidence of it: the DR interval is (-0.0241, +0.0856)
+and covers zero comfortably, so on this data the gap between the two rows is not established.
+
+Worth recording that the partial pass this section previously reported, seven cases from one
+seed, pointed the other way. It suggested the differences might be larger here than they were
+for capping and in the policy rule's favour, and said so while refusing to publish a number
+off seven cases. Finishing it refuted the suggestion. The refusal was right and the hunch was
+wrong, which is the ordinary outcome of measuring something.
+
+So the default stays on the Qini rule, and now for a better reason than the one in
+`itx/bench/grid.py`. That reason was an argument about variance: the policy value at a single
+budget reads one cutoff of the validation ranking where the Qini integrates all of it. The
+argument may still be right, but it is not what decides this. What decides it is that neither
+rule is measurably better, so the protocol in PLAN.md section 4 keeps what is already there,
+and a reader who prefers the other rule can pass it and lose nothing.
+
+The uncomfortable reading is the one this section has now reached three times from three
+directions. Capping the tuning rows changes nearly every selection and costs nothing; scoring
+on the decision instead of the curve changes 87% of the selections and costs nothing; the
+selections themselves land somewhere different on nearly every partition of the same dataset.
+The grid is choosing among configurations that are near-ties, and about 89% of this
+benchmark's compute is spent making a choice that does not matter. Whether the grid earns its
+place is a week 8 question and `docs/rejected.md` is where it gets answered.
 
 ---
 
+## Dragonnet, and why its column is not quite comparable
+
+Built in week 6. One network on a shared representation of the covariates, with two outcome
+heads and a propensity head, trained together (Shi, Blei and Veitch 2019). The propensity head
+is the idea: gradient descent on the outcome alone builds a representation that keeps every
+scrap of covariate information, and forcing it to also predict treatment pushes it toward the
+part of the covariate space assignment actually depended on. Targeted regularisation adds one
+fitted scalar that perturbs the outcome predictions the way the doubly robust correction
+points, which gives the fitted model the same one-step property AIPW has.
+
+**Its column answers a different question from the other five, and the README says so.** Every
+other estimator here is LightGBM underneath, deliberately, so that differences between columns
+are differences between estimators rather than between the models under them. Dragonnet cannot
+honour that, because the architecture is the thing being tested. A gap between Dragonnet and
+the T-learner confounds "a neural network with a propensity head" with "two gradient-boosted
+trees", and no amount of care in the benchmark separates the two.
+
+**It is untuned, and that is the lesser of two bad options.** The committed grid is over
+`min_child_samples` and `num_leaves`. Those are LightGBM's knobs and mean nothing to a
+network, so the choice was between the paper's published defaults and a grid of its own. The
+grid is identical across estimators precisely so the estimator column does not quietly become
+a compute column, and a bespoke search for the one estimator that could not use the shared
+grid would be the most visible possible thumb on the scale. So it runs at the defaults and the
+table says "not tuned", the same way it does for the random ranking.
+
+**Three things had to be added around the paper.** Categorical columns are one-hot encoded
+rather than passed through, since the loaders hand over integer codes and a dense layer reads
+a code as a magnitude. Features are standardised on the training rows. And there is a row cap
+of 200,000, because this is a CPU-only project by budget and Criteo at a hundred epochs is not
+a benchmark anyone reruns. The cap does not bind on IHDP, ACIC or Hillstrom, so those three
+are a control for what it does, and what it costs is not yet measured. PLAN.md change 30 is
+the template and the same measurement is owed.
+
+**No numbers yet.** Dragonnet is registered, tested against known effects on synthetic data,
+and runs end to end through the benchmark, but the README tables were measured before it
+existed and will carry it after the next full run rather than before. Nothing in them is a
+placeholder for it.
+
+## Sensitivity: what it would take to overturn any of this
+
+Every number above rests on an assumption nothing in this repository can test, that the
+covariates carry all of the confounding. Three devices price that assumption, and they are
+in `itx/sensitivity/`. `uv run itx sensitivity --dataset <name>` runs all three.
+
+They are not interchangeable. The E-value asks how strongly an unmeasured confounder would
+have to be associated with both the treatment and the outcome; the Rosenbaum bound asks how
+far it would have to shift the odds of being treated; the negative control asks the pipeline
+a question whose answer is already known. Only the third can fail.
+
+**What they say, at a 20% budget on the T-learner's ranking, seed 11.**
+
+| Dataset | E-value, point | E-value, interval | Rosenbaum Gamma | Negative control |
+|---|---|---|---|---|
+| IHDP | - | - | - | -0.527 (-2.379, 0.756) on `x6` |
+| ACIC 2016 | 9.95 | 6.98 | 6.59 | -0.021 (-0.203, 0.169) on `x_44` |
+| Hillstrom | 2.52 | 1.79 | 1.32 | -0.013 (-0.050, 0.026) on `recency` |
+
+**IHDP has nothing to report and that is the finding.** A 150-row test split targeted at 20%
+leaves a group of 30 holding five treated units. Five is below the floor of ten either arm
+needs, which is the same floor the risk-decile table uses, so there is no risk ratio. The
+matcher finds three pairs against the twenty the normal approximation needs, so there is no
+Gamma. Only the negative control runs, and its interval is nearly five standard deviations
+wide, which is a statement about 150 rows rather than about bias. IHDP is too small for
+sensitivity analysis and the honest output is four dashes.
+
+That is worth one more sentence, because the first version of this code did not produce
+dashes. It produced a targeted-group risk ratio of 51.6 and an E-value of 102.6, off five
+treated units, through the continuous-outcome conversion whose exponential shape turns a
+homogeneous targeted group into a spectacular number. PLAN.md change 46 has the decomposition.
+
+**ACIC's large numbers are correct and are not reassurance.** A Gamma of 6.59 says the result
+survives a hidden factor making one of two covariate-identical units six and a half times
+more likely to be treated. On a dataset this project has spent two weeks demonstrating is
+badly confounded, that reads as a contradiction, and it is not one. ACIC's confounding is
+severe and entirely *measured*: assignment is simulated from the recorded covariates, so the
+covariates are sufficient and there is no unmeasured confounding for any of these three
+devices to find. Week 5 measured the same thing from the other side, with doubly robust
+estimation recovering ACIC's true policy gains to a mean absolute error of 0.11 where the
+unadjusted comparison is out by 2.8 and of the wrong sign.
+
+So ACIC and IHDP cannot be used to check that these devices work, which is the natural thing
+to reach for and the wrong one. The only place a negative control can be caught failing is
+data built to catch it, and `tests/test_negative_control.py` plants a confounder outside the
+covariate set and requires the device to find it. That test is the evidence any of this
+works. The dataset numbers are not.
+
+**ACIC's E-value is an order of magnitude, not a number.** Its outcome is continuous, so
+there is no rate to divide and the ratio of 5.24 is a standardised difference of 1.82 put
+through `exp(0.91d)`. The conversion was built for the smaller effect sizes meta-analyses
+deal in, and a targeted group is selected to be homogeneous, so its within-group spread is
+below the population's and `d` is correspondingly inflated. The three datasets PLAN.md
+section 2 names for this measure, Hillstrom, Criteo and Lenta, are all binary and do not go
+through the conversion at all.
+
+**Hillstrom is the one that reads cleanly, and its numbers are modest.** A real risk ratio of
+1.574 (1.244, 2.006), an E-value of 2.52 falling to 1.79 at the interval, and a Gamma of 1.3.
+The reading for a randomised experiment is not "this survives confounding of that strength",
+since there is none, but "this is what randomisation is buying, and an observational version
+of this study would have to argue against a confounder of at least this size". A Gamma of 1.3
+is not much. It is worth knowing that the strongest result in this table would be overturned
+by a hidden factor shifting the odds of treatment by a third.
+
+**The Gamma belongs to one decimal place.** Pairs are formed greedily, in a seeded order, and
+the order moves the answer. Twelve matching seeds on Hillstrom give a spread of 0.043 around
+1.30, so 1.32 and 1.41 are the same number. This is also how the matching key itself was
+caught: Hillstrom's design propensity is exactly 0.5 for every row, which makes every unit
+equidistant from every other and turns propensity matching into arbitrary pairing that still
+calls itself matched. The key now falls back to the prognostic score where the propensity has
+no spread. Measuring what that bought is PLAN.md change 47, and the answer is nothing: no
+more stable across seeds, forty-five fewer pairs, slightly smaller Gamma. It is kept because
+pairing units on a constant and calling them a matched pair is a claim the code should not
+make, not because it works better.
+
+**Criteo and Lenta are not in this table yet.** They are the other two datasets PLAN.md
+section 2 names for the E-value, both binary, and both need a full-size fit before the
+targeted group exists. Queued behind the benchmark rerun rather than reported from a
+subsample.
+
 ## Still to come
 
-Dragonnet (week 6), causal forest if the schedule allows. Approaches considered and left as
-literature rather than code, per PLAN.md section 2: TARNet, CEVAE, and the
-class-transformation method.
+Dragonnet's numbers, which need the next full benchmark run; the causal forest if the schedule
+allows. Approaches considered and left as literature rather than code, per PLAN.md section 2:
+TARNet, CEVAE, and the class-transformation method.

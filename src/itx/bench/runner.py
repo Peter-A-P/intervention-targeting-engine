@@ -43,6 +43,7 @@ from itx.data.synthetic import (
 from itx.estimators.base import BaseUpliftEstimator
 from itx.estimators.baselines import OutcomeRanking, RandomRanking
 from itx.estimators.dr_learner import DRLearner
+from itx.estimators.dragonnet import Dragonnet
 from itx.estimators.r_learner import RLearner
 from itx.estimators.s_learner import SLearner
 from itx.estimators.t_learner import TLearner
@@ -123,11 +124,20 @@ ESTIMATORS: dict[str, EstimatorFactory] = {
     "r-learner": lambda config, seed: RLearner(config, seed=seed),
     "outcome-ranking": lambda config, seed: OutcomeRanking(config, seed=seed),
     "random": lambda _config, seed: RandomRanking(seed=seed),
+    # The config is ignored rather than translated. It holds LightGBM leaf sizes, and
+    # inventing a mapping from those to a network width would be a fabrication dressed
+    # as fairness. Dragonnet runs at its published defaults; see UNTUNED below.
+    "dragonnet": lambda _config, seed: Dragonnet(seed=seed),
 }
 
-#: Estimators with nothing to tune. Running them through the grid would fit six identical
-#: models and pick between six identical scores.
-UNTUNED: frozenset[str] = frozenset({"random"})
+#: Estimators the committed grid cannot tune. For the random ranking there is nothing to
+#: tune at all, and running it through the grid would fit six identical models and pick
+#: between six identical scores. For Dragonnet there is plenty to tune and none of it is in
+#: the grid, which is over LightGBM's leaf size and tree width. Giving the one estimator
+#: that could not use the shared grid a bespoke search of its own would be a more visible
+#: thumb on the scale than giving it none, so it runs at the published defaults and the
+#: table says "not tuned" next to it (PLAN.md change 45).
+UNTUNED: frozenset[str] = frozenset({"random", "dragonnet"})
 
 #: What runs when no estimator is named. A single random ranking is left out on purpose:
 #: the baseline the protocol calls for is the average of 200 of them, which is added
@@ -139,6 +149,7 @@ DEFAULT_ESTIMATORS: tuple[str, ...] = (
     "x-learner",
     "dr-learner",
     "r-learner",
+    "dragonnet",
     "outcome-ranking",
 )
 

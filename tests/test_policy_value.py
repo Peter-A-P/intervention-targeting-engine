@@ -39,6 +39,7 @@ from itx.policy.policy_value import (
     ipw_gain,
     ipw_value,
     policy_metrics,
+    share_gap_key,
 )
 from itx.policy.rank_and_cut import rank_and_cut
 
@@ -314,6 +315,8 @@ class TestPolicyMetrics:
             "gain_dr@20%",
             "gain_ipw@10%",
             "gain_ipw@20%",
+            "share_gap@10%",
+            "share_gap@20%",
         ]
 
     def test_it_agrees_with_the_single_budget_functions(self):
@@ -361,6 +364,92 @@ class TestPolicyMetrics:
         assert metrics[gain_key("ipw", 0.3)] == pytest.approx(
             ipw_gain(sample["outcome"], sample["treatment"], treat, nuisances.propensity)
         )
+
+
+class TestTheTreatedShareGap:
+    """The diagnostic that says when the IPW column beside it cannot be read.
+
+    Week 5 found Criteo's IPW gain running half again its doubly robust one with a design
+    propensity of 0.85 and nothing clipped, because the top of a ranking held 86.7% treated
+    rather than 85%, and Horvitz-Thompson divides the control arm by 0.15. These tests
+    reconstruct that arithmetic on data where the concentration is placed by hand.
+    """
+
+    def test_a_prefix_treated_at_the_expected_rate_shows_no_gap(self):
+        # 4,000 units, a constant propensity of 0.6, and a ranking uncorrelated with the
+        # arm, so the prefix should hold the population's treated share and nothing else.
+        outcome, treatment, _ = randomised_sample(n=4_000, share=0.6, seed=2)
+        nuisances = Nuisances(
+            propensity=np.full(outcome.size, float(treatment.mean())),
+            mu0=np.zeros(outcome.size),
+            mu1=np.zeros(outcome.size),
+            propensity_fit=nuisances_of(known_potential_outcomes(n=100, seed=1)).propensity_fit,
+        )
+        rng = np.random.default_rng(3)
+        metrics = policy_metrics(
+            outcome, treatment, rng.normal(size=outcome.size), nuisances, budgets=(0.5,)
+        )
+        assert metrics[share_gap_key(0.5)] == pytest.approx(0.0, abs=0.03)
+
+    def test_it_is_the_realised_share_minus_the_modelled_one(self):
+        # Placed by hand so the answer is arithmetic rather than a draw. The top 100 of the
+        # ranking hold 90 treated against a modelled 0.85, so the gap is exactly 0.05.
+        n = 1_000
+        scores = np.arange(n, dtype=np.float64)[::-1]  # unit 0 ranks first
+        treatment = np.zeros(n, dtype=np.int64)
+        treatment[:90] = 1  # 90 of the top 100
+        treatment[100:] = (np.arange(n - 100) % 100 < 85).astype(np.int64)
+        nuisances = Nuisances(
+            propensity=np.full(n, 0.85),
+            mu0=np.zeros(n),
+            mu1=np.zeros(n),
+            propensity_fit=nuisances_of(known_potential_outcomes(n=100, seed=1)).propensity_fit,
+        )
+        metrics = policy_metrics(np.zeros(n), treatment, scores, nuisances, budgets=(0.1,))
+        assert metrics[share_gap_key(0.1)] == pytest.approx(0.90 - 0.85)
+
+    def test_it_reads_the_same_prefix_the_gains_do(self):
+        sample = known_potential_outcomes(n=2_000, seed=19)
+        scores = sample["mu1"] - sample["mu0"]
+        nuisances = nuisances_of(sample)
+        metrics = policy_metrics(
+            sample["outcome"], sample["treatment"], scores, nuisances, budgets=(0.25,)
+        )
+        treat = rank_and_cut(scores, 0.25)
+        expected = float(sample["treatment"][treat].mean() - sample["propensity"][treat].mean())
+        assert metrics[share_gap_key(0.25)] == pytest.approx(expected)
+
+    def test_a_full_budget_compares_the_two_population_means(self):
+        # At a budget of 1 the prefix is everybody, so the gap is the treated share minus
+        # the mean propensity, which is how well calibrated the propensity model is overall.
+        sample = known_potential_outcomes(n=3_000, seed=23)
+        metrics = policy_metrics(
+            sample["outcome"],
+            sample["treatment"],
+            np.arange(3_000, dtype=np.float64),
+            nuisances_of(sample),
+            budgets=(1.0,),
+        )
+        assert metrics[share_gap_key(1.0)] == pytest.approx(
+            float(sample["treatment"].mean() - sample["propensity"].mean())
+        )
+
+    def test_a_ranking_that_concentrates_treatment_is_caught(self):
+        # The Criteo shape: a ranking correlated with the arm. The gap has to be positive
+        # and large enough to notice, or the diagnostic would have missed the thing it was
+        # written for.
+        n = 4_000
+        rng = np.random.default_rng(31)
+        treatment = (rng.random(n) < 0.85).astype(np.int64)
+        scores = rng.normal(size=n) + 0.8 * treatment  # treated units rank higher
+        nuisances = Nuisances(
+            propensity=np.full(n, 0.85),
+            mu0=np.zeros(n),
+            mu1=np.zeros(n),
+            propensity_fit=nuisances_of(known_potential_outcomes(n=100, seed=1)).propensity_fit,
+        )
+        metrics = policy_metrics(np.zeros(n), treatment, scores, nuisances, budgets=(0.1,))
+        assert metrics[share_gap_key(0.1)] > 0.05
 
 
 class TestContributions:

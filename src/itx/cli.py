@@ -7,6 +7,7 @@ convenience wrapper around a notebook.
 
 from __future__ import annotations
 
+import math
 import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
@@ -20,6 +21,7 @@ if TYPE_CHECKING:
 
     from itx.bench.grid import Selection
     from itx.bench.runner import BenchmarkRow
+    from itx.sensitivity.rosenbaum import RosenbaumBound
 
 app = typer.Typer(
     name="itx",
@@ -488,6 +490,129 @@ def diagnose(
     typer.echo("")
     typer.echo(table.to_markdown())
     typer.echo(table.summary())
+
+
+@app.command("sensitivity")
+def sensitivity(
+    dataset: Annotated[str, typer.Option(help="Dataset key to test.")] = "hillstrom",
+    estimator: Annotated[
+        str, typer.Option(help="Which ranking defines the targeted group.")
+    ] = "t-learner",
+    seed: Annotated[
+        int | None, typer.Option(help="Split seed; the first committed one if omitted.")
+    ] = None,
+    budget: Annotated[float, typer.Option(help="Share of the population targeted.")] = 0.2,
+    control: Annotated[
+        str | None,
+        typer.Option(help="Covariate to use as the negative control; the hardest if omitted."),
+    ] = None,
+    resamples: Annotated[int, typer.Option(help="Bootstrap resamples.")] = 500,
+) -> None:
+    """Price the unmeasured confounding this targeting result would survive.
+
+    Three devices, answering different questions (PLAN.md section 4). The E-value prices a
+    confounder's association with treatment and outcome; the Rosenbaum bound prices its
+    effect on the odds of being treated; the negative control asks the pipeline about an
+    outcome the treatment cannot have moved, and is the only one of the three that can fail.
+    """
+    from itx.bench.runner import DATASETS, ESTIMATORS, nuisances_for
+    from itx.bench.seeds import SEEDS, TIE_SEED
+    from itx.data.splits import stratified_split
+    from itx.estimators.lightgbm_base import DEFAULT_CONFIG
+    from itx.policy.rank_and_cut import rank_and_cut
+    from itx.sensitivity import negative_control, targeting_e_value, targeting_rosenbaum
+
+    if dataset not in DATASETS:
+        typer.echo(f"unknown dataset {dataset!r}; known: {', '.join(sorted(DATASETS))}")
+        raise typer.Exit(code=1)
+    if estimator not in ESTIMATORS:
+        typer.echo(f"unknown estimator {estimator!r}; known: {', '.join(sorted(ESTIMATORS))}")
+        raise typer.Exit(code=1)
+
+    say = _printer()
+    chosen_seed = SEEDS[0] if seed is None else seed
+    split = stratified_split(DATASETS[dataset](), chosen_seed)
+    test = split.test
+
+    say(f"{dataset}: fitting {estimator} on {split.train.n_units:,} training rows")
+    fitted = ESTIMATORS[estimator](DEFAULT_CONFIG, chosen_seed)
+    fitted.fit(split.train)
+    scores = fitted.predict_uplift(test.features)
+
+    say("fitting the propensity and outcome models the sensitivity work shares")
+    nuisances = nuisances_for(split)
+    targeted = rank_and_cut(scores, budget, seed=TIE_SEED)
+
+    say("E-value")
+    e_value = targeting_e_value(
+        test.outcome,
+        test.treatment,
+        scores,
+        budget=budget,
+        n_resamples=resamples,
+        seed=chosen_seed,
+    )
+    say("Rosenbaum bound")
+    bound = targeting_rosenbaum(
+        nuisances.propensity,
+        test.treatment,
+        test.outcome,
+        targeted,
+        budget=budget,
+        # On a randomised design the propensity is a constant and matching on it is
+        # arbitrary pairing, so the prognostic score is the fallback key.
+        prognostic=nuisances.mu0,
+        seed=chosen_seed,
+    )
+    say("negative control")
+    control_result = negative_control(
+        split.train,
+        test,
+        column=control,
+        seed=chosen_seed,
+        n_resamples=resamples,
+    )
+
+    typer.echo("")
+    typer.echo(
+        f"Sensitivity on {dataset}, seed {chosen_seed}, targeting the top {budget:.0%} "
+        f"by `{estimator}` on {test.n_units:,} test rows"
+    )
+    typer.echo("")
+    typer.echo("| Device | Number | Reading |")
+    typer.echo("|---|---|---|")
+    typer.echo(
+        f"| E-value, point | {_maybe(e_value.point)} | "
+        f"confounder association that moves the estimate to no effect |"
+    )
+    typer.echo(
+        f"| E-value, interval | {_maybe(e_value.limit)} | "
+        f"association that stops it excluding no effect |"
+    )
+    typer.echo(
+        f"| Rosenbaum Gamma | {_gamma(bound)} | "
+        f"hidden bias the result survives, on {bound.matched_on} pairs |"
+    )
+    typer.echo(
+        f"| Negative control | {control_result.effect.format(4)} | "
+        f"effect on `{control_result.column}`, which must be zero |"
+    )
+    typer.echo("")
+    for paragraph in (e_value.summary(), bound.summary(), control_result.summary()):
+        typer.echo(paragraph)
+        typer.echo("")
+
+
+def _maybe(value: float) -> str:
+    """An E-value, or a dash where the risk ratio was undefined."""
+    return "-" if not math.isfinite(value) else f"{value:.2f}"
+
+
+def _gamma(bound: RosenbaumBound) -> str:
+    """A Gamma, marked when the search was censored or the pairs were too thin."""
+    if not math.isfinite(bound.gamma):
+        return "-"
+    return f"above {bound.gamma:.2f}" if bound.censored else f"{bound.gamma:.2f}"
 
 
 @app.command("selection")

@@ -50,13 +50,19 @@ aligned with the decision. It arrived in week 5 as :func:`policy_value_rule`, an
 available rather than default. Which of the two a run used is recorded on the selection, and
 `itx selection` fits both on a dataset and reports where they disagree.
 
-The default did not move, and the reason is worth stating rather than assuming. The policy
-value at a single budget reads one cutoff of the validation ranking, so it is a noisier
-signal than a coefficient integrating the whole curve, and on the small validation splits
-this benchmark uses that noise is the dominant term. The argument for selecting on the
-decision rather than the curve is a good one about bias, made against a variance cost that
-happens to be larger here. What settles it is the measurement in `docs/estimators.md`, not
-the argument.
+The default did not move, and week 6 measured why rather than leaving it as the argument
+below. Fitting both rules' winning configurations on the full training split and scoring both
+on test, over all 26 ACIC cases where they disagree, moves the true policy gain at a 20%
+budget by a mean of -0.0011 with a bootstrap interval of (-0.0137, +0.0099), against a level
+around 1.2. The policy rule is ahead in 15 of 26. Neither rule is measurably better, so
+section 4's protocol keeps what is already there, and a caller who prefers the other rule can
+pass it and lose nothing (PLAN.md change 49).
+
+The argument that was originally offered still stands but no longer decides anything. It was
+that the policy value at a single budget reads one cutoff of the validation ranking, so it is
+a noisier signal than a coefficient integrating the whole curve, and on the small validation
+splits this benchmark uses that noise dominates. It may well be true. It is not why the
+default is where it is.
 
 ## Candidates a dataset cannot support are removed before selection
 

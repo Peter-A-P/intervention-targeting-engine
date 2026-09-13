@@ -11,6 +11,7 @@ from itx.policy.policy_value import (
     ipw_gain,
     ipw_value,
     policy_metrics,
+    share_gap_key,
 )
 from itx.policy.rank_and_cut import n_targeted, rank_and_cut
 
@@ -27,4 +28,5 @@ __all__ = [
     "n_targeted",
     "policy_metrics",
     "rank_and_cut",
+    "share_gap_key",
 ]

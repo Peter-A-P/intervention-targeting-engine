@@ -492,8 +492,9 @@ So the rule is not "check the clipped share and otherwise trust IPW". Nothing is
 The rule is that Horvitz-Thompson weighting is fragile whenever one arm is small, because that
 arm's weight is large and any gap between the assumed and the realised share inside a
 *selected* subset is multiplied by it. The cheap check is to compare the treated share inside
-the targeted prefix with the design propensity, which costs one mean and is not yet a column
-in these tables. Read the doubly robust column on Criteo.
+the targeted prefix with the propensity of those same units, which costs one mean and is the
+`Treated share gap` column in the policy tables above. Read the doubly robust column on
+Criteo.
 
 **This is the dataset where the outcome-ranking trap does not happen, and it is the most
 useful result in the project.**
@@ -557,6 +558,42 @@ form: it records whether an ad was actually shown, and it is zero for every one 
 It is a consequence of the treatment. Criteo published it deliberately, for a
 noncompliance question this project does not ask.
 
+### How much unmeasured confounding would overturn any of this
+
+Every number above rests on an assumption nothing here can test: that the covariates carry
+all of the confounding. Three devices price it, and `uv run itx sensitivity --dataset <name>`
+runs all three. At a 20% budget on the T-learner's ranking, seed 11:
+
+| Dataset | E-value | Rosenbaum Gamma | Negative control |
+|---|---|---|---|
+| Hillstrom | 2.52, falling to 1.79 at the interval | 1.3 | -0.013 (-0.050, 0.026) |
+| ACIC 2016 | 9.95, order of magnitude only | 6.6 | -0.021 (-0.203, 0.169) |
+| IHDP | too few units to form one | too few pairs to form one | -0.527 (-2.379, 0.756) |
+
+The E-value is how strongly something unmeasured would have to be associated with both the
+treatment and the outcome to explain the result away. The Gamma is how far it would have to
+shift the odds of being treated. The negative control runs the whole pipeline on a
+pre-treatment covariate, where the true effect is zero by construction, and reports what came
+back in standard deviations.
+
+**Only the third one can fail, and none of them do here.** That is worth stating plainly
+rather than as reassurance. ACIC's Gamma of 6.6 looks like a contradiction on a dataset this
+page has spent two sections showing is badly confounded, and it is not one: ACIC's confounding
+is severe and entirely *measured*, since assignment is simulated from the recorded covariates,
+so there is no unmeasured confounding for any of these devices to find. They are reporting
+the truth. They would report the same thing on data where it was false for a reason they
+cannot see, which is why the evidence that the negative control works is a test that plants a
+confounder outside the covariate set and requires it to be caught, not these three rows.
+
+**Hillstrom's Gamma of 1.3 is the number to sit with.** The strongest cleanly-readable result
+here would be overturned by a hidden factor shifting the odds of treatment by a third. It was
+a randomised experiment, so nothing is hiding, and the reading is what an observational
+version of the same study would have had to argue against. It is not much.
+
+[docs/estimators.md](docs/estimators.md) carries the rest, including why IHDP's row is three
+dashes, why ACIC's E-value is an order of magnitude rather than a number, and why the Gamma
+is quoted to one decimal place. Criteo and Lenta need a full-size fit and are queued.
+
 ## What this does not do
 
 - It does not identify effects without an experiment or a credible ignorability
@@ -564,9 +601,20 @@ noncompliance question this project does not ask.
   the targeting decision flips; it does not remove the assumption.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
-- Not yet built, in schedule order: realised policy value under a budget; Rosenbaum
-  bounds and E-values; Dragonnet; the budget-slider demo. Nothing above is a placeholder
-  for them: the numbers reported are the numbers measured.
+- Not yet built, in schedule order: the fraud worked case; the budget-slider demo. Nothing
+  above is a placeholder for them: the numbers reported are the numbers measured.
+- **The sensitivity table covers three datasets of five, and none of the three can fail it.**
+  Criteo and Lenta need a full-size fit and are queued. Of the three that are there, two are
+  randomised and the third is confounded only through covariates it records, so a clean sweep
+  is the expected result rather than evidence the devices work. See
+  [docs/estimators.md](docs/estimators.md).
+- **Dragonnet is not tuned and is not a LightGBM model.** Every other estimator here shares
+  one base learner so that differences between columns are differences between estimators.
+  Dragonnet cannot, because the architecture is the thing being tested, so its column
+  confounds "a neural network with a propensity head" with "two gradient-boosted trees". It
+  also runs at the paper's published defaults, because the committed grid is over LightGBM's
+  leaf size and tree width and a bespoke grid for the one estimator that could not use the
+  shared one would be worse than none. PLAN.md change 45.
 - **Lenta has no licence.** Not from the publisher, not in the package that distributes it.
   This repository downloads it and redistributes nothing, but nobody reading this is being
   told their own use of that dataset is permitted. See
@@ -629,6 +677,14 @@ the lot. A killed run leaves a checkpoint beside its results file, and `--resume
 
 ```bash
 uv run itx benchmark --dataset lenta --resume
+```
+
+Three commands answer a question without running the benchmark at all:
+
+```bash
+uv run itx diagnose    --dataset acic   # is uplift modelling worth it here, for one model
+uv run itx sensitivity --dataset acic   # E-value, Rosenbaum bound, negative control
+uv run itx selection   --dataset acic   # where the two hyperparameter rules disagree
 ```
 
 Resuming is opt-in rather than automatic, because a checkpoint written by an older version of
