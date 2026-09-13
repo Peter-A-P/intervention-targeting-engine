@@ -685,3 +685,31 @@ The nuisance models for the rule are fitted on the training split and applied to
 validation split, once per split rather than once per candidate, for the same reason as in
 change 37: a candidate must not supply the models that score it. There is a test that
 corrupting the test split changes nothing about what the rule chooses.
+
+**42. Lenta's null was partly a property of the metric, and change 33's guess was right**
+(week 5). Change 33 reported every Qini interval on Lenta containing zero, noted that the
+S-learner's realised uplift excluded zero at all three budgets while its Qini did not, and
+said the gap was "an argument for the week 5 policy work rather than a result on its own".
+It is now a result.
+
+With realised policy value in the table, at a budget covering 20% of the population all five
+uplift models' doubly robust gains exclude zero: 0.0024, 0.0021, 0.0020, 0.0025 and 0.0024,
+against random targeting's 0.0012 and an outcome ranking that still contains zero. Two of the
+five clear zero by less than 1e-5 and the README says so rather than counting them as five
+clean wins.
+
+The mechanism is the one guessed at: a coefficient integrating the whole curve averages a
+front-of-ranking advantage away against the flat tail where every method is identical, and a
+budgeted number reads only the front. On an underpowered dataset that is the difference
+between seeing an effect and not.
+
+It does not make Lenta a win and the README does not claim one. The gains are about twice
+random targeting's with heavily overlapping intervals, so "these rankings buy something" is
+established and "these rankings beat random" is not. What the dataset now demonstrates is
+about the instrument rather than about retail marketing, which is a better reason to keep it
+than the one it was kept for.
+
+Also visible here: every IPW interval on Lenta contains zero at every budget, including for
+the methods the DR column separates. Lenta was randomised but does not publish its assignment
+probability, so section 3's decision to leave `propensity` as None and estimate it has a
+measurable cost, and the doubly robust column is what pays it back.

@@ -35,7 +35,8 @@ done, by the probability of that arm. Unbiased whenever the propensity is right,
 randomised dataset is a design constant and not a modelling assumption. Its weakness is
 variance: a unit with a propensity of 0.02 carries fifty times the weight of an average one,
 and on an observational dataset a handful of rows can carry the estimate. This is the
-estimator to believe on Hillstrom, Criteo and Lenta.
+estimator to believe wherever the propensity is a design constant, which on Hillstrom and
+Criteo it is.
 
 **DR** adds outcome models for the two arms and reweights only their residuals. It is
 consistent if *either* the propensity or the outcome models are right, which is the property
@@ -46,6 +47,16 @@ This is the estimator to believe on ACIC and IHDP, where assignment is not rando
 Both are reported, always, and a disagreement between them is information rather than an
 embarrassment: it says the outcome models and the propensity model are telling different
 stories about the same units.
+
+**Which to read is decided by the clipped share, not by the dataset's reputation.** It is
+tempting to sort the datasets into "randomised, trust IPW" and "observational, trust DR" and
+stop there, and that sorting is wrong twice over. Lenta was randomised but does not publish
+its assignment probability, so a model estimates a number that is in truth a constant, and
+whether that model stayed away from the bounds is a question rather than an assumption. ACIC
+and IHDP are the reverse case made concrete: 46% and 17.3% of their test rows sit against the
+0.01 bound, each carrying an inverse weight of 100, and their IPW gains are wrong by a factor
+of three and unusable respectively. :attr:`PropensityFit.clipped_share` is the number that
+sorts these cases, it costs nothing, and it is available before any policy value is computed.
 
 ## The nuisance models are fitted once per split, not once per estimator
 

@@ -307,7 +307,40 @@ Selected on the validation split from the committed grid:
 **What each ranking buys.**
 
 <!-- itx:table:lenta-policy -->
+| Estimator | IPW gain at 10% | DR gain at 10% | IPW gain at 20% | DR gain at 20% | IPW gain at 30% | DR gain at 30% |
+|---|---|---|---|---|---|---|
+| `s-learner` | 0.0017 (-0.0003, 0.0038) | 0.0018 (0.0001, 0.0035) | 0.0022 (-0.0004, 0.0049) | 0.0024 (0.0002, 0.0046) | 0.0027 (-0.0002, 0.0057) | 0.0030 (0.0006, 0.0056) |
+| `t-learner` | 0.0013 (-0.0007, 0.0033) | 0.0017 (0.0000, 0.0033) | 0.0017 (-0.0007, 0.0043) | 0.0021 (0.0001, 0.0042) | 0.0022 (-0.0006, 0.0049) | 0.0025 (0.0003, 0.0048) |
+| `x-learner` | 0.0006 (-0.0013, 0.0026) | 0.0010 (-0.0006, 0.0027) | 0.0016 (-0.0008, 0.0041) | 0.0020 (0.0000, 0.0041) | 0.0022 (-0.0006, 0.0049) | 0.0024 (0.0002, 0.0047) |
+| `dr-learner` | 0.0009 (-0.0011, 0.0029) | 0.0016 (0.0000, 0.0032) | 0.0019 (-0.0006, 0.0043) | 0.0025 (0.0005, 0.0046) | 0.0023 (-0.0003, 0.0051) | 0.0030 (0.0008, 0.0054) |
+| `r-learner` | 0.0007 (-0.0014, 0.0027) | 0.0010 (-0.0006, 0.0026) | 0.0019 (-0.0006, 0.0044) | 0.0024 (0.0003, 0.0045) | 0.0027 (-0.0001, 0.0053) | 0.0031 (0.0008, 0.0054) |
+| `outcome-ranking` | 0.0002 (-0.0023, 0.0028) | 0.0012 (-0.0007, 0.0031) | 0.0011 (-0.0019, 0.0043) | 0.0023 (-0.0001, 0.0049) | 0.0021 (-0.0013, 0.0055) | 0.0032 (0.0004, 0.0060) |
+| `random-200` | 0.0004 (-0.0008, 0.0016) | 0.0006 (-0.0004, 0.0016) | 0.0009 (-0.0008, 0.0025) | 0.0012 (-0.0002, 0.0025) | 0.0013 (-0.0005, 0.0030) | 0.0018 (0.0002, 0.0033) |
 <!-- itx:end:lenta-policy -->
+
+**Changing the metric turned this dataset from a null into a faint signal, which is the
+result week 4 predicted and could not produce.** Not one Qini interval in the table above
+excludes zero. In this table, at a budget covering a fifth of the customers, all five uplift
+models do: 0.0024, 0.0021, 0.0020, 0.0025 and 0.0024, against random targeting's 0.0012 and
+an outcome ranking whose interval still contains zero. Two of those five clear zero by less
+than a hundred-thousandth and should be read as touching it rather than clearing it, but the
+direction is consistent and the S-learner and DR-learner are not marginal.
+
+The mechanism is the one change 33 guessed at. A Qini coefficient integrates the whole curve,
+so a real advantage confined to the front of the ranking is averaged away against the long
+flat tail where every method is identical. A budgeted number reads only the front. On a
+dataset this underpowered that is the difference between seeing the effect and not.
+
+What it does not do is make Lenta a win. The uplift models buy about twice what random
+targeting buys and their intervals overlap random's heavily, so "these rankings buy something"
+is established and "these rankings beat picking names out of a hat" is not. The honest
+summary of Lenta is still the week 4 one: a 0.75-point effect on a 10.3% base rate is too
+small to target at this sample size. The finding is about the instrument, not the dataset.
+
+The IPW column contains zero everywhere, at every budget, for every method including the ones
+the DR column separates. Lenta was randomised but does not publish its assignment probability,
+so the propensity is estimated here rather than known, and the extra variance that costs is
+exactly what the doubly robust column is buying back.
 
 **Nothing here beats random targeting, and that is the result.** Every Qini interval in the
 table above contains zero, for all five estimators and for both baselines. On the Qini they
