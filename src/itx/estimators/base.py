@@ -142,8 +142,29 @@ class BaseUpliftEstimator(abc.ABC):
         """Estimator-specific prediction, called only after the feature check."""
 
     def _warn_if_degenerate(self, data: UpliftDataset) -> None:
-        """Warn when the fitted model predicts an identical effect for every unit."""
+        """Warn when the fitted model predicts nothing usable for anyone.
+
+        Two separate failures, and the second was added in week 6 after it cost a result.
+        A model that returns a constant zero was the case this was built for. A model that
+        returns NaN is worse and slipped past it, because ``np.allclose(nan, 0.0)`` is
+        False: Dragonnet on Lenta produced an all-NaN prediction, ``rank_order`` fell back
+        to row order, and a broken fit reported a Qini and a policy gain indistinguishable
+        from random targeting rather than reporting nothing. Plausible numbers from a dead
+        model are worse than an error, so this checks for them by name.
+        """
         predictions = self._predict_uplift(data.features)
+        if predictions.size and not np.isfinite(predictions).all():
+            warnings.warn(
+                f"{self.name}: predicted uplift is not finite for "
+                f"{int((~np.isfinite(predictions)).sum()):,} of {predictions.size:,} units "
+                f"on {data.n_units:,} training rows. Every metric computed from this ranking "
+                f"is meaningless: a non-finite score sorts to one end, so the ranking becomes "
+                f"the order the rows happened to arrive in. Check the feature matrix for "
+                f"missing values, which the tree learners accept and a network does not.",
+                DegenerateFitWarning,
+                stacklevel=3,
+            )
+            return
         if predictions.size and np.allclose(predictions, 0.0):
             warnings.warn(
                 f"{self.name}: predicted uplift is zero for every unit on "

@@ -910,12 +910,48 @@ Nothing was lost, because the fits were banked: Lenta resumed from its checkpoin
 seconds against the 5h11m it took to compute. That is the checkpointing of change 30 doing
 exactly what it was built for, and it is the only reason this cost minutes rather than a day.
 
-Two things worth separating. Dragonnet's Lenta fit is not degenerate, which was checked before
-assuming: its Qini, AUUC and uplift at every budget sit alongside the T-learner's, and only
-the calibration columns are undefined. Why calibration specifically fails there, when it works
-on IHDP, ACIC and Hillstrom, is not yet explained and is not written up until it is.
+This entry originally said Dragonnet's Lenta fit was not degenerate, on the evidence that its
+Qini, AUUC and uplift sat alongside the T-learner's. That was wrong, and the reasoning was
+wrong in an instructive way: on Lenta the T-learner is itself near-random, so "alongside the
+T-learner" carried no information at all. The fit was dead. Change 51 has it.
 
 And the lesson generalises past this one function. A results table is the last step of a long
 run, so anything that can raise there is expensive in proportion to everything that came
 before it. `tests/test_bench.py::TestAnUndefinedMetric` reconstructs the failure from the
 shape of the real data.
+
+
+**51. Dragonnet produced an all-NaN ranking on Lenta, and it reported plausible numbers
+instead of failing** (week 6). Chasing change 50's undefined calibration to its cause found
+something worse than undefined calibration. Dragonnet's predicted uplift on Lenta is NaN for
+every unit, on every seed.
+
+The cause is a missing-value gap that only Lenta exposes. LightGBM accepts NaN natively, which
+is why five meta-learners handle Lenta without anyone thinking about it, and Lenta is the only
+one of the five datasets that has missing values at all: 19.5% of its cells, across 150 of its
+191 columns, against exactly zero for IHDP, ACIC, Hillstrom and Criteo. A dense layer does not
+accept NaN. Standardising a column that holds one gives a NaN mean, the design matrix goes NaN
+on the first forward pass, and the weights never come back.
+
+The way it surfaced is the part worth keeping. It did not look like a failure. The predictions
+were all NaN, `rank_order` sorted them to one end, the ranking became the order the rows
+happened to arrive in, and the results table reported a Qini of +0.0001 and a DR gain at 20% of
++0.0013 against random targeting's -0.0000 and +0.0012. A dead model produced numbers that
+looked like a real estimator having a quiet day on a hard dataset. It was committed and pushed
+before anyone knew.
+
+Two things let it through, and both are fixed. The encoder now imputes with the training median
+and adds a missingness indicator per affected column, because absence in Lenta is a fact about
+the customer rather than a hole in the record: someone with no `cheque_count_3m_g20` never
+bought from that group, and imputing a median asserts an average purchase history for people
+who have none. And `_warn_if_degenerate` now tests for non-finite predictions by name. It was
+written for the constant-zero case and `np.allclose(nan, 0.0)` is False, so it watched this
+happen in silence.
+
+The rule this leaves behind is worth more than the fix. The check that catches a dead model
+must not be a check on the model's output looking wrong, because a dead model's output can
+look perfectly ordinary once a ranking metric has finished with it. It has to be a check on the
+output being a number.
+
+Lenta's table still carries the bad Dragonnet row and is flagged in the README until it is
+refitted; regenerating it costs one seed of Lenta, about an hour.

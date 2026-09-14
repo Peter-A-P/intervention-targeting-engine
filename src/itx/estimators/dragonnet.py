@@ -60,6 +60,24 @@ Features are standardised, since a network trained by gradient descent on raw co
 spanning six orders of magnitude spends its first epochs undoing the scale. The shift and
 scale come from the training rows only.
 
+Missing values are imputed with the training median and flagged with an indicator column,
+which is the change that cost a result before it was made. LightGBM takes NaN natively, so
+every meta-learner here handles Lenta without anyone thinking about it, and Lenta is the
+only one of the five datasets with missing values: 19.5% of its cells, across 150 of its 191
+columns. A dense layer does not take NaN. Standardising a column that contains one gives a
+NaN mean, the whole design matrix goes NaN on the first forward pass, and the weights never
+come back. That happened, and the way it surfaced is the part worth remembering: the
+predictions were all NaN, :func:`itx.metrics.curves.rank_order` sorted them to one end, the
+ranking became the order the rows arrived in, and the results table reported a Qini and a
+policy gain indistinguishable from random targeting instead of reporting nothing. A dead
+model that produces plausible numbers is worse than one that raises.
+
+The indicator column is there because the missingness is informative rather than incidental.
+A Lenta customer with no ``cheque_count_3m_g20`` did not have that field lost, they never
+bought from that group, and imputing a median over that would assert an average purchase
+history for people who have none. So the fact of the absence is kept as its own feature and
+the imputed value fills the hole underneath it.
+
 And there is a row cap, :data:`DEFAULT_MAX_ROWS`, because this is a CPU-only project by
 budget (PLAN.md section 1) and Criteo's 1.4 million rows at a hundred epochs is not a
 benchmark anyone reruns. What the cap costs is not yet measured; PLAN.md change 30 is the
@@ -386,9 +404,17 @@ class _Encoder:
 
     Attributes:
         numeric: Names of the columns passed through as numbers, in order.
-        centre: Mean of each numeric column on the training rows.
+        centre: Mean of each numeric column on the training rows, computed after
+            imputation so that a column with missing values still has a finite one.
         scale: Standard deviation of each, floored so a constant column does not divide
             by zero.
+        fill: Median of each numeric column on the training rows, ignoring missing values,
+            used to fill them. NaN only where a training column was entirely missing, and
+            :meth:`transform` then falls back to zero, which is the column mean after
+            standardisation and so the least informative value available.
+        missing: Indices into ``numeric`` of the columns that had missing values in
+            training. Each gets an indicator column, because absence is a fact about the
+            customer rather than a hole in the record.
         categorical: Names of the one-hot columns, in order.
         levels: The category codes seen in training, per categorical column. Anything else
             lands in a spare final column rather than raising, because a rare category
@@ -398,6 +424,8 @@ class _Encoder:
     numeric: tuple[str, ...]
     centre: FloatArray
     scale: FloatArray
+    fill: FloatArray
+    missing: tuple[int, ...]
     categorical: tuple[str, ...]
     levels: tuple[tuple[float, ...], ...]
 
@@ -424,12 +452,26 @@ class _Encoder:
         numeric = tuple(name for name in features.columns if name not in set(one_hot))
 
         block = features.select(numeric).to_numpy().astype(np.float64) if numeric else None
-        centre = block.mean(axis=0) if block is not None else np.zeros(0)
-        spread = block.std(axis=0) if block is not None else np.zeros(0)
+        if block is None:
+            fill = np.zeros(0)
+            missing: tuple[int, ...] = ()
+            centre = np.zeros(0)
+            spread = np.zeros(0)
+        else:
+            absent = np.isnan(block)
+            missing = tuple(int(i) for i in np.flatnonzero(absent.any(axis=0)))
+            # A column that is entirely missing in training has no median; transform falls
+            # back to zero for it, which is the column mean once standardised.
+            fill = np.where(absent.all(axis=0), 0.0, _column_medians(block))
+            filled = np.where(absent, fill, block)
+            centre = filled.mean(axis=0)
+            spread = filled.std(axis=0)
         return cls(
             numeric=numeric,
             centre=centre,
             scale=np.where(spread > 0.0, spread, 1.0),
+            fill=fill,
+            missing=missing,
             categorical=one_hot,
             levels=tuple(
                 tuple(float(v) for v in np.unique(features[name].to_numpy()))
@@ -449,7 +491,13 @@ class _Encoder:
         parts: list[FloatArray] = []
         if self.numeric:
             block = features.select(self.numeric).to_numpy().astype(np.float64)
-            parts.append((block - self.centre) / self.scale)
+            absent = np.isnan(block)
+            filled = np.where(absent, self.fill, block)
+            parts.append((filled - self.centre) / self.scale)
+            if self.missing:
+                # One indicator per column that was ever missing in training, so the
+                # network can tell an imputed median from an observed one.
+                parts.append(absent[:, list(self.missing)].astype(np.float64))
         for name, levels in zip(self.categorical, self.levels, strict=True):
             column = features[name].to_numpy().astype(np.float64)
             # One extra column for anything unseen, so a missing level is recorded rather
@@ -465,6 +513,23 @@ class _Encoder:
             return np.zeros((features.height, 0), dtype=np.float64)
         stacked: FloatArray = np.hstack(parts)
         return stacked
+
+
+def _column_medians(block: FloatArray) -> FloatArray:
+    """Median of each column ignoring missing values, without NumPy's all-NaN warning.
+
+    Args:
+        block: Training rows by numeric column.
+
+    Returns:
+        One median per column; NaN for a column with no observed value at all, which the
+        caller replaces.
+    """
+    with np.errstate(all="ignore"):
+        medians: FloatArray = np.nanmedian(
+            np.where(np.isnan(block).all(axis=0), 0.0, block), axis=0
+        )
+    return medians
 
 
 def _capped_rows(data: UpliftDataset, max_rows: int, seed: int) -> IntArray:

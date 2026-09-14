@@ -26,7 +26,7 @@ import pytest
 torch = pytest.importorskip("torch", reason="Dragonnet needs the 'neural' extra")
 
 from itx.data import synthetic  # noqa: E402
-from itx.estimators.base import NotFittedError  # noqa: E402
+from itx.estimators.base import DegenerateFitWarning, NotFittedError  # noqa: E402
 from itx.estimators.dragonnet import (  # noqa: E402
     DEFAULT_DRAGONNET,
     Dragonnet,
@@ -87,6 +87,82 @@ class TestTheEncoder:
         encoder = _Encoder.fit(frame, ("id",), max_categories=10)
         assert encoder.categorical == ()
         assert encoder.numeric == ("id",)
+
+
+class TestMissingValues:
+    """Lenta is 19.5% missing and it produced a committed table full of nothing.
+
+    LightGBM takes NaN natively, so every meta-learner handles Lenta without anyone
+    thinking about it, and Lenta is the only one of the five datasets with missing values.
+    A dense layer does not. Standardising a column holding a NaN gives a NaN mean, the whole
+    matrix goes NaN on the first forward pass, and the weights never return. What made it
+    expensive was that it did not look like a failure: the predictions were all NaN,
+    `rank_order` sorted them to one end, the ranking became the order the rows arrived in,
+    and the results table reported a Qini indistinguishable from random targeting.
+    """
+
+    def with_missing(self, share: float, n: int = 4_000, p: int = 12, seed: int = 0):
+        rng = np.random.default_rng(seed)
+        x = rng.normal(size=(n, p))
+        treatment = (rng.random(n) < 0.5).astype(np.int64)
+        outcome = x[:, 0] + treatment * (1.0 + x[:, 1]) + rng.normal(0, 0.2, n)
+        if share:
+            x[rng.random((n, p)) < share] = np.nan
+        frame = pl.DataFrame({f"f{i}": x[:, i] for i in range(p)})
+        return UpliftDataset(
+            name="missing", features=frame, treatment=treatment, outcome=outcome
+        )
+
+    def test_a_column_with_missing_values_does_not_poison_the_matrix(self):
+        encoder = _Encoder.fit(self.with_missing(0.2).features, (), max_categories=64)
+        encoded = encoder.transform(self.with_missing(0.2).features)
+        assert np.isfinite(encoded).all()
+
+    def test_a_missingness_indicator_is_added_per_affected_column(self):
+        data = self.with_missing(0.2, p=12)
+        encoder = _Encoder.fit(data.features, (), max_categories=64)
+        encoded = encoder.transform(data.features)
+        # Twelve standardised columns plus one indicator for each column that had a gap.
+        assert encoded.shape[1] == 12 + len(encoder.missing)
+        assert len(encoder.missing) > 0
+
+    def test_the_indicator_marks_the_rows_that_were_missing(self):
+        # Absence in this data is a fact about the unit, not a hole in the record, so it
+        # has to reach the network rather than be smoothed over by the median.
+        frame = pl.DataFrame({"a": [1.0, 2.0, float("nan"), 4.0]})
+        encoder = _Encoder.fit(frame, (), max_categories=64)
+        encoded = encoder.transform(frame)
+        assert encoded[:, -1].tolist() == [0.0, 0.0, 1.0, 0.0]
+
+    def test_the_hole_is_filled_with_the_training_median(self):
+        frame = pl.DataFrame({"a": [1.0, 2.0, 3.0, float("nan")]})
+        encoder = _Encoder.fit(frame, (), max_categories=64)
+        assert encoder.fill[0] == pytest.approx(2.0)
+
+    def test_a_column_missing_everywhere_does_not_raise(self):
+        frame = pl.DataFrame({"a": [1.0, 2.0, 3.0], "b": [float("nan")] * 3})
+        encoder = _Encoder.fit(frame, (), max_categories=64)
+        assert np.isfinite(encoder.transform(frame)).all()
+
+    def test_no_indicators_when_nothing_is_missing(self):
+        encoder = _Encoder.fit(self.with_missing(0.0).features, (), max_categories=64)
+        assert encoder.missing == ()
+
+    def test_it_fits_and_predicts_finite_uplift_on_missing_data(self):
+        data = self.with_missing(0.195)
+        predicted = Dragonnet(QUICK, seed=0).fit(data).predict_uplift(data.features)
+        assert np.isfinite(predicted).all()
+        assert np.unique(predicted).size > 100  # a real ranking, not a constant
+
+    def test_a_non_finite_prediction_is_warned_about_loudly(self):
+        # The guard that would have caught this at the source. np.allclose(nan, 0) is
+        # False, so the old all-zero check stayed silent while the run produced numbers.
+        class Broken(Dragonnet):
+            def _predict_uplift(self, features):
+                return np.full(features.height, np.nan)
+
+        with pytest.warns(DegenerateFitWarning, match="not finite"):
+            Broken(QUICK, seed=0).fit(self.with_missing(0.0, n=600))
 
 
 class TestTheRowCapAndHoldout:
