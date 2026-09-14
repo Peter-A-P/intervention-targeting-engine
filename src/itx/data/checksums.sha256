@@ -49,3 +49,4 @@ c8ee8ca537ef4315a0ee5753bd01d792a1b3cdacb1fd69e1288b2bb89944d1b7  acic2016_zymu_
 #   scikit-uplift; see docs/data/lenta.md. Recorded 2026-09-11.
 #
 b531544f6c072d22f232d91e20ffcaca265acf224e02687502a40e6d56135682  lenta_dataset.csv.gz
+3a5c83ab6b3cc13dcabe5ffa9f522307fd5f7f7b6e6f6a60c32284ca6283d642  ieee_train_transaction.csv

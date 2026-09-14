@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Annotated
 
+import numpy as np
 import typer
 
 from itx import __version__
@@ -697,6 +698,90 @@ def selection(
 def _config_label(chosen: Selection) -> str:
     """The winning settings of a selection, as ``min_child_samples/num_leaves``."""
     return f"{chosen.config.min_child_samples}/{chosen.config.num_leaves}"
+
+
+@app.command("allocate")
+def allocate(
+    dataset: Annotated[
+        str, typer.Option(help="Dataset key. Only the fraud case has per-unit costs.")
+    ] = "ieee-fraud",
+    estimator: Annotated[str, typer.Option(help="Which model ranks the queue.")] = "t-learner",
+    hours: Annotated[float, typer.Option(help="Analyst hours available.")] = 1000.0,
+    seed: Annotated[
+        int | None, typer.Option(help="Split seed; the first committed one if omitted.")
+    ] = None,
+) -> None:
+    """Spend a budget of analyst time four ways and say what each one bought.
+
+    The fraud worked case is the only one here where treating a unit has a per-unit cost, so
+    it is the only one where the cost-aware knapsack of PLAN.md section 7 does anything that
+    rank-and-cut does not. Both are run against the same budget, beside the risk ranking a
+    fraud team would use today and beside random.
+    """
+    from itx.bench.allocate import compare_queues, to_markdown
+    from itx.bench.runner import DATASETS, ESTIMATORS, nuisances_for
+    from itx.bench.seeds import SEEDS, TIE_SEED
+    from itx.data.ieee_fraud import COST_COLUMN
+    from itx.data.splits import stratified_split
+    from itx.estimators.baselines import OutcomeRanking
+    from itx.estimators.lightgbm_base import DEFAULT_CONFIG
+
+    if dataset not in DATASETS:
+        typer.echo(f"unknown dataset {dataset!r}; known: {', '.join(sorted(DATASETS))}")
+        raise typer.Exit(code=1)
+
+    say = _printer()
+    chosen_seed = SEEDS[0] if seed is None else seed
+    data = DATASETS[dataset]()
+    if COST_COLUMN not in data.feature_names:
+        typer.echo(
+            f"{dataset} has no {COST_COLUMN!r} column, so every review costs the same and "
+            f"the knapsack reduces to rank-and-cut. Try --dataset ieee-fraud."
+        )
+        raise typer.Exit(code=1)
+
+    split = stratified_split(data, chosen_seed)
+    test = split.test
+    costs = test.features[COST_COLUMN].to_numpy()
+
+    say(f"{dataset}: fitting {estimator} on {split.train.n_units:,} training rows")
+    uplift = ESTIMATORS[estimator](DEFAULT_CONFIG, chosen_seed)
+    uplift.fit(split.train)
+    predicted = uplift.predict_uplift(test.features)
+
+    say("fitting the risk ranking a fraud team would use today")
+    # Predicted outcome under control, negated: the outcome is dollars retained, so the
+    # transactions with the worst predicted outcome are the ones a risk queue reviews first.
+    risk = OutcomeRanking(DEFAULT_CONFIG, seed=chosen_seed, fit_on="control")
+    risk.fit(split.train)
+    risk_scores = -risk.predict_uplift(test.features)
+
+    say("pricing each queue against the same budget")
+    rng = np.random.default_rng(chosen_seed)
+    queues = compare_queues(
+        {
+            "uplift-knapsack": predicted,
+            "uplift-rank-and-cut": predicted,
+            "risk": risk_scores,
+            "random": rng.normal(size=test.n_units),
+        },
+        costs,
+        hours,
+        outcome=test.outcome,
+        treatment=test.treatment,
+        nuisances=nuisances_for(split),
+        truth=test.require_true_effect(),
+        knapsack_for=("uplift-knapsack",),
+        seed=TIE_SEED,
+    )
+
+    typer.echo("")
+    typer.echo(
+        f"{dataset}, seed {chosen_seed}, {test.n_units:,} held-out transactions worth "
+        f"${test.features['TransactionAmt'].sum():,.0f}"
+    )
+    typer.echo("")
+    typer.echo(to_markdown(queues, hours))
 
 
 demo_app = typer.Typer(help="Build the static budget-slider demo.", no_args_is_help=True)

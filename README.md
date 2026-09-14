@@ -6,10 +6,12 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
-**Status: week 5 of 8.** Five estimators of the seven, benchmarked on all five datasets, each
-one now reported with what its ranking actually buys at a budget rather than only how well it
-ranks. The numbers below are real and reproducible; two estimators, the sensitivity analysis,
-the fraud case and the demo are still to come. Build plan: [PLAN.md](PLAN.md).
+**Status: week 7 of 8.** Seven estimators benchmarked on all five datasets, each reported with
+what its ranking actually buys at a budget rather than only how well it ranks, plus a
+sensitivity section, a fraud worked case that declares itself semi-synthetic in its first
+sentence, and a budget-slider demo that is built and not yet hosted. The numbers below are real
+and reproducible. Still to come: hosting, `docs/rejected.md`, the clean-environment rerun, and
+the flip to public. Build plan: [PLAN.md](PLAN.md).
 
 **The same baseline, the same code, opposite conclusions.** Ranking people by risk is how this
 job is usually done. At a budget covering a tenth of the population it buys **-0.20 on ACIC**
@@ -612,6 +614,38 @@ version of the same study would have had to argue against. It is not much.
 dashes, why ACIC's E-value is an order of magnitude rather than a number, and why the Gamma
 is quoted to one decimal place. Criteo and Lenta need a full-size fit and are queued.
 
+## The fraud worked case
+
+**This case is semi-synthetic and says so before it says anything else. The features are real
+and the treatment effect is invented.** IEEE-CIS Fraud Detection supplies 590,540 real card
+transactions with real features and a real `isFraud` label. Nobody recorded which of them a
+human analyst reviewed, because that is not in the data, so the review and everything it does
+are simulated here from a published function
+([src/itx/data/ieee_fraud.py](src/itx/data/ieee_fraud.py), card at
+[docs/data/ieee-fraud.md](docs/data/ieee-fraud.md)). Nothing below is a measured fact about
+fraud review. It is the allocation logic shown on a problem shaped like the ones this project
+is aimed at.
+
+What the simulation says: a transaction is worth its amount. Left alone, a fraudulent one is
+charged back and the business loses that amount, and a legitimate one completes and earns a 3%
+margin. Sent to review, a fraudulent one is caught with some probability and the loss is
+avoided, and a legitimate one is wrongly declined with some probability and the margin is lost.
+So review helps on fraud and hurts on everything else, which makes 96.5% of this population
+sleeping dogs.
+
+**The one assumption doing the work is that review is hardest on what looks riskiest.** The
+catch rate falls from 0.85 to 0.30 as a transaction's fraud signal rises, because the obvious
+fraud is stopped by rules before it reaches a queue and what arrives is the practised kind. A
+reader who thinks real review works the other way can change one constant and rerun. That
+assumption is what puts the highest-risk transactions in the lost-causes quadrant, and it is
+why ranking a review queue by risk is not ranking it by what review is worth.
+
+<!-- itx:table:ieee-fraud -->
+<!-- itx:end:ieee-fraud -->
+
+<!-- itx:table:ieee-fraud-policy -->
+<!-- itx:end:ieee-fraud-policy -->
+
 ## The budget slider
 
 `uv run itx demo build` precomputes what a static page needs, and `demo/` is the page. Open
@@ -636,9 +670,9 @@ Three things about it are limits rather than features, and the page says all thr
 - **Only the top 200 of each ranking ships.** Criteo's test split is 279,592 rows and the whole
   list would be a multi-megabyte download to render something nobody scrolls.
 - **Costs are uniform**, so the cost-aware knapsack in `itx/policy/cost_aware.py` reduces to
-  rank-and-cut here. Varying cost per unit is what the fraud worked case is for, and that is
-  not built: it needs IEEE-CIS, which is behind a Kaggle account and competition rules rather
-  than a URL with a checksum like every other loader here.
+  rank-and-cut here. Varying cost per unit is what the fraud worked case above is for, and
+  `uv run itx allocate` is where the knapsack is compared against rank-and-cut on a budget of
+  analyst hours rather than a headcount.
 
 Not yet hosted. PLAN.md section 7 puts it on Azure Static Web Apps at
 `targeting.peterparker.ca`; until then it is a directory you can open.
@@ -650,8 +684,13 @@ Not yet hosted. PLAN.md section 7 puts it on Azure Static Web Apps at
   the targeting decision flips; it does not remove the assumption.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
-- Not yet built, in schedule order: the fraud worked case; the budget-slider demo. Nothing
-  above is a placeholder for them: the numbers reported are the numbers measured.
+- Not yet done: hosting the demo at `targeting.peterparker.ca`, `docs/rejected.md`, and the
+  clean-environment rerun that closes week 8. Nothing above is a placeholder for any of them:
+  the numbers reported are the numbers measured.
+- **The fraud case's IEEE-CIS file is the one input this repository cannot fetch for you.**
+  It sits behind a Kaggle account and accepted competition rules and may not be redistributed,
+  so [docs/data/ieee-fraud.md](docs/data/ieee-fraud.md) gives three steps and the loader
+  checks the committed digest once the file is in place.
 - **The sensitivity table covers three datasets of five, and none of the three can fail it.**
   Criteo and Lenta need a full-size fit and are queued. Of the three that are there, two are
   randomised and the third is confounded only through covariates it records, so a clean sweep

@@ -1010,3 +1010,51 @@ this project fetches from a direct URL and verifies a committed checksum. It nee
 credentials or a substitute dataset, and substituting one is a change to section 3 rather than
 something to do quietly. The cost-aware knapsack it was going to exercise stays built, tested
 and unused, which is now the second week that has been true.
+**53. The fraud worked case is built, on data that turned out to be next door** (week 7).
+Change 52 recorded the case as blocked: IEEE-CIS is a Kaggle competition dataset behind an
+account and accepted rules, with no credentials on this machine. Peter had already downloaded
+it for project 09, with a manifest carrying per-file sha256 digests. The two training files
+are hardlinked into this project's `data/raw/`, same volume so no copy, and verified against
+the manifest's digests before the digest for `train_transaction.csv` was committed to
+`checksums.sha256`. Only the training split is used; the test split has no labels.
+
+Two mechanisms were added so that this file can sit beside the others without pretending to
+be like them. `Source.manual` marks a file a loader cannot fetch, and `fetch` raises
+`ManualDownloadRequiredError` with the Kaggle page and the target path when it is absent,
+rather than an HTTP error that looks like a broken download. The card at
+`docs/data/ieee-fraud.md` gives the three steps. Nothing downloads it and nothing commits it,
+because the licence forbids redistribution.
+
+The design is in `src/itx/data/ieee_fraud.py`, all of it in `simulate()` with named
+constants, so the effect function is published rather than described. The features are real:
+44 of the file's 394 columns, the `V1`-`V339` block dropped as uninterpretable. The treatment
+is a fair coin, so the propensity is known and the case is about allocation rather than
+identification. The outcome is dollars retained: a fraudulent transaction left alone is charged
+back, a legitimate one earns a 3% margin, review catches fraud with a probability that *falls*
+from 0.85 to 0.30 as the transaction's fraud signal rises, and wrongly declines legitimate
+sales with a probability that rises from 0.01 to 0.15. Review costs 8 to 30 analyst minutes
+depending on how much of the record is missing, which is the per-unit cost the cost-aware
+knapsack of week 5 finally has something to spend.
+
+The single load-bearing assumption is that review is hardest on what looks riskiest. It puts
+the highest-risk transactions in the lost-causes quadrant and is the reason ranking a queue by
+risk is not ranking it by what review buys. It is stated in the module docstring, the card, and
+the README, and it is one constant: set `CATCH_FALL` to zero and the case becomes one where
+risk ranking is optimal, which is a perfectly reasonable thing to believe about some review
+operations.
+
+Two consequences of the design worth knowing before reading any number from it. First, 96.5%
+of the population are sleeping dogs, because review helps only the 3.50% that are fraudulent
+and harms every legitimate transaction a little. Reviewing everything is worth about $2.32 a
+transaction, and reviewing the right 2% by the true effect is worth more than reviewing all of
+it, since the harm to the other 98% cancels most of the gain. Second, the per-unit truth is the
+expected effect, not the realised coin flip, because an effect defined by one draw would be
+unlearnable and PEHE against it would be measuring the coin. Both are asserted in
+`tests/test_ieee_fraud.py`.
+
+`itx allocate` runs the allocation comparison: four queues against the same budget of analyst
+hours, scored on the doubly robust estimate this package would report on real data and on the
+true value the simulation wrote, side by side. The dataset is registered in `DATASETS` so
+`itx benchmark --dataset ieee-fraud` works, and deliberately not in `BENCHMARK_DATASETS`: it is
+a worked case rather than a benchmark row, and putting an invented effect in the same sweep as
+five measured datasets would invite a reader to compare a simulation against the world.

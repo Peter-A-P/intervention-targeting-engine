@@ -31,6 +31,7 @@ from itx.bench.seeds import (
 from itx.data.acic import load_acic
 from itx.data.criteo import load_criteo
 from itx.data.hillstrom import load_hillstrom
+from itx.data.ieee_fraud import load_ieee_fraud
 from itx.data.ihdp import load_ihdp
 from itx.data.lenta import load_lenta
 from itx.data.splits import stratified_split
@@ -100,6 +101,11 @@ DATASETS: dict[str, Callable[[], UpliftDataset]] = {
     "criteo": load_criteo,
     "criteo-full": lambda: load_criteo(fraction=1.0),
     "lenta": load_lenta,
+    # The fraud worked case: real features, simulated review, simulated effect. Not in
+    # BENCHMARK_DATASETS because it is a worked case rather than a benchmark row: its effect
+    # was invented here, so putting it in the same sweep as five measured datasets would
+    # invite a reader to compare a simulation against the world.
+    "ieee-fraud": load_ieee_fraud,
     "synthetic-binary": binary_outcome,
     "synthetic-heterogeneous": heterogeneous_effect,
     "synthetic-complex": complex_effect,

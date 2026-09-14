@@ -28,6 +28,12 @@ class Source:
         url: Where it is fetched from.
         licence: The terms the file is published under, repeated in its dataset card.
         note: Anything a reader needs to know before downloading, such as a click-through.
+        manual: True when the file cannot be fetched by URL and a person has to place it.
+            IEEE-CIS is the only one: Kaggle serves competition data to an authenticated
+            account that has accepted the competition rules, which is not a thing a loader
+            can do. ``url`` then points at the page to get it from rather than at the file,
+            and :func:`itx.data.download.fetch` says so instead of failing on an HTTP error
+            that looks like the download broke.
     """
 
     key: str
@@ -35,6 +41,7 @@ class Source:
     url: str
     licence: str
     note: str = ""
+    manual: bool = False
 
     @property
     def expected_sha256(self) -> str:
@@ -83,6 +90,23 @@ def _acic_sources() -> dict[str, Source]:
 
 
 SOURCES: dict[str, Source] = {
+    "ieee-fraud-train": Source(
+        key="ieee-fraud-train",
+        filename="ieee_train_transaction.csv",
+        url="https://www.kaggle.com/competitions/ieee-fraud-detection/data",
+        licence=(
+            "Kaggle competition rules, IEEE-CIS Fraud Detection. Non-commercial and "
+            "academic use; the file is not redistributable, which is why nothing here "
+            "downloads it and nothing here commits it."
+        ),
+        note=(
+            "590,540 transactions with 394 columns and a real isFraud label. Needs a "
+            "Kaggle account that has accepted the competition rules, so it cannot be "
+            "fetched by URL. Only train_transaction.csv is used; the test split has no "
+            "labels. Rename it to ieee_train_transaction.csv."
+        ),
+        manual=True,
+    ),
     "hillstrom": Source(
         key="hillstrom",
         filename="hillstrom.csv",

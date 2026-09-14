@@ -21,6 +21,15 @@ class ChecksumMismatchError(RuntimeError):
     """A downloaded or cached file does not match its committed digest."""
 
 
+class ManualDownloadRequiredError(RuntimeError):
+    """A source that cannot be fetched by URL is not where it was expected.
+
+    Its own error rather than a generic one, because the fix is a person doing something
+    rather than a retry: IEEE-CIS is served by Kaggle to an authenticated account that has
+    accepted the competition rules, so there is no URL a loader can pull it from.
+    """
+
+
 def sha256_of(path: Path) -> str:
     """Hex SHA-256 of a file, read in chunks so a 300 MB download stays out of memory.
 
@@ -53,6 +62,7 @@ def fetch(key: str, *, force: bool = False, quiet: bool = False) -> Path:
 
     Raises:
         ChecksumMismatchError: If the download does not match the committed digest.
+        ManualDownloadRequiredError: If the source cannot be fetched by URL and is not present.
     """
     spec = source(key)
     target = data_dir() / spec.filename
@@ -68,6 +78,16 @@ def fetch(key: str, *, force: bool = False, quiet: bool = False) -> Path:
             f"expected {expected[:12]}...; re-downloading",
             quiet=quiet,
         )
+
+    if spec.manual:
+        msg = (
+            f"{spec.filename} has to be placed by hand and is not in "
+            f"{target.parent}. {spec.note} "
+            f"Get it from {spec.url}, then put it at {target}. "
+            f"It is checked against the committed digest {expected[:12]}... like every "
+            f"other file here, so a wrong or truncated copy will not be used."
+        )
+        raise ManualDownloadRequiredError(msg)
 
     target.parent.mkdir(parents=True, exist_ok=True)
     partial = target.with_suffix(target.suffix + ".part")
