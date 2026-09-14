@@ -893,3 +893,29 @@ decision rather than the curve changes 87% of the selections and costs nothing. 
 land somewhere different on nearly every partition of the same dataset. Roughly 89% of this
 benchmark's compute goes on a choice among near-ties. Whether the grid earns its place is a
 week 8 question for `docs/rejected.md`.
+
+**50. One undefined metric took down a five-hour benchmark run, and the fragility was older
+than the estimator that triggered it** (week 6). The week 6 rerun completed IHDP, ACIC,
+Hillstrom and all thirty-five Lenta fits, then raised `ValueError: no finite values to
+summarise` while rendering Lenta's table and exited, with Criteo not yet started.
+
+The trigger was Dragonnet, whose calibration slope and calibration error are undefined on all
+five Lenta seeds. The defect was `itx/bench/table.py`. `summarise` called `bootstrap_over` on
+every estimator and metric, and that function raises when handed nothing finite, which is
+correct for its other callers and wrong here: the table already renders an undefined estimate
+as a dash, and one estimator having nothing to say about one column is an ordinary thing. It
+should never have been able to end a five-dataset sweep at the final step.
+
+Nothing was lost, because the fits were banked: Lenta resumed from its checkpoint in 8.2
+seconds against the 5h11m it took to compute. That is the checkpointing of change 30 doing
+exactly what it was built for, and it is the only reason this cost minutes rather than a day.
+
+Two things worth separating. Dragonnet's Lenta fit is not degenerate, which was checked before
+assuming: its Qini, AUUC and uplift at every budget sit alongside the T-learner's, and only
+the calibration columns are undefined. Why calibration specifically fails there, when it works
+on IHDP, ACIC and Hillstrom, is not yet explained and is not written up until it is.
+
+And the lesson generalises past this one function. A results table is the last step of a long
+run, so anything that can raise there is expensive in proportion to everything that came
+before it. `tests/test_bench.py::TestAnUndefinedMetric` reconstructs the failure from the
+shape of the real data.

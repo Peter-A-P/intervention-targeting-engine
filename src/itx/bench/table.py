@@ -14,6 +14,7 @@ available next to it, and the full per-seed detail is written to JSON.
 from __future__ import annotations
 
 import json
+import math
 from collections import Counter
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -60,7 +61,17 @@ def summarise(rows: Sequence[BenchmarkRow]) -> list[Summary]:
 
     Returns:
         Summaries in estimator-then-metric order. Metrics missing from an estimator's rows
-        are skipped rather than filled in.
+        are skipped rather than filled in. A metric that is present but undefined on every
+        seed is kept and rendered as a dash, rather than raising.
+
+    The dash case is here because it cost a benchmark run. Dragonnet's calibration is
+    undefined on all five Lenta seeds, and :func:`itx.metrics.bootstrap.bootstrap_over`
+    raises on an input with no finite values, which is right for its other callers and
+    fatal here: the exception surfaced after Lenta's 35 fits had finished, at the table
+    render, and took the whole run down with it including the Criteo dataset that had not
+    started. One estimator having nothing to say about one metric is an ordinary thing
+    that the table already knows how to print. It must not be able to destroy five hours
+    of fits.
     """
     summaries: list[Summary] = []
     for estimator, estimator_rows in group_by_estimator(rows).items():
@@ -69,6 +80,17 @@ def summarise(rows: Sequence[BenchmarkRow]) -> list[Summary]:
             if not estimates:
                 continue
             values = np.array([e.value for e in estimates], dtype=np.float64)
+            across = (
+                bootstrap_over(values, level=estimates[0].level)
+                if np.isfinite(values).any()
+                else Estimate(
+                    value=math.nan,
+                    low=math.nan,
+                    high=math.nan,
+                    level=estimates[0].level,
+                    n_resamples=0,
+                )
+            )
             summaries.append(
                 Summary(
                     dataset=estimator_rows[0].dataset,
@@ -81,7 +103,7 @@ def summarise(rows: Sequence[BenchmarkRow]) -> list[Summary]:
                         level=estimates[0].level,
                         n_resamples=sum(e.n_resamples for e in estimates),
                     ),
-                    across_seeds=bootstrap_over(values, level=estimates[0].level),
+                    across_seeds=across,
                     n_seeds=len(estimates),
                 )
             )

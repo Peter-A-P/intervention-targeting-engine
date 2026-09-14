@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import math
 from dataclasses import replace
 from pathlib import Path
 
@@ -32,6 +33,7 @@ from itx.bench.runner import (
     DEFAULT_ESTIMATORS,
     ESTIMATORS,
     UNTUNED,
+    BenchmarkRow,
     _duration,
     evaluate,
     random_reference_row,
@@ -43,6 +45,7 @@ from itx.bench.seeds import SEEDS, TIE_SEED, bootstrap_seed_for
 from itx.bench.table import (
     compare_results,
     read_json,
+    results_table,
     selected_configurations,
     summarise,
     to_markdown,
@@ -54,6 +57,7 @@ from itx.data import synthetic
 from itx.data.splits import stratified_split
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG
 from itx.estimators.s_learner import SLearner
+from itx.metrics.bootstrap import Estimate
 
 RESAMPLES = 40
 runner = CliRunner()
@@ -1000,6 +1004,84 @@ class TestCheckpointFile:
         )
         assert reused == ()
         assert lines == []
+
+
+class TestAnUndefinedMetric:
+    """A metric one estimator cannot compute must not take the run down with it.
+
+    This is a regression test for a real failure. Dragonnet's calibration is undefined on
+    all five Lenta seeds, `bootstrap_over` raises when handed nothing finite, and the
+    exception surfaced at the table render after Lenta's thirty-five fits had completed,
+    killing a benchmark that still had Criteo to run. The fits survived in the checkpoint,
+    but five hours of a five-dataset sweep ended on one estimator having nothing to say
+    about one column.
+    """
+
+    def make_rows(self, undefined_for: str):
+        """Two estimators over three seeds, one of which cannot compute `calibration_slope`."""
+        rows = []
+        for estimator in ("t-learner", undefined_for):
+            for seed in (11, 23, 37):
+                metrics = {
+                    "qini": Estimate(value=0.01, low=0.0, high=0.02),
+                    "calibration_slope": Estimate(
+                        value=math.nan if estimator == undefined_for else 0.5,
+                        low=math.nan if estimator == undefined_for else 0.2,
+                        high=math.nan if estimator == undefined_for else 0.8,
+                    ),
+                }
+                rows.append(
+                    BenchmarkRow(
+                        dataset="synthetic",
+                        estimator=estimator,
+                        seed=seed,
+                        n_test=100,
+                        metrics=metrics,
+                        fit_seconds=1.0,
+                        scores=np.zeros(100),
+                    )
+                )
+        return rows
+
+    def test_a_metric_undefined_on_every_seed_renders_as_a_dash(self):
+        table = results_table(self.make_rows("dragonnet"))
+        dragonnet = next(line for line in table.splitlines() if "dragonnet" in line)
+        assert dragonnet.count("| - |") >= 1
+
+    def test_the_other_metrics_on_that_row_survive(self):
+        # The failure mode worth guarding is losing the whole row, or the whole table, for
+        # one undefined column.
+        table = results_table(self.make_rows("dragonnet"))
+        dragonnet = next(line for line in table.splitlines() if "dragonnet" in line)
+        assert "0.0100" in dragonnet
+
+    def test_the_other_estimators_are_unaffected(self):
+        table = results_table(self.make_rows("dragonnet"))
+        assert "t-learner" in table
+        other = next(line for line in table.splitlines() if "t-learner" in line)
+        assert "0.5000" in other
+
+    def test_summarise_keeps_the_row_rather_than_dropping_it(self):
+        summaries = summarise(self.make_rows("dragonnet"))
+        undefined = [
+            s
+            for s in summaries
+            if s.estimator == "dragonnet" and s.metric == "calibration_slope"
+        ]
+        assert len(undefined) == 1
+        assert not math.isfinite(undefined[0].across_seeds.value)
+        assert undefined[0].across_seeds.n_resamples == 0
+
+    def test_a_metric_undefined_on_only_some_seeds_still_summarises(self):
+        rows = self.make_rows("dragonnet")
+        rows[3].metrics["calibration_slope"] = Estimate(value=0.4, low=0.1, high=0.7)
+        summaries = summarise(rows)
+        undefined = next(
+            s
+            for s in summaries
+            if s.estimator == "dragonnet" and s.metric == "calibration_slope"
+        )
+        assert undefined.across_seeds.value == pytest.approx(0.4)
 
 
 class TestSelectionRules:
