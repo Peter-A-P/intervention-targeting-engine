@@ -912,10 +912,57 @@ a benchmark anyone reruns. The cap does not bind on IHDP, ACIC or Hillstrom, so 
 are a control for what it does, and what it costs is not yet measured. PLAN.md change 30 is
 the template and the same measurement is owed.
 
-**No numbers yet.** Dragonnet is registered, tested against known effects on synthetic data,
-and runs end to end through the benchmark, but the README tables were measured before it
-existed and will carry it after the next full run rather than before. Nothing in them is a
-placeholder for it.
+**The verdict it was included for: competitive, and not a breakthrough.** Ranking scores
+across the five datasets, against the T-learner as the reference:
+
+| Dataset | Dragonnet Qini | T-learner Qini | Dragonnet PEHE | Best PEHE |
+|---|---|---|---|---|
+| IHDP | **+0.0613** | +0.0305 | 1.405 | 0.857 (T) |
+| ACIC 2016 | +0.2249 | +0.2107 | 1.235 | 1.216 (T) |
+| Hillstrom | **+0.0042** | +0.0031 | - | - |
+| Lenta | -0.0002 | +0.0002 | - | - |
+| Criteo | **+0.0032** | +0.0022 | - | - |
+
+Best Qini on three of five. Mid-table on ACIC. Weakest of the six modelled rankings on Lenta,
+where its realised gain at a 20% budget is +0.0017 (-0.0001, +0.0035) and covers zero, while
+the five meta-learners' just exclude it. On IHDP it ranks best and estimates worst of the two
+that matter: a PEHE of 1.405 against the T-learner's 0.857, which is the ordinary reminder that
+ranking well and estimating well are different jobs, and it is still far better than the
+DR-learner's 8.541 on the same 448 training rows.
+
+Two caveats keep that from being a win, and they pull in opposite directions. The comparison is
+not clean, for the reason above: its column confounds the architecture with the function class.
+But the handicap it carries is smaller than it sounds. It runs at published defaults where the
+others get a grid search, which would be a real disadvantage if the grid were worth anything,
+and the measurement two sections down says the grid is worth nothing on this data. An untuned
+estimator is barely handicapped on a benchmark where tuning buys nothing, so the three wins
+should not be read as winning from behind.
+
+**Its Lenta column was wrong in the first run, and the way it was wrong is the useful part.**
+Dragonnet's predicted uplift on Lenta came back NaN for every unit on every seed. Lenta is the
+only one of these five datasets with missing values, 19.5% of its cells across 150 of its 191
+columns, against exactly zero for the other four. LightGBM accepts NaN natively, so nobody
+building five meta-learners ever had to think about it; a dense layer does not, and
+standardising a column holding a NaN puts NaN through the whole matrix on the first forward
+pass.
+
+It did not present as a failure. All-NaN scores sort to one end, so the ranking became the
+order the rows arrived in, and the table reported a Qini of +0.0001 and a realised gain of
++0.0013 against random targeting's -0.0000 and +0.0012. A dead model read as a real estimator
+having a quiet day on a hard dataset, and it was committed before anyone noticed. What found it
+was chasing an unrelated symptom, the undefined calibration of change 50, to its cause.
+
+The fix imputes with the training median and adds a missingness indicator per affected column,
+because absence in Lenta is a fact about the customer rather than a gap in the record: someone
+with no `cheque_count_3m_g20` never bought from that group. The refitted row is the one in the
+table above, and the conclusion it supports is the same one the broken row happened to point
+at, which is luck rather than vindication.
+
+The rule worth taking from it is in `itx/estimators/base.py`. The check that catches a dead
+model cannot be a check on its output looking wrong, because a dead model's output looks
+entirely ordinary once a ranking metric has finished with it. It has to be a check that the
+output is a number. `_warn_if_degenerate` was written for the constant-zero case and
+`np.allclose(nan, 0.0)` is False, so it watched this happen in silence. PLAN.md change 51.
 
 ## Sensitivity: what it would take to overturn any of this
 

@@ -955,5 +955,16 @@ must not be a check on the model's output looking wrong, because a dead model's 
 look perfectly ordinary once a ranking metric has finished with it. It has to be a check on the
 output being a number.
 
-Lenta's table still carries the bad Dragonnet row and is flagged in the README until it is
-refitted; regenerating it costs one seed of Lenta, about an hour.
+**Refitted 2026-09-14**, a full 4h59m Lenta rerun rather than a surgical patch, because this
+file's own note on change 30 warns against a results file that is half one version and half
+another. Dragonnet's Lenta row now has a calibration slope of 0.030 instead of NaN and a Qini
+of -0.0002 instead of +0.0001. The figures came back with it, since a full run carries per-unit
+scores where a checkpoint resume does not.
+
+The conclusion the broken row pointed at survives, which is luck and not vindication: Dragonnet
+is still the weakest of the six modelled rankings on Lenta. One claim made from the broken row
+does not survive and is corrected here. The commit that published the remeasured tables said
+Dragonnet was "the only estimator there whose DR gain at 20% fails to exclude zero". On the
+refitted numbers the outcome ranking covers zero too, at +0.0023 (-0.0001, +0.0049) against
+Dragonnet's +0.0017 (-0.0001, +0.0035). The accurate statement is that Dragonnet is the weakest
+of the six and that its interval covers zero where the five meta-learners' just exclude it.
