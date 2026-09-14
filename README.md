@@ -273,8 +273,10 @@ Spending the budget on the highest-risk tenth of this population buys 0.34. Spen
 random tenth buys 3.42. Ranking by risk is not leaving return on the table here, it is ten
 times worse than not thinking about it at all, and its Qini is negative rather than merely
 unimpressive. That happens when the people most likely to have the outcome are the people
-least susceptible to the intervention, which is the normal shape of a fraud queue or a
-clinical follow-up list.
+least susceptible to the intervention, which is the shape a fraud queue or a clinical
+follow-up list is usually assumed to have. The fraud worked case below was built on exactly
+that assumption and shows it is not sufficient on its own: what decides the outcome is how
+large the spread in susceptibility is against the spread in risk.
 
 ![Qini curves on ACIC 2016](docs/figures/qini-acic.png)
 
@@ -564,7 +566,10 @@ than doing nothing. On a fraud queue or a clinical follow-up list, where the mos
 cases are often the least movable, ACIC is the relevant picture. On an advertising set where
 the high-risk group is a hundred times more likely to act, Criteo is. Building an uplift model
 is worth it in the first case and close to pointless in the second, and a decile table like
-the one above says which one you are in before anybody fits a meta-learner.
+the one above says which one you are in before anybody fits a meta-learner. The fraud worked
+case below is the reminder that "the most at-risk are the least movable" can be true and
+still put a problem on the Criteo side of this table, when the effect's sign is decided by
+the risk itself.
 
 The table is the committed 10% stratified subsample, 1,397,958 rows. Stratifying on the arm
 crossed with both outcomes holds every cell at exactly a tenth of itself, so the subsample's
@@ -637,14 +642,147 @@ sleeping dogs.
 catch rate falls from 0.85 to 0.30 as a transaction's fraud signal rises, because the obvious
 fraud is stopped by rules before it reaches a queue and what arrives is the practised kind. A
 reader who thinks real review works the other way can change one constant and rerun. That
-assumption is what puts the highest-risk transactions in the lost-causes quadrant, and it is
-why ranking a review queue by risk is not ranking it by what review is worth.
+assumption puts the highest-risk transactions in the lost-causes quadrant, and it was chosen
+to make the risk queue lose. It did not. The tables say by how much and the text after them
+says why, because the why is the useful part.
+
+The two tables below are the standard ones, on 118,108 held-out transactions per seed, five
+seeds. `outcome-ranking` here is the risk queue: a model of dollars retained under no
+review, fitted on the untreated rows, with the *lowest* predicted value reviewed first. The
+dataset declares that its risk is a low outcome and the baseline reads the declaration
+(PLAN.md change 54, which is also the record of what the table said before it did).
 
 <!-- itx:table:ieee-fraud -->
+| Estimator | Qini (95% CI) | Normalised AUUC | uplift@10% | uplift@20% | uplift@30% | Calibration slope | Calibration error | PEHE | ATE error |
+|---|---|---|---|---|---|---|---|---|---|
+| `s-learner` | 0.4652 (0.3447, 0.5906) | 0.0789 (0.0637, 0.0932) | 17.1557 (12.4618, 22.0506) | 9.9734 (7.5248, 12.4965) | 7.0175 (5.3525, 8.7249) | 1.5325 (1.1985, 1.8800) | 0.8989 (0.5578, 1.4612) | 23.3784 (21.0590, 25.8840) | 0.3049 (0.1803, 0.4392) |
+| `t-learner` | 0.4226 (0.2977, 0.5485) | 0.0757 (0.0604, 0.0899) | 17.3070 (12.6444, 22.1204) | 9.5967 (7.1883, 12.0609) | 6.7156 (5.0896, 8.3614) | 0.3999 (0.2810, 0.5122) | 1.9291 (1.4487, 2.4670) | 24.1094 (22.0752, 26.2834) | 0.0992 (0.0078, 0.2383) |
+| `x-learner` | 0.4578 (0.3358, 0.5863) | 0.0784 (0.0637, 0.0928) | 17.8279 (13.2454, 22.7470) | 10.0149 (7.6415, 12.5112) | 6.9697 (5.3687, 8.6182) | 0.6518 (0.4902, 0.7977) | 1.0678 (0.7091, 1.6226) | 22.9896 (21.0951, 25.0188) | 0.1186 (0.0258, 0.2501) |
+| `dr-learner` | 0.4215 (0.2962, 0.5505) | 0.0757 (0.0606, 0.0902) | 16.2740 (11.7021, 21.0215) | 9.5285 (7.1572, 12.0212) | 6.7869 (5.1699, 8.4418) | 0.5667 (0.4146, 0.7086) | 1.4643 (1.0331, 2.0304) | 24.6935 (22.8884, 26.6054) | 0.0563 (0.0076, 0.2042) |
+| `r-learner` | 0.4265 (0.2997, 0.5527) | 0.0760 (0.0611, 0.0899) | 16.4785 (12.0197, 21.1627) | 9.5768 (7.2282, 11.9806) | 6.7820 (5.1959, 8.3992) | 0.6771 (0.5107, 0.8296) | 1.0844 (0.7644, 1.6768) | 24.8547 (22.6779, 27.1907) | 0.1068 (0.0089, 0.2451) |
+| `dragonnet` | 0.3216 (0.2122, 0.4363) | 0.0679 (0.0537, 0.0817) | 11.9723 (7.9380, 16.2629) | 7.6010 (5.4372, 9.9428) | 5.6238 (4.1214, 7.1924) | 0.8055 (0.5457, 1.0611) | 1.3000 (1.0212, 1.8725) | 24.5096 (21.9945, 27.2344) | 1.0494 (0.9100, 1.1849) |
+| `outcome-ranking` | 0.4625 (0.3395, 0.5875) | 0.0788 (0.0638, 0.0929) | 17.9672 (13.3958, 22.6635) | 9.9946 (7.6514, 12.4335) | 6.9599 (5.3604, 8.5863) | - | - | - | - |
+| `random-200` | 0.0023 (-0.0766, 0.0841) | 0.0439 (0.0379, 0.0500) | 2.3484 (0.9081, 3.9574) | 2.3517 (1.2881, 3.4474) | 2.3446 (1.5297, 3.1682) | - | - | - | - |
+
+Selected on the validation split from the committed grid:
+
+- `s-learner`: min_child_samples=200, num_leaves=31 (2 of 5 seeds), min_child_samples=60, num_leaves=31 (1 of 5 seeds), min_child_samples=20, num_leaves=15 (1 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds)
+- `t-learner`: min_child_samples=200, num_leaves=15 (3 of 5 seeds), min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
+- `x-learner`: min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=60, num_leaves=31 (1 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds)
+- `dr-learner`: min_child_samples=200, num_leaves=15 (2 of 5 seeds), min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=20, num_leaves=31 (1 of 5 seeds)
+- `r-learner`: min_child_samples=60, num_leaves=15 (2 of 5 seeds), min_child_samples=5, num_leaves=15 (2 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds)
+- `outcome-ranking`: min_child_samples=60, num_leaves=15 (1 of 5 seeds), min_child_samples=200, num_leaves=15 (1 of 5 seeds), min_child_samples=5, num_leaves=15 (1 of 5 seeds), min_child_samples=200, num_leaves=31 (1 of 5 seeds), min_child_samples=5, num_leaves=31 (1 of 5 seeds)
 <!-- itx:end:ieee-fraud -->
 
 <!-- itx:table:ieee-fraud-policy -->
+| Estimator | IPW gain at 10% | DR gain at 10% | IPW gain at 20% | DR gain at 20% | Treated share gap at 20% | IPW gain at 30% | DR gain at 30% |
+|---|---|---|---|---|---|---|---|
+| `s-learner` | 1.7492 (1.2613, 2.2409) | 1.6802 (1.2779, 2.0971) | 2.0260 (1.5339, 2.5376) | 1.9508 (1.5422, 2.3743) | -0.0042 (-0.0105, 0.0022) | 2.1281 (1.6283, 2.6416) | 2.0557 (1.6392, 2.4867) |
+| `t-learner` | 1.7387 (1.2662, 2.2259) | 1.6643 (1.2793, 2.0587) | 1.9416 (1.4590, 2.4376) | 1.8584 (1.4693, 2.2582) | -0.0033 (-0.0096, 0.0030) | 2.0297 (1.5387, 2.5299) | 1.9499 (1.5531, 2.3572) |
+| `x-learner` | 1.8057 (1.3411, 2.3093) | 1.7299 (1.3521, 2.1263) | 2.0331 (1.5602, 2.5310) | 1.9509 (1.5509, 2.3552) | -0.0041 (-0.0103, 0.0023) | 2.1154 (1.6339, 2.6159) | 2.0349 (1.6308, 2.4438) |
+| `dr-learner` | 1.6738 (1.2081, 2.1628) | 1.6026 (1.2294, 1.9927) | 1.9342 (1.4616, 2.4397) | 1.8655 (1.4751, 2.2773) | -0.0040 (-0.0103, 0.0024) | 2.0580 (1.5672, 2.5572) | 1.9838 (1.5867, 2.3933) |
+| `r-learner` | 1.6566 (1.1987, 2.1267) | 1.5897 (1.2118, 1.9766) | 1.9411 (1.4715, 2.4283) | 1.8676 (1.4694, 2.2687) | -0.0036 (-0.0099, 0.0024) | 2.0534 (1.5710, 2.5427) | 1.9768 (1.5752, 2.3812) |
+| `dragonnet` | 1.2041 (0.7991, 1.6357) | 1.1699 (0.8510, 1.5135) | 1.5262 (1.0962, 2.0000) | 1.4874 (1.1324, 1.8679) | -0.0012 (-0.0074, 0.0052) | 1.6940 (1.2399, 2.1723) | 1.6564 (1.2847, 2.0482) |
+| `outcome-ranking` | 1.8486 (1.3852, 2.3336) | 1.7757 (1.4035, 2.1649) | 2.0497 (1.5744, 2.5452) | 1.9751 (1.5934, 2.3782) | -0.0053 (-0.0117, 0.0009) | 2.1260 (1.6441, 2.6228) | 2.0521 (1.6602, 2.4563) |
+| `random-200` | 0.2349 (0.0910, 0.3966) | 0.2281 (0.1065, 0.3576) | 0.4706 (0.2577, 0.6895) | 0.4576 (0.2838, 0.6435) | -0.0010 (-0.0067, 0.0045) | 0.7037 (0.4592, 0.9510) | 0.6812 (0.4804, 0.8801) |
 <!-- itx:end:ieee-fraud-policy -->
+
+**Reading the ranking table.** The S-learner and X-learner lead on the Qini, 0.4652 and
+0.4578 with intervals that overlap every other meta-learner's, and tie exactly on realised
+value at a 20% budget (1.9508 against 1.9509 dollars per transaction, doubly robust). The
+X-learner has the lowest PEHE, 22.99, on a population where the true effect is about -$0.37
+for 96.5% of transactions and about +$74 for the rest, so every estimator's individual-effect
+error is of the order of the effect it is trying to find. Dragonnet is last of the six on
+every ranking column and its ATE error, 1.05, is far above the meta-learners' 0.06 to 0.30.
+The `random-200` row's uplift is $2.35 a transaction at every budget, which is the value of
+reviewing everybody, and the top decile of any meta-learner is worth seven times that.
+
+**The risk queue's Qini is 0.4625 (0.3395, 0.5875), level with the S-learner's 0.4652.** Its
+top decile is worth $17.97 a transaction and its realised value at a 20% budget is 1.9751,
+and both are the highest numbers in their columns. It is the best-ranked baseline this
+project has measured on any dataset, and the reason is in the design: review helps only
+fraud, and a model of dollars lost under no review is very nearly a model of which
+transactions are fraud. That
+is a different picture from ACIC, where the effect runs against risk, and it is what the
+allocation below is about.
+
+### What 1,000 analyst hours buy
+
+`uv run itx allocate --estimator s-learner --hours 1000` prices five queues against the same
+budget on the first seed. Two values per queue: what the simulation's written effects say the
+queue was worth, and the doubly robust estimate this package would have reported on real
+data, where the first number does not exist.
+
+| Queue at 1,000 analyst hours | Reviewed | Hours used | True value | DR estimate | $/analyst hour |
+|---|---|---|---|---|---|
+| `uplift-knapsack` | 4,312 | 1,000 | $156,549 | $131,724 | $157 |
+| `uplift-rank-and-cut` | 4,248 | 1,000 | $156,357 | $127,033 | $156 |
+| `risk` | 4,281 | 1,000 | $169,398 | $148,739 | $169 |
+| `random` | 4,264 | 1,000 | $8,366 | $5,096 | $8 |
+| `oracle` | 4,122 | 947 | $305,052 | $307,446 | $322 |
+
+Seed 11, 118,108 held-out transactions worth $15.9M. `oracle` ranks by the effect the
+simulation wrote and is available only because the case is semi-synthetic.
+
+**The risk queue beats every fitted uplift model, and not narrowly.** $169,398 against the
+S-learner's $156,549, and the S-learner is the best of them: the X-learner's knapsack buys
+$154,457, the T-learner's $147,306, the DR-learner's $140,740. The gap holds at 250 hours
+($112,543 against $99,186) and at 100 ($75,693 against $68,726). On this case a fraud team
+that kept its risk model and ignored this repository would be $13,000 a thousand hours better
+off than one that switched.
+
+**The reason is the size of two spreads, and it is the same mechanism as the decile table
+above.** Fraud is 3.5% of transactions and review is worth about +$74 on one of them and
+-$0.37 on anything else. Finding the fraud is worth a step of $74; ordering correctly inside
+the fraud, where the catch rate runs from 0.85 down to 0.30, is worth a slope across a factor
+of three. A risk model learns the step from 177,000 untreated rows with a clean label. An
+uplift model has to learn the step and the slope from the difference between two noisy arms, and it gets
+the step slightly worse. The case was built so that the slope runs against risk, and it does;
+it is just that the step dominates. "The most at-risk cases are the least movable" was true
+here, and was not enough.
+
+**The oracle says the value is there.** $305,052 with 53 hours unspent, because it reviewed
+every one of the 4,122 fraudulent transactions in the split and then stopped, since every
+remaining transaction has a negative effect. A perfect ranking is worth 1.8 times the risk
+queue at every budget tried, $136,060 against $75,693 at 100 hours. So this is not
+a case where uplift modelling has nothing to add. It is a case where these estimators, on
+these features, could not reach what there was to add, and a reader deciding whether to build
+one should know that those are different situations with the same table.
+
+**What the package would have reported without the truth.** The doubly robust column is
+within 1% of the truth for the oracle and 12% to 19% low for the three fitted queues. At 250
+hours it puts the uplift knapsack ($84,968) *above* the risk queue ($82,409) when the truth is the other way round by $13,000. So on real data, at that budget, this
+package would have called the comparison for the uplift model and been wrong. The estimate is
+honest about its interval on the benchmark tables; here it is quoted as a point because that
+is how a decision would have read it, and the point was on the wrong side.
+
+**The knapsack bought nothing over rank-and-cut.** $192 at 1,000 hours, $431 at 250, and
+$1,560 *less* at 100. Review costs run from 9 to 18 minutes and are set by how much of the
+record is missing, which has little to do with how much review is worth, so ranking by effect
+per minute changes which marginal transactions get in and the marginal transactions are where
+the estimate is least reliable. The machinery is correct arithmetic, tested to reduce to
+rank-and-cut exactly at uniform cost, and this is the honest report of what it did on the
+one dataset where it could do anything: on a cost that varies by a factor of two and is
+unrelated to the effect, it is a wash.
+
+**The cheap diagnostic says so in advance, now.** `uv run itx diagnose --dataset ieee-fraud`
+fits one risk model and cuts the split into ten bands of predicted risk. Band 1, the
+riskiest tenth, loses $32 a transaction unreviewed and $15 reviewed, a multiplier of 0.47x
+and an uplift of $17.00 (12.51, 21.28). Bands 3 to 10 earn money unreviewed, and their
+measured uplift is small and positive in most of them, because the few frauds the risk model
+missed are each worth two hundred times the harm review does to a legitimate sale. The rank
+correlation between a band's risk and its uplift is
+0.467 (0.333, 0.892), and the verdict is the middle one of the three it can give: the
+rankings agree in part, uplift modelling is worth measuring, and the benchmark says how
+much. That is the right call. It is not the call the same command made on the first run,
+when it announced with a confident interval that the effect ran against risk, because it
+had the riskiest band at the wrong end of the predicted outcome. PLAN.md change 54 is the
+record of that defect, the fix, and the test that keeps it fixed.
+
+What this case does not say: anything about fraud review. Every dollar above is a
+consequence of `simulate()`, and a reader who believes obvious fraud is *easier* for an
+analyst to catch can set `CATCH_FALL` to zero, rerun the same three commands, and get a case
+where the risk queue is optimal by construction rather than by a narrow margin.
 
 ## The budget slider
 

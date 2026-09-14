@@ -34,6 +34,25 @@ already doing the right thing. Negative means the effect runs against risk, the 
 spending the budget on the highest-risk cases is worse than spending it at random, which is
 what ACIC does.
 
+## Which way risk points, and what a value outcome does to the ratios
+
+"Risk" is the predicted outcome under no intervention on a churn, response or readmission
+outcome, and its negation on an outcome that is a value the harm reduces, such as dollars
+retained. The dataset says which (:attr:`~itx.types.UpliftDataset.risk_is_low_outcome`) and
+the bands, the correlation and the verdict all follow it. Before it did, this table on the
+fraud worked case put the most profitable legitimate transactions in band 1, called them the
+riskiest, and announced with a confident interval that the effect ran against risk, when the
+risk queue was in fact beating random by two orders of magnitude (PLAN.md change 54).
+
+The two ratios, risk spread and multiplier, are ratios of risks and presume a positive
+baseline risk: the mechanism above is multiplicative, and a ratio of two quantities that can
+differ in sign is not a relative effect. On a value outcome the risk is the negated mean, so
+a band that loses money has a positive risk and a well-defined multiplier (review that cuts
+the loss to 47% of what it was is a multiplier of 0.47x), while a band that makes money has
+a negative risk and no multiplier at all. A spread across bands that include one is
+undefined. Both are rendered as a dash rather than a number, and where the risk spread is
+undefined the verdict rests on the correlation alone.
+
 ## What this is not
 
 It is not a substitute for the benchmark, and a favourable verdict here is not a measured
@@ -89,10 +108,13 @@ class Decile:
         index: 0 for the highest-risk band.
         n_units: Rows in the band.
         n_treated: How many of them were treated.
-        predicted_risk: Mean predicted probability of the outcome without intervention.
-        control_rate: Observed outcome rate among the band's control rows.
-        treated_rate: Observed outcome rate among the band's treated rows.
+        predicted_risk: Mean predicted risk without intervention: the predicted outcome,
+            or its negation on a dataset that declares the risk is a low outcome.
+        control_rate: Observed mean outcome among the band's control rows.
+        treated_rate: Observed mean outcome among the band's treated rows.
         uplift: Treated rate minus control rate, with its interval.
+        sign: +1 when risk is a high outcome, -1 when it is a low one. Decides which bands
+            have a multiplier.
     """
 
     index: int
@@ -102,16 +124,21 @@ class Decile:
     control_rate: float
     treated_rate: float
     uplift: Estimate
+    sign: float = 1.0
 
     @property
     def multiplier(self) -> float:
-        """Relative effect: what the intervention multiplied the outcome rate by.
+        """Relative effect: what the intervention multiplied the band's risk by.
 
-        NaN where the band's control rows produced no events at all, which is a real answer
-        rather than an infinite one: no relative effect can be formed against a rate of
-        zero.
+        The ratio of treated to control mean, which is the same number whether both are
+        read as outcomes or as risks. NaN where the band's control *risk* is zero or
+        negative, which is a real answer rather than an infinite or a nonsensical one: no
+        relative effect can be formed against a rate of zero, and a ratio of two means that
+        differ in sign is not a relative effect. On a value outcome that makes a band that
+        earns money a dash and a band that loses money a number. The same rule is applied
+        inside the bootstrap, so the spread and the column agree on which bands count.
         """
-        if self.control_rate == 0.0:
+        if not self.sign * self.control_rate > 0.0:
             return float("nan")
         return self.treated_rate / self.control_rate
 
@@ -295,8 +322,12 @@ def risk_deciles(
     # Highest risk first, so band 1 is the group a risk-ranked budget would be spent on.
     band_of = _band_assignment(scores, bins, tie_seed=tie_seed)
 
+    # The observed control mean is the outcome; the risk is that or its negation. The
+    # correlation and the spread have to be taken against the risk, or on a value outcome
+    # they would report the sign of the wrong thing.
+    sign = -1.0 if test.risk_is_low_outcome else 1.0
     estimates = bootstrap_vector(
-        _statistics(test.outcome, test.treatment, band_of, bins),
+        _statistics(test.outcome, test.treatment, band_of, bins, sign=sign),
         test.n_units,
         n_resamples=n_resamples,
         level=level,
@@ -315,6 +346,7 @@ def risk_deciles(
             control_rate=estimates[f"control@{band}"].value,
             treated_rate=estimates[f"treated@{band}"].value,
             uplift=estimates[f"uplift@{band}"],
+            sign=sign,
         )
         for band in range(bins)
     )
@@ -345,7 +377,7 @@ def _band_assignment(scores: FloatArray, bins: int, *, tie_seed: int) -> IntArra
 
 
 def _statistics(
-    outcome: FloatArray, treatment: IntArray, band_of: IntArray, bins: int
+    outcome: FloatArray, treatment: IntArray, band_of: IntArray, bins: int, *, sign: float = 1.0
 ) -> Callable[[IntArray], dict[str, float]]:
     """Every number in the table, as one function of the resampled row positions.
 
@@ -353,6 +385,10 @@ def _statistics(
     derived from the per-band rates and have to be computed from the *same* resample as
     them. Bootstrapping the bands and the spreads separately would report a spread whose
     interval did not correspond to any actual redraw of the bands.
+
+    ``sign`` is +1 when risk is a high outcome and -1 when it is a low one. It enters the
+    risk spread and the correlation, which are statements about risk, and not the per-band
+    rates, which are statements about the outcome and are reported in its units.
     """
 
     def statistics(index: IntArray) -> dict[str, float]:
@@ -374,12 +410,13 @@ def _statistics(
             values[f"treated@{band}"] = treat
             values[f"uplift@{band}"] = treat - control
             control_rates.append(control)
-            multipliers.append(treat / control if control > 0.0 else float("nan"))
+            multipliers.append(treat / control if sign * control > 0.0 else float("nan"))
             uplifts.append(treat - control)
 
-        values["risk_spread"] = _spread(np.array(control_rates))
+        risks = sign * np.array(control_rates)
+        values["risk_spread"] = _spread(risks)
         values["multiplier_spread"] = _spread(np.array(multipliers))
-        values["correlation"] = _rank_correlation(np.array(control_rates), np.array(uplifts))
+        values["correlation"] = _rank_correlation(risks, np.array(uplifts))
         return values
 
     return statistics

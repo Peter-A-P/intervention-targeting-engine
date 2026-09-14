@@ -716,7 +716,8 @@ def allocate(
     The fraud worked case is the only one here where treating a unit has a per-unit cost, so
     it is the only one where the cost-aware knapsack of PLAN.md section 7 does anything that
     rank-and-cut does not. Both are run against the same budget, beside the risk ranking a
-    fraud team would use today and beside random.
+    fraud team would use today, beside random, and beside the oracle ranking that only a
+    simulated effect makes available.
     """
     from itx.bench.allocate import compare_queues, to_markdown
     from itx.bench.runner import DATASETS, ESTIMATORS, nuisances_for
@@ -750,13 +751,15 @@ def allocate(
     predicted = uplift.predict_uplift(test.features)
 
     say("fitting the risk ranking a fraud team would use today")
-    # Predicted outcome under control, negated: the outcome is dollars retained, so the
-    # transactions with the worst predicted outcome are the ones a risk queue reviews first.
+    # A risk model fitted on the untreated rows. The dataset declares that its risk is a low
+    # outcome (dollars retained), and the baseline reads that, so the highest score here is
+    # the transaction a fraud queue would review first.
     risk = OutcomeRanking(DEFAULT_CONFIG, seed=chosen_seed, fit_on="control")
     risk.fit(split.train)
-    risk_scores = -risk.predict_uplift(test.features)
+    risk_scores = risk.predict_uplift(test.features)
 
     say("pricing each queue against the same budget")
+    truth = test.require_true_effect()
     rng = np.random.default_rng(chosen_seed)
     queues = compare_queues(
         {
@@ -764,14 +767,19 @@ def allocate(
             "uplift-rank-and-cut": predicted,
             "risk": risk_scores,
             "random": rng.normal(size=test.n_units),
+            # The ceiling, and the reason the case is worth simulating. It ranks by the
+            # effect the simulation wrote, so no fitted model can beat it, and the distance
+            # to it separates two very different failures: a problem with no signal to find,
+            # and a problem whose signal these features and this estimator cannot reach.
+            "oracle": truth,
         },
         costs,
         hours,
         outcome=test.outcome,
         treatment=test.treatment,
         nuisances=nuisances_for(split),
-        truth=test.require_true_effect(),
-        knapsack_for=("uplift-knapsack",),
+        truth=truth,
+        knapsack_for=("uplift-knapsack", "oracle"),
         seed=TIE_SEED,
     )
 

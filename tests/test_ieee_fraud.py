@@ -157,6 +157,14 @@ class TestTheLoader:
         assert LABEL not in data.feature_names
         assert set(FEATURES) <= set(data.feature_names)
 
+    def test_it_declares_that_risk_is_a_low_outcome(self, tmp_path):
+        # Dollars retained: the transaction a fraud queue takes first is the one predicted
+        # to lose the most, which is the lowest outcome. Without this flag the benchmark's
+        # outcome-ranking row is a queue of the most profitable legitimate sales.
+        path = tmp_path / "t.csv"
+        tiny_transactions().write_csv(path)
+        assert load_ieee_fraud(path=path).risk_is_low_outcome
+
     def test_it_carries_the_truth_and_the_known_propensity(self, tmp_path):
         path = tmp_path / "t.csv"
         tiny_transactions().write_csv(path)

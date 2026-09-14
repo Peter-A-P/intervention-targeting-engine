@@ -68,6 +68,15 @@ class OutcomeRanking(BaseUpliftEstimator):
     ``predict_uplift`` here returns a predicted outcome, not an effect. The abuse of the
     name is deliberate: this baseline has to travel through exactly the same ranking,
     metric and policy code as a real estimator, or the comparison would not be honest.
+
+    Which end of the predicted outcome is "risk" is a property of the dataset, read from
+    :attr:`~itx.types.UpliftDataset.risk_is_low_outcome` at fit time. On a response, churn or
+    readmission outcome the risk queue starts at the highest prediction. On an outcome that is
+    a value the harm reduces, dollars retained on a transaction, it starts at the lowest, so
+    the score is negated. Without that, the baseline on such a dataset would queue the
+    transactions most likely to be legitimate and profitable, which is a policy nobody runs,
+    and would report a strongly negative Qini that reads like the trap this baseline exists
+    to show and is a units mistake instead (PLAN.md change 54).
     """
 
     name = "outcome-ranking"
@@ -100,9 +109,11 @@ class OutcomeRanking(BaseUpliftEstimator):
         self.seed = seed
         self.fit_on = fit_on
         self._learner: OutcomeLearner | None = None
+        self._sign = 1.0
 
     def _fit(self, data: UpliftDataset) -> None:
-        """Fit a plain outcome model on the selected rows."""
+        """Fit a plain outcome model on the selected rows, and note which way risk points."""
+        self._sign = -1.0 if data.risk_is_low_outcome else 1.0
         rows = _rows_for(data, self.fit_on)
         frame = data.features[rows]
         self._learner = OutcomeLearner(
@@ -116,11 +127,16 @@ class OutcomeRanking(BaseUpliftEstimator):
         )
 
     def _predict_uplift(self, features: pl.DataFrame) -> FloatArray:
-        """The predicted outcome, used as a targeting score."""
+        """The predicted risk, used as a targeting score.
+
+        The predicted outcome, or its negation when the dataset said risk is a low outcome,
+        so that the highest score is always the unit a risk queue would take first.
+        """
         if self._learner is None:  # pragma: no cover - guarded by _check_features
             msg = "outcome-ranking: fit before predicting"
             raise RuntimeError(msg)
-        return self._learner.predict(self._matrix(features))
+        scores: FloatArray = self._sign * self._learner.predict(self._matrix(features))
+        return scores
 
 
 def _rows_for(data: UpliftDataset, fit_on: FitOn) -> np.ndarray:

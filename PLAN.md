@@ -154,7 +154,7 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 | 4 | Sep 28 - Oct 4 | Criteo and Lenta loaders; Polars pipeline and 10% subsample; full benchmark runner with seeds; results table renderer into README | **Done 2026-09-12.** All five tables measured. Both loaders, both cards, `itx benchmark --all`, and a covariate-balance leak detector that caught two contaminated Lenta columns. The week's real cost was discovering the tuning protocol did not scale (change 30); its results were Criteo showing the outcome-ranking trap is conditional (change 32) and Lenta showing nothing at all (change 33). Not overnight, because this machine reboots itself nightly (change 34): the Criteo and Lenta runs are 50 minutes and 4h41m and both must start in the morning. 398 tests |
 | 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset; `itx diagnose`, the risk-decile table of change 32 | **Done 2026-09-13.** All five policy tables measured with both baselines, from one `itx benchmark --all` taking 10h19m. The trap is demonstrated on every dataset and turns out to change sign across them: the same baseline buys -0.20 on ACIC and +0.0055 on Criteo at a 10% budget. Also closed change 9's second selection rule, and the cost-aware knapsack, which is built and tested but not applied until the fraud case in week 7. Three findings the week did not set out to get: the policy value reverses the sign of the ACIC recommendation where `uplift@k` cannot see it (change 36 and the ground-truth check), it turns Lenta's null into a signal (change 42), and a known propensity is not sufficient to trust IPW (change 43). 484 tests |
 | 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; Dragonnet in PyTorch; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | **Done 2026-09-13 except one refit.** All three sensitivity devices built with `itx sensitivity`, reported on three datasets, and the section leads on the limitation that none of the three can fail there (changes 46, 47). Dragonnet built, registered and in four of five tables; Lenta's row is being refitted after change 51. The treated-share column of change 43 landed and reproduced week 5's hand decomposition to four decimals on Criteo. The second selection rule's cost is measured and is nothing (change 49). Two defects found and fixed: a run-ending exception on an undefined metric (change 50) and a dead Dragonnet fit reporting random targeting as a result (change 51). Causal forest not started. 637 tests |
-| 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; Azure Static Web Apps at targeting.peterparker.ca | **Demo built 2026-09-14, not hosted; fraud case blocked.** `itx demo build` and `demo/` are done and tested: fifty budget points per estimator with a band, the top 200 of each ranking, 385 KB for all five datasets, no backend and no off-origin fetch (change 52). Hosting needs an Azure account and a DNS change, neither of which is mine to do. The fraud case needs IEEE-CIS, which is behind a Kaggle account and accepted competition rules where every other loader here uses a URL and a committed checksum; it needs credentials or a substitute dataset, and substituting is a change to section 3. 664 tests |
+| 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; Azure Static Web Apps at targeting.peterparker.ca | **Done 2026-09-14 except hosting.** Demo built and tested (change 52). Fraud case built on IEEE-CIS, which was already on the machine for project 09 (53), benchmarked with seven estimators over five seeds, and allocated: the risk queue a fraud team already runs beats every fitted uplift model at every budget tried, $169,398 against the S-learner's $156,549 at 1,000 analyst hours with the oracle at $305,052, because separating fraud from legitimate is worth a step of $74 and ordering within fraud a slope the estimators cannot resolve. The sign defect that made the benchmark row and the decile diagnostic report the opposite was found by running the diagnostic and fixed with a declaration on the dataset (54). Hosting needs an Azure account and a DNS change; `docs/deploy.md` has both routes. 698 tests |
 | 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | Definition of done all checked |
 
 Slack: week 6's causal forest and week 7's cost-aware policy are the first things to
@@ -1058,3 +1058,51 @@ true value the simulation wrote, side by side. The dataset is registered in `DAT
 `itx benchmark --dataset ieee-fraud` works, and deliberately not in `BENCHMARK_DATASETS`: it is
 a worked case rather than a benchmark row, and putting an invented effect in the same sweep as
 five measured datasets would invite a reader to compare a simulation against the world.
+
+**54. The risk queue on the fraud case pointed the wrong way, and the diagnostic followed
+it** (week 7). The first benchmark of ieee-fraud, 35 fits in 4h05m, put the outcome-ranking
+baseline at a Qini of -0.4871 (-0.6142, -0.3615), far below random. `itx diagnose` on the same
+split said "the effect runs against risk" with a correlation of -0.467 (-0.892, -0.333). And
+`itx allocate`, on the same split, showed the risk queue worth $169,398 at 1,000 analyst hours
+against random's $8,366 and every fitted uplift model's less. Three tools, one dataset, two
+answers.
+
+The cause is a convention that had never been tested against a value outcome. `OutcomeRanking`
+ranks by predicted outcome, highest first, which is the risk queue on every dataset before this
+one: the outcome is a response, a visit, a purchase or a score, and the risky unit is the one
+most likely to have it. On dollars retained the risky unit is the one with the *lowest*
+predicted outcome, and the baseline was queueing the most profitable legitimate sales under the
+name of the thing every fraud team runs. The diagnostic took its "risk" from the same score and
+its correlation from the raw control mean, so band 1 was the wrong end and the sign of the
+correlation was the sign of the wrong thing. `itx allocate` was right only because it negated
+the score by hand with a comment explaining why: one fact, encoded in one place and absent from
+two, which is the shape of defect that survives review.
+
+The fix is a declaration on the dataset. `UpliftDataset.risk_is_low_outcome`, default False,
+set True by the fraud loader, is read by `OutcomeRanking` at fit time (it negates its score) and
+by `risk_deciles` (the correlation and risk spread are taken against the signed control mean,
+and band order follows the baseline). The hand negation in `itx allocate` is gone. Two ratio
+columns in the decile table, the multiplier and the spreads, presume a positive baseline risk,
+so they are now defined only where a band's control *risk* is positive: a band that loses money
+has a multiplier (review that cuts the loss to 47% is 0.47x), a band that earns money has a
+dash, and a spread across bands of both signs is undefined. Tests: the baseline reverses under
+the flag; a dollars-retained population where the intervention removes loss in proportion to
+risk gets "broadly agree" with the flag and "runs against risk" without it, which pins the
+defect as a test; the flag survives `take`; the fraud loader sets it; and the ratio rules on
+hand-built bands.
+
+The five outcome-ranking rows were refitted from a checkpoint holding the other thirty, which
+no code path in this change touches. The allocation numbers reproduce to the dollar, which is
+the regression check that the negation moved and did nothing else. The corrected row and
+diagnostic are in the README and `docs/estimators.md`.
+
+Two other things in the same change. `itx allocate` gained an `oracle` queue, ranking by the
+effect the simulation wrote, because the write-up needed the ceiling and the alternative was a
+throwaway script, which is what week 5 was criticised for. And the case's own docstring, card
+and README paragraph said the falling catch rate "means ranking the queue by fraud risk is not
+ranking it by what review is worth"; measured, it is close to exactly that, and the three
+places now say what was measured and why (`docs/estimators.md`, "where the risk queue wins").
+The finding is the useful part of the week: "the most at-risk cases are the least movable" is
+true on this case and is not sufficient, because a step of $74 between fraud and legitimate
+dominates a slope of a factor of three inside fraud, and the README's two sentences that
+presented a fraud queue as the natural home of the ACIC picture are qualified accordingly.

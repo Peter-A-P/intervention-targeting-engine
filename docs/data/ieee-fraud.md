@@ -85,6 +85,15 @@ the lost-causes quadrant. Change `CATCH_FALL` to zero and the case becomes one w
 ranking is optimal, which is a perfectly reasonable thing to believe about some review
 operations and is a one-line experiment.
 
+**What was measured.** The assumption held and was not enough: the risk queue beats every
+fitted uplift model at every budget tried, $169,398 against $156,549 at 1,000 analyst hours
+on the first seed, with the oracle at $305,052. The README section "The fraud worked case"
+and `docs/estimators.md` carry the tables and the reason. Reading either, keep in mind that
+`outcome-ranking` in the benchmark table is the risk queue with the *lowest* predicted value
+first, because this dataset's outcome is dollars retained and it declares
+`risk_is_low_outcome=True`; the first run of the table did not, and reported the opposite
+sign (PLAN.md change 54).
+
 ## Consequences worth knowing before reading any number from it
 
 - **96.5% of the population are sleeping dogs.** Review helps only the 3.50% that are

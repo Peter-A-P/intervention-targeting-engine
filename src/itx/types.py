@@ -36,6 +36,14 @@ class UpliftDataset:
         true_effect: Per-unit treatment effect where the data is simulated and the truth
             was written down, otherwise None. Only the semi-synthetic sets have it.
         replicate: Index of the replicate for datasets that ship many (IHDP, ACIC).
+        risk_is_low_outcome: Which way a risk model points. False, the default, means the
+            units a risk score puts first are the ones with the *highest* predicted
+            outcome: likely to churn, respond, visit, be readmitted. True means they are the
+            ones with the *lowest*, which is the case when the outcome is a value the harm
+            reduces, such as dollars retained on a transaction that may be fraudulent. The
+            outcome-ranking baseline and the risk-decile diagnostic read this so that "rank
+            by risk" means what a team running that queue would mean by it, on every
+            dataset, without the sign being fixed by hand at each call site.
     """
 
     name: str
@@ -46,6 +54,7 @@ class UpliftDataset:
     propensity: FloatArray | None = None
     true_effect: FloatArray | None = None
     replicate: int | None = None
+    risk_is_low_outcome: bool = False
 
     def __post_init__(self) -> None:
         """Reject a malformed dataset at construction rather than mid-benchmark."""

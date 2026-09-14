@@ -22,8 +22,10 @@ import pytest
 from itx.estimators.baselines import OutcomeRanking
 from itx.metrics.bootstrap import Estimate
 from itx.metrics.risk_deciles import (
+    Decile,
     RiskDecileTable,
     _rank_correlation,
+    _statistics,
     risk_deciles,
     risk_scores,
 )
@@ -102,6 +104,99 @@ class TestTheThreeCases:
         # has to decline to say so rather than report whichever ordering the noise left.
         table = diagnose("against-risk", n=6_000, strength=0.05)
         assert "cannot tell" in table.verdict
+
+
+def value_population(n: int, *, seed: int = 0) -> UpliftDataset:
+    """A dollars-retained population: the intervention removes losses in proportion to risk.
+
+    The binary "with-risk" population, re-expressed as value. Each event is a loss of one
+    dollar; the intervention prevents events in proportion to the baseline rate; and the
+    outcome recorded is minus the loss. So the units a risk model should queue first are the
+    ones with the lowest predicted outcome, uplift in dollars is positive and proportional
+    to risk, and the right verdict is that the two rankings agree. Read the other way, as
+    every dataset before the fraud case was, the same numbers say the effect runs against
+    risk, which is the mistake the flag exists to prevent.
+    """
+    rng = np.random.default_rng(seed)
+    driver = rng.uniform(0.0, 1.0, n)
+    noise = rng.normal(0.0, 0.3, n)
+    baseline = 0.02 + 0.6 * driver
+    prevented = 0.4 * baseline
+    treatment = (rng.random(n) < 0.5).astype(np.int64)
+    probability = np.clip(baseline - treatment * prevented, 0.0, 1.0)
+    loss = (rng.random(n) < probability).astype(np.float64)
+    return UpliftDataset(
+        name="synthetic-value",
+        features=pl.DataFrame({"driver": driver, "noise": noise}),
+        treatment=treatment,
+        outcome=-loss,
+        propensity=np.full(n, 0.5),
+        true_effect=prevented,
+        risk_is_low_outcome=True,
+    )
+
+
+class TestAValueOutcome:
+    def diagnose(self, data: UpliftDataset) -> RiskDecileTable:
+        half = data.n_units // 2
+        train = data.take(np.arange(half))
+        test = data.take(np.arange(half, data.n_units), name=data.name)
+        return risk_deciles(train, test, n_resamples=200, seed=0)
+
+    def test_the_flag_survives_a_split(self):
+        data = value_population(200)
+        assert data.take(np.arange(50)).risk_is_low_outcome
+
+    def test_risk_points_at_the_lowest_outcome_and_the_verdict_follows(self):
+        table = self.diagnose(value_population(30_000))
+        # Band 1 is the riskiest: the most negative predicted outcome, so the largest
+        # predicted risk, and the largest measured uplift in dollars.
+        risks = [band.predicted_risk for band in table.deciles]
+        assert risks == sorted(risks, reverse=True)
+        assert table.deciles[0].control_rate < table.deciles[-1].control_rate
+        assert table.deciles[0].uplift.value > table.deciles[-1].uplift.value
+        assert table.correlation.low > 0.0
+        assert "runs against risk" not in table.verdict
+
+    def test_read_the_old_way_the_same_data_gives_the_opposite_verdict(self):
+        # The defect this guards against, kept as a test rather than a memory.
+        from dataclasses import replace
+
+        table = self.diagnose(replace(value_population(30_000), risk_is_low_outcome=False))
+        assert table.correlation.high < 0.0
+        assert "runs against risk" in table.verdict
+
+    def test_a_population_that_only_loses_money_has_every_ratio_defined(self):
+        table = self.diagnose(value_population(30_000))
+        # Every band's control mean is a loss, so every band's risk is positive: the
+        # multipliers are all below one (the intervention removes loss), the risk spread is
+        # the spread of loss across bands, and the verdict is the same agreement the binary
+        # version of this population gets.
+        assert all(0.0 < band.multiplier < 1.0 for band in table.deciles)
+        assert table.risk_spread.value > 1.0
+        assert table.risk_dominates
+        assert "broadly agree" in table.verdict
+
+    def test_a_band_that_makes_money_has_no_multiplier(self):
+        loses = Decile(0, 10, 5, 0.5, -0.50, -0.25, Estimate(0.25, 0.1, 0.4, 0.95, 1), -1.0)
+        earns = Decile(1, 10, 5, -0.5, 0.50, 0.60, Estimate(0.10, 0.0, 0.2, 0.95, 1), -1.0)
+        responds = Decile(0, 10, 5, 0.5, 0.50, 0.60, Estimate(0.10, 0.0, 0.2, 0.95, 1))
+        never = Decile(1, 10, 5, 0.0, -0.50, -0.25, Estimate(0.25, 0.1, 0.4, 0.95, 1))
+        # Review cut the loss to half: a real relative effect, the same number either way up.
+        assert loses.multiplier == pytest.approx(0.5)
+        assert np.isnan(earns.multiplier)
+        assert responds.multiplier == pytest.approx(1.2)
+        assert np.isnan(never.multiplier)
+
+    def test_a_spread_across_bands_of_both_signs_is_undefined(self):
+        # Two bands: one loses a dollar per unit, one earns a dollar. As risks, +1 and -1,
+        # and no ratio can be formed across them. Rendered as a dash, not a number.
+        outcome = np.array([-1.0, -1.0, 1.0, 1.0] * 50)
+        treatment = np.array([0, 1] * 100, dtype=np.int64)
+        band_of = np.array([0, 0, 1, 1] * 50, dtype=np.int64)
+        values = _statistics(outcome, treatment, band_of, 2, sign=-1.0)(np.arange(200))
+        assert np.isnan(values["risk_spread"])
+        assert np.isnan(values["multiplier_spread"])
 
 
 class TestTheBands:

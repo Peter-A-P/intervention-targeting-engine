@@ -229,6 +229,18 @@ def test_the_outcome_ranking_predicts_outcomes_rather_than_effects(binary_data):
     assert abs(with_outcome_driver) > abs(with_effect)
 
 
+def test_the_outcome_ranking_points_the_other_way_when_risk_is_a_low_outcome(binary_data):
+    # On dollars retained, the risky transaction is the one with the lowest predicted
+    # outcome. The dataset says so and the baseline negates its score, so the same model
+    # produces the reverse ordering and nothing downstream has to know which case it is in.
+    from dataclasses import replace
+
+    as_value = replace(binary_data, risk_is_low_outcome=True)
+    high_is_risk = OutcomeRanking(seed=0).fit(binary_data).predict_uplift(binary_data.features)
+    low_is_risk = OutcomeRanking(seed=0).fit(as_value).predict_uplift(as_value.features)
+    assert low_is_risk == pytest.approx(-high_is_risk)
+
+
 @pytest.mark.parametrize("fit_on", ["all", "treated", "control"])
 def test_the_outcome_ranking_can_be_fitted_on_either_arm(fit_on, binary_data):
     scores = (

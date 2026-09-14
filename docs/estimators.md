@@ -352,6 +352,16 @@ Not an estimator. A plain model of the outcome, ignoring the treatment, with its
 outcome used as a targeting score. It is here because it is what most targeting in the
 wild actually does, and because it is the thing a Qini curve is worst at exposing.
 
+**Which way it points is a property of the dataset, not of the baseline.** On a response, a
+visit, a purchase or a test score, the risk queue starts at the highest predicted outcome,
+and that is the default. On dollars retained it starts at the lowest, because the risk is a
+loss, and the fraud worked case declares that with `risk_is_low_outcome=True` on its
+`UpliftDataset`. The baseline negates its score when it reads the flag, and so does the
+decile diagnostic. Before the flag existed the fraud table's row for this baseline was a Qini
+of -0.4871 (-0.6142, -0.3615): a queue of the most profitable legitimate sales, a policy
+nobody runs, presented under the name of the one everybody runs (PLAN.md change 54). The
+section on the fraud case below is where this baseline stops losing.
+
 **On Hillstrom it is indistinguishable from random.** Qini 0.0012, interval
 (-0.0008, 0.0033), against the averaged random baseline's -0.0000: the interval still
 contains zero after tuning on the validation split, while all three real estimators'
@@ -587,10 +597,11 @@ the distance to it. On ten thousand units the gap is under 0.01%. On three units
 costs five eighths of the budget, greedy is beaten by 30% and says so, which is the test that
 keeps the number from being decoration.
 
-It is not yet applied to a dataset. Costs are a property of the problem rather than of these
-five public datasets, and inventing a cost column to demonstrate the machinery on Hillstrom
-would be a picture of an assumption. The fraud worked case in week 7 is semi-synthetic and
-declares its cost function, which is where this gets used on something.
+None of the five public datasets carries a cost, and inventing a cost column to demonstrate
+the machinery on Hillstrom would be a picture of an assumption. The fraud worked case is
+semi-synthetic and declares its cost function, and it is where this is applied to something:
+see "The fraud worked case: where the risk queue wins" below for what the knapsack bought
+there, which was almost nothing over rank-and-cut, and why.
 
 ### Which of the two estimators to believe, and how to tell without the truth
 
@@ -1044,8 +1055,150 @@ section 2 names for the E-value, both binary, and both need a full-size fit befo
 targeted group exists. Queued behind the benchmark rerun rather than reported from a
 subsample.
 
+## The fraud worked case: where the risk queue wins
+
+Semi-synthetic, and every number in this section is a consequence of `simulate()` in
+`src/itx/data/ieee_fraud.py` rather than a fact about fraud review. The features are the
+44 interpretable columns of IEEE-CIS Fraud Detection. The review is a fair coin, so the
+propensity is known. Review catches fraud with a probability that *falls* from 0.85 to 0.30
+as the transaction's fraud signal rises, wrongly declines legitimate sales with a probability
+that rises from 0.01 to 0.15, and costs 9 to 18 analyst minutes depending on how complete the
+record is. The falling catch rate was chosen to put the highest-risk transactions in the
+lost-causes quadrant and make the risk queue lose. The README carries the two standard tables;
+this section is what they mean.
+
+### The ranking table
+
+Five seeds, 118,108 held-out transactions each. The S-learner and X-learner lead on Qini,
+0.4652 (0.3447, 0.5906) and 0.4578 (0.3358, 0.5863), tied on realised value at 20% to the
+third decimal, with the T-, DR- and R-learners a step behind at 0.42 to 0.43 and every
+interval overlapping every other's. Dragonnet is last on every ranking column, 0.3216, and
+its ATE error of 1.05 is the one number in the table that is not close to the others'. PEHE
+runs from 22.99 (X) to 24.85 (R), on a population where the true effect is -$0.37 for 96.5%
+of transactions and averages +$74 on the rest, so no estimator's individual-effect error is
+small against the effect it is looking for; they rank well and forecast badly, which is the
+calibration section's point on a fourth dataset.
+
+The risk queue's Qini is 0.4625 (0.3395, 0.5875), level with the S-learner's 0.4652, and its
+uplift in the top decile, $17.97, and its realised value at 20%, 1.9751, are the highest
+numbers in their columns. It is the best this baseline has scored anywhere in the project,
+and the ranking table agrees with the allocation below on which queue to run.
+
+### The allocation
+
+`itx allocate` spends a budget of analyst hours five ways on the first seed and scores each
+queue twice: by the effect the simulation wrote, which real data does not have, and by the
+doubly robust estimate this package would report on real data.
+
+| Queue at 1,000 analyst hours | Reviewed | Hours used | True value | DR estimate | $/analyst hour |
+|---|---|---|---|---|---|
+| `uplift-knapsack` (S-learner) | 4,312 | 1,000 | $156,549 | $131,724 | $157 |
+| `uplift-rank-and-cut` (S-learner) | 4,248 | 1,000 | $156,357 | $127,033 | $156 |
+| `risk` | 4,281 | 1,000 | $169,398 | $148,739 | $169 |
+| `random` | 4,264 | 1,000 | $8,366 | $5,096 | $8 |
+| `oracle` | 4,122 | 947 | $305,052 | $307,446 | $322 |
+
+And the same comparison at two smaller budgets, true values:
+
+| Analyst hours | `uplift-knapsack` | `risk` | `oracle` |
+|---|---|---|---|
+| 100 | $68,726 | $75,693 | $136,060 |
+| 250 | $99,186 | $112,543 | $204,681 |
+| 1,000 | $156,549 | $169,398 | $305,052 |
+
+**The risk queue beats every fitted uplift model at every budget.** By estimator at 1,000
+hours, knapsack, true value: S-learner $156,549, X-learner $154,457, T-learner $147,306,
+DR-learner $140,740, all against the risk queue's $169,398. Uplift modelling on this case, as
+built, costs a fraud team about $13,000 per thousand analyst hours against what it already
+does.
+
+**Why: the step and the slope.** The risk-decile module states the mechanism for a binary
+outcome, absolute uplift is baseline risk times the relative effect, and the same logic
+holds here in dollars. Finding a fraudulent transaction is worth a step of about $74 over a
+legitimate one. Ordering correctly within the fraud, where the catch rate runs from 0.85 to
+0.30, is worth a slope across a factor of three. A risk model learns the step from 177,000
+untreated rows with a clean label. An uplift model learns the step and the slope from the
+difference between two arms, and learns the step slightly worse. The case was designed so
+the slope runs against risk, and it does. The step dominates anyway. So the honest form of
+the project's headline claim is not that risk queues are wrong on problems where the riskiest
+cases are the least movable; it is that they are wrong when the spread in movability is
+large *relative to* the spread in risk, and here it is not.
+
+**The oracle says what was on the table.** It reviewed every one of the 4,122 fraudulent
+transactions in the split for 947 hours and stopped, because every remaining transaction has
+a negative effect: $305,052, 1.8 times the risk queue at every budget tried. That gap is
+estimation error, not absence of signal, and a reader should keep the two apart. On ACIC the
+uplift models capture the ceiling's direction and the risk queue does harm. Here the risk
+queue captures most of what a simple ranking can and the uplift models capture less, and the
+remaining 45% of achievable value is reachable by neither with these features.
+
+**What the estimate would have said.** The doubly robust column is within 1% for the oracle
+and 12% to 19% low for the three fitted queues. At 250 hours it ranks the uplift knapsack
+($84,968) above the risk queue ($82,409); the truth is $99,186 against $112,543. This
+package, on real data, at that budget, would have picked the wrong queue. The bootstrap
+intervals on the benchmark tables are the guard against reading a point like that, and the
+allocation table quotes points because that is how a budget decision reads them.
+
+**The knapsack was a wash.** $192 better than rank-and-cut at 1,000 hours, $431 at 250,
+$1,560 worse at 100. Review cost varies by a factor of two and is set by record completeness,
+which is unrelated to the effect, so dividing a noisy effect estimate by it reorders the
+marginal transactions, and the marginal transactions are exactly where the estimate is least
+reliable. The knapsack is correct arithmetic; on this cost structure it has nothing to
+optimise. The week 5 section above explains what it would need: a cost that correlates with
+the effect.
+
+### The decile diagnostic, and the defect it exposed
+
+`itx diagnose --dataset ieee-fraud` is the cheap check that is supposed to say in advance
+which side of this argument a problem is on. Run on the first benchmark's code it said:
+
+> The effect runs against risk. Spending the budget on the highest-risk cases will be worse
+> than spending it at random.
+
+with a correlation of -0.467 (-0.892, -0.333), at the same time as the allocation showed the
+risk queue beating random by two orders of magnitude. Both were the same code reading the same
+data. The diagnostic's "band 1, riskiest" was the tenth of transactions with the *highest*
+predicted outcome: the most profitable legitimate sales. Its "risk" was the predicted
+outcome, and on dollars retained the risk is the negation. The benchmark's outcome-ranking
+row had the same sign error, which is where the -0.4871 came from, and `itx allocate` did
+not, because it negated the score by hand with a comment saying why. One fact, encoded in
+one place and absent from two.
+
+The fix is a declaration on the dataset, `risk_is_low_outcome`, read by the baseline and the
+diagnostic so that "rank by risk" means the same thing everywhere without anybody negating
+anything by hand. The ratio columns are defined only where a band's control *risk* is
+positive, because a multiplier across a sign change is not a relative effect; on this case
+that leaves the two bands that lose money with a multiplier and the eight that earn one with
+a dash, and the risk spread undefined. The tests include the population that produces the
+old verdict under the old reading and the right one under the new, so the defect is a test
+rather than a memory. Corrected, the diagnostic says:
+
+| Decile | Units | Predicted risk | Control rate | Treated rate | Multiplier | Uplift (95% CI) |
+|---|---|---|---|---|---|---|
+| 1 | 11,810 | 33.8216 | -32.2450 | -15.2469 | 0.47x | 16.9981 (12.5058, 21.2837) |
+| 2 | 11,811 | 2.3658 | -0.5912 | 0.7867 | -1.33x | 1.3780 (0.7009, 2.1120) |
+| 3 | 11,811 | 0.2636 | 0.3929 | 1.3843 | - | 0.9914 (0.4561, 1.5315) |
+| 4 | 11,811 | -0.6443 | 1.3144 | 1.5717 | - | 0.2573 (-0.0840, 0.6082) |
+| 5 | 11,811 | -1.1965 | 1.1321 | 1.7335 | - | 0.6014 (0.2563, 1.0269) |
+| 6 | 11,810 | -1.5598 | 1.7150 | 1.6269 | - | -0.0881 (-0.3603, 0.2027) |
+| 7 | 11,811 | -1.9342 | 1.8107 | 2.0626 | - | 0.2519 (0.0248, 0.5380) |
+| 8 | 11,811 | -2.3230 | 1.7437 | 2.1806 | - | 0.4368 (0.1327, 0.7764) |
+| 9 | 11,811 | -2.9071 | 2.6898 | 2.6694 | - | -0.0204 (-0.4560, 0.4741) |
+| 10 | 11,811 | -12.6795 | 7.9351 | 10.0031 | - | 2.0680 (-0.1141, 4.6937) |
+
+Seed 11, 118,108 test rows, dollars per transaction. Risk spread and multiplier spread are
+undefined (band 2's multiplier is negative: review turned a small loss into a small gain,
+which is a real effect and not a ratio anything can be formed across). Risk-to-uplift
+correlation 0.467 (0.333, 0.892).
+
+> Risk and uplift rankings agree in part and disagree in part. Uplift modelling is worth
+> measuring here: how much it buys is what the benchmark is for.
+
+That is the right call. It is also the weakest of the diagnostic's three confident verdicts,
+which is fair: the risk queue and the oracle are $136,000 apart at this budget, and a table
+of ten bands cannot see inside the fraud band where that difference lives.
+
 ## Still to come
 
-Dragonnet's numbers, which need the next full benchmark run; the causal forest if the schedule
-allows. Approaches considered and left as literature rather than code, per PLAN.md section 2:
-TARNet, CEVAE, and the class-transformation method.
+The causal forest if the schedule allows. Approaches considered and left as literature rather
+than code, per PLAN.md section 2: TARNet, CEVAE, and the class-transformation method.

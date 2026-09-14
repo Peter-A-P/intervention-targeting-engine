@@ -37,11 +37,23 @@ kind, and a human staring at it has a worse chance than the base rate suggests.
 
 That single choice is what makes this a worked case for this repository rather than a
 demonstration that expensive things are worth doing. It puts the highest-risk transactions in
-the lost-causes quadrant, where review buys least, and it means **ranking the queue by fraud
-risk is not ranking it by what review is worth**. That is the trap the whole project is about,
-arriving on a problem shaped like the ones it is aimed at. It is an assumption, it is stated
-here, and a reader who thinks real review works the other way can change one constant and
-rerun.
+the lost-causes quadrant, where review buys least, and it was chosen so that ranking the queue
+by fraud risk would not be ranking it by what review is worth. It is an assumption, it is
+stated here, and a reader who thinks real review works the other way can change one constant
+and rerun.
+
+**What was measured is that it was not enough.** The risk queue beats every fitted uplift
+model at every budget tried (README, "The fraud worked case"), because separating the 3.5%
+that are fraud from the rest is worth a step of about $74 a transaction and ordering within
+the fraud is worth a slope across a factor of three, and a risk model learns the step from a
+clean label while an uplift model learns both from the difference of two arms. The oracle
+ranking is worth 1.8 times the risk queue, so the value is there and these estimators do not
+reach it. Two consequences for how this module is read. The trap the project is about arrives
+here as its converse: a problem where the risk queue is right for a reason the decile
+diagnostic can measure in advance. And the outcome is dollars retained, so the risk is a *low*
+outcome, which the dataset declares with ``risk_is_low_outcome=True``; before it did, the
+benchmark's outcome-ranking row and ``itx diagnose`` both reported the sign of the wrong queue
+(PLAN.md change 54).
 
 ## Assignment is randomised, deliberately
 
@@ -180,6 +192,9 @@ def load_ieee_fraud(
         categorical=CATEGORICAL,
         propensity=np.full(frame.height, KNOWN_PROPENSITY),
         true_effect=effect,
+        # The outcome is dollars retained, so the transactions a fraud queue reviews first
+        # are the ones with the lowest predicted outcome, not the highest.
+        risk_is_low_outcome=True,
     )
 
 
