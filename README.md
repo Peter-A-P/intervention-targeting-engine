@@ -9,9 +9,9 @@ shows the intervention list changing as the budget moves.
 **Status: week 7 of 8.** Seven estimators benchmarked on all five datasets, each reported with
 what its ranking actually buys at a budget rather than only how well it ranks, plus a
 sensitivity section, a fraud worked case that declares itself semi-synthetic in its first
-sentence, and a budget-slider demo that is built and not yet hosted. The numbers below are real
-and reproducible. Still to come: hosting, `docs/rejected.md`, the clean-environment rerun, and
-the flip to public. Build plan: [PLAN.md](PLAN.md).
+sentence, and a budget-slider demo live at [targeting.peterparker.ca](https://targeting.peterparker.ca). The
+numbers below are real and reproducible. Still to come: `docs/rejected.md`, the
+clean-environment rerun, and the flip to public. Build plan: [PLAN.md](PLAN.md).
 
 **The same baseline, the same code, opposite conclusions.** Ranking people by risk is how this
 job is usually done. At a budget covering a tenth of the population it buys **-0.20 on ACIC**
@@ -812,8 +812,10 @@ Three things about it are limits rather than features, and the page says all thr
   `uv run itx allocate` is where the knapsack is compared against rank-and-cut on a budget of
   analyst hours rather than a headcount.
 
-Not yet hosted. PLAN.md section 7 puts it on Azure Static Web Apps at
-`targeting.peterparker.ca`; until then it is a directory you can open.
+Live at [https://targeting.peterparker.ca](https://targeting.peterparker.ca), on Azure Static Web Apps' free tier,
+published from this machine with the deployment token rather than from a workflow in the
+repository; [docs/deploy.md](docs/deploy.md) records the route and the DNS record. Or open
+`demo/index.html` over any static file server, which is the same page.
 
 ## What this does not do
 
@@ -822,8 +824,7 @@ Not yet hosted. PLAN.md section 7 puts it on Azure Static Web Apps at
   the targeting decision flips; it does not remove the assumption.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
-- Not yet done: hosting the demo at `targeting.peterparker.ca`, `docs/rejected.md`, and the
-  clean-environment rerun that closes week 8. Nothing above is a placeholder for any of them:
+- Not yet done: `docs/rejected.md`, and the clean-environment rerun that closes week 8. Nothing above is a placeholder for any of them:
   the numbers reported are the numbers measured.
 - **The fraud case's IEEE-CIS file is the one input this repository cannot fetch for you.**
   It sits behind a Kaggle account and accepted competition rules and may not be redistributed,

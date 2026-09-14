@@ -50,19 +50,23 @@ that is about to go public.
 2. In the resource, open **Overview** and copy the **deployment token**. Treat it as a
    secret: it is enough on its own to publish to that site. Do not put it in the repository,
    in `CLAUDE.local.md`, or in a shell history you keep.
-3. Install the CLI once, with Node available:
+3. Put the token in the environment for this shell only, straight from the CLI, so it
+   never appears on a command line or in shell history:
 
-   ```bash
-   npm install -g @azure/static-web-apps-cli
+   ```powershell
+   $env:SWA_CLI_DEPLOYMENT_TOKEN = az staticwebapp secrets list --name <app> --resource-group <group> --subscription <sub> --query properties.apiKey -o tsv
    ```
 
-4. Deploy from the repository root:
+4. Deploy from the repository root through `npx`, which needs Node and nothing else:
 
-   ```bash
-   swa deploy ./demo --deployment-token <the token> --env production
+   ```powershell
+   npx --yes @azure/static-web-apps-cli deploy ./demo --env production
    ```
 
-5. Redeploy with the same command whenever `itx demo build` has rewritten `demo/data/`.
+   A global `npm install -g` also works, but on this machine npm's global folder is not on
+   PATH, so the installed `swa` command is not found until that is fixed; `npx` sidesteps it.
+
+5. Redeploy with the same two commands whenever `itx demo build` has rewritten `demo/data/`.
 
 ## The custom domain, either route
 
@@ -82,13 +86,24 @@ that is about to go public.
    nothing to buy or install.
 5. Check `https://targeting.peterparker.ca` serves the page over HTTPS.
 
-## Afterwards
+## As deployed, 2026-09-14
 
-- Put the URL in the README, next to the results tables, and in
-  `../peterparker.ca/content/01-intervention-targeting.md`, which currently says the demo is
-  a directory you can open rather than a link you can click.
-- Tick the demo line in PLAN.md section 10, which is currently marked partial because "live"
-  is what that line asks for and a built page is not a live one.
+Route B. A second Static Web App, `targeting-peterparker-ca`, free tier, in the same
+resource group as the portfolio site's app, created with `az staticwebapp create` and
+published with the `npx` command above. Custom domain `targeting.peterparker.ca` attached
+with `az staticwebapp hostname set`, which validated by the CNAME alone and reported
+`Ready` within the command's own wait. The CNAME is at Cloudflare with proxy status
+"DNS only"; a proxied record would have blocked validation and the managed certificate.
+The live page returns the content security policy from `staticwebapp.config.json` and
+`data/index.json` lists five datasets.
+
+Why a second app rather than a second hostname on the existing one: a Static Web App serves
+one set of files to every hostname attached to it and does not route by host, so a subdomain
+with different content is a separate app. The alternative was a path under the portfolio
+site, which would have changed the address the plan names, dropped this page's own security
+policy in favour of the site's, and coupled the two repositories' builds.
+
+The README, the site's stand-in page and PLAN.md section 10 carry the URL.
 
 ## If the free tier changes: GitHub Pages
 
