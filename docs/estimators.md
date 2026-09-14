@@ -818,8 +818,10 @@ step buys very little here at all. Week 2 already measured the S-learner's Hills
 moving from 0.0040 untuned to 0.0042 tuned. A reader entitled to ask why the project spends
 89% of its compute on selection would be asking a fair question, and the answer for now is
 that the protocol in PLAN.md section 4 commits to it and changing what is measured mid-build
-is worse than paying for it. Whether the grid earns its place is a question for week 8, and
-`docs/rejected.md` is where it will be answered either way.
+is worse than paying for it. Week 8 answered it: with no selection at all, every one of
+fifty-four untuned means on IHDP, ACIC and Hillstrom lands inside its tuned interval, and
+`docs/rejected.md` records the four measurements and the decision that the grid does not
+earn its place, while the committed tables keep the protocol they were measured under.
 
 **The second selection rule changes almost every choice, which is more of the same.** Week 5
 closed change 9 by adding the rule the Qini one was always measured against: score each

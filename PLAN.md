@@ -155,7 +155,7 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 | 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset; `itx diagnose`, the risk-decile table of change 32 | **Done 2026-09-13.** All five policy tables measured with both baselines, from one `itx benchmark --all` taking 10h19m. The trap is demonstrated on every dataset and turns out to change sign across them: the same baseline buys -0.20 on ACIC and +0.0055 on Criteo at a 10% budget. Also closed change 9's second selection rule, and the cost-aware knapsack, which is built and tested but not applied until the fraud case in week 7. Three findings the week did not set out to get: the policy value reverses the sign of the ACIC recommendation where `uplift@k` cannot see it (change 36 and the ground-truth check), it turns Lenta's null into a signal (change 42), and a known propensity is not sufficient to trust IPW (change 43). 484 tests |
 | 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; Dragonnet in PyTorch; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | **Done 2026-09-13 except one refit.** All three sensitivity devices built with `itx sensitivity`, reported on three datasets, and the section leads on the limitation that none of the three can fail there (changes 46, 47). Dragonnet built, registered and in four of five tables; Lenta's row is being refitted after change 51. The treated-share column of change 43 landed and reproduced week 5's hand decomposition to four decimals on Criteo. The second selection rule's cost is measured and is nothing (change 49). Two defects found and fixed: a run-ending exception on an undefined metric (change 50) and a dead Dragonnet fit reporting random targeting as a result (change 51). Causal forest not started. 637 tests |
 | 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; Azure Static Web Apps at targeting.peterparker.ca | **Done 2026-09-14 except hosting.** Demo built and tested (change 52). Fraud case built on IEEE-CIS, which was already on the machine for project 09 (53), benchmarked with seven estimators over five seeds, and allocated: the risk queue a fraud team already runs beats every fitted uplift model at every budget tried, $169,398 against the S-learner's $156,549 at 1,000 analyst hours with the oracle at $305,052, because separating fraud from legitimate is worth a step of $74 and ordering within fraud a slope the estimators cannot resolve. The sign defect that made the benchmark row and the decile diagnostic report the opposite was found by running the diagnostic and fixed with a declaration on the dataset (54). Hosted the same afternoon at https://targeting.peterparker.ca: a second free-tier Static Web App beside the portfolio site's, published from this machine with the deployment token so the repository carries no workflow and no credential, one DNS-only CNAME at Cloudflare, certificate managed by Azure; `docs/deploy.md` records it. 698 tests |
-| 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | Definition of done all checked |
+| 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | **Started 2026-09-14.** README already in Rule A shape. `docs/rejected.md` written on the tuning grid with a fourth measurement made for it (change 55). Clean-environment rerun running in a fresh clone and virtual environment, all six datasets in cost order, each compared with `itx compare`; IHDP reproduced exactly. Tag and flip to public wait on the rerun and on Peter |
 
 Slack: week 6's causal forest and week 7's cost-aware policy are the first things to
 drop if behind. Neither is in the definition of done. Dragonnet stays: it is the
@@ -203,20 +203,25 @@ Whichever produces the clearest evidence gets `docs/rejected.md`:
 
 Mirrors the portfolio's definition for this project:
 
-- [ ] Five estimators benchmarked on five datasets, one results table in the README
-- [~] Dragonnet (PyTorch) in the same table, with a stated verdict on where it earned its
-      complexity (week 6; verdict written, in four of five tables, Lenta refitting after
-      change 51)
-- [ ] Qini and AUUC reported with bootstrap intervals, never as a bare number
-- [ ] Policy value at budget reported against random and outcome-ranking baselines
-- [ ] PEHE and ATE error on the ground-truth sets
+- [x] Five estimators benchmarked on five datasets, one results table in the README (weeks
+      2 to 5; five tables, one per dataset, all from `itx benchmark`)
+- [x] Dragonnet (PyTorch) in the same table, with a stated verdict on where it earned its
+      complexity (week 6; in all five tables since the Lenta refit of 2026-09-14, verdict in
+      `docs/estimators.md`: three of five on Qini, last on Lenta and the fraud case)
+- [x] Qini and AUUC reported with bootstrap intervals, never as a bare number (week 2;
+      `summarise` has no path that renders a point without its interval)
+- [x] Policy value at budget reported against random and outcome-ranking baselines (weeks 2
+      and 5; IPW and DR at three budgets, both baselines in every table)
+- [x] PEHE and ATE error on the ground-truth sets (week 2; IHDP, ACIC and the fraud case)
 - [x] Sensitivity section with Rosenbaum bounds and E-values (week 6; three datasets of
       five, and none of the three is capable of failing it, which the section says)
 - [x] Live budget-slider demo at targeting.peterparker.ca (week 7; built, tested, committed
       under `demo/` and live since 2026-09-14)
-- [ ] README opens with the one-liner and the results table
-- [ ] `docs/estimators.md` written: where each estimator breaks
-- [ ] One rejected approach documented with evidence
+- [x] README opens with the one-liner and the results table (one-liner, status, headline
+      finding, results, limitations, then installation)
+- [x] `docs/estimators.md` written: where each estimator breaks (weeks 2 to 7)
+- [x] One rejected approach documented with evidence (week 8, change 55: the tuning grid,
+      four measurements)
 - [ ] Clean-environment rerun reproduces the table
 - [ ] Repository public, v0.1.0 tagged
 
@@ -1106,3 +1111,30 @@ The finding is the useful part of the week: "the most at-risk cases are the leas
 true on this case and is not sufficient, because a step of $74 between fraud and legitimate
 dominates a slope of a factor of three inside fraud, and the README's two sentences that
 presented a fraud queue as the natural home of the ACIC picture are qualified accordingly.
+
+**55. `docs/rejected.md`: the hyperparameter grid, measured four times, does not earn its
+place** (week 8). Section 9 listed three Rule C candidates and said whichever produced the
+clearest evidence would get the document. None of the three did. The first, outcome ranking
+as a policy, became the headline finding rather than a rejected approach. The second, the
+S-learner collapsing on Hillstrom, was a prediction that failed: the S-learner has the best
+realised value at 20% there. The third, the class-transformation method, was never built
+(section 2 leaves it as literature). What did produce the clearest evidence was the tuning
+grid itself, which changes 30 and 49 both deferred to this week.
+
+The fourth measurement is the plain one the first three did not make: `--no-tune` on IHDP,
+ACIC and Hillstrom against the committed tables. Fifty-four of fifty-four untuned five-seed
+means fall inside their tuned intervals, the two rows the grid never touched reproduce to
+every decimal as the control, and the estimator order changes only on the two datasets where
+every interval overlaps every other. The largest move is the DR-learner's ACIC Qini, 0.2401
+to 0.1862 inside (0.1765, 0.3085): the one estimator the grid was extended for in change 16
+is the one that visibly used it, and it moves from best to worst without leaving anyone's
+interval. The cost of the step is read off the fraud benchmark log against `fit_seconds`:
+84% to 94% of an estimator's wall time on the large datasets.
+
+The decision, stated in the document: the grid is rejected as a step that earns its cost;
+the committed tables keep the protocol of section 4 because it was fixed before any number
+was seen and a protocol changed at the end of a build to match its results is worse to ship
+than a step that cost compute and changed nothing; the README tells anyone reusing this to
+pass `--no-tune`; the per-seed selection blocks are provenance, not findings; a future version
+that re-measures everything drops the step. Section 4's protocol text is unchanged for that
+reason. The definition of done's Rule C line is ticked.

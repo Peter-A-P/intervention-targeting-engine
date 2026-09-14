@@ -10,8 +10,8 @@ shows the intervention list changing as the budget moves.
 what its ranking actually buys at a budget rather than only how well it ranks, plus a
 sensitivity section, a fraud worked case that declares itself semi-synthetic in its first
 sentence, and a budget-slider demo live at [targeting.peterparker.ca](https://targeting.peterparker.ca). The
-numbers below are real and reproducible. Still to come: `docs/rejected.md`, the
-clean-environment rerun, and the flip to public. Build plan: [PLAN.md](PLAN.md).
+numbers below are real and reproducible. Still to come: the clean-environment rerun and the
+flip to public. Build plan: [PLAN.md](PLAN.md).
 
 **The same baseline, the same code, opposite conclusions.** Ranking people by risk is how this
 job is usually done. At a budget covering a tenth of the population it buys **-0.20 on ACIC**
@@ -868,6 +868,7 @@ uv run itx benchmark --dataset ihdp
 uv run itx benchmark --dataset acic
 uv run itx benchmark --dataset lenta
 uv run itx benchmark --dataset criteo     # the committed 10% subsample
+uv run itx benchmark --dataset ieee-fraud # the worked case; needs the one file you fetch yourself
 ```
 
 `itx data pull hillstrom ihdp-train ihdp-test acic-x acic-zymu-1` fetches only the small
@@ -888,8 +889,12 @@ one says how to install it.
 `itx benchmark` selects hyperparameters on the validation split, fits, evaluates on the
 held-out test split, writes every per-seed number and the chosen configuration to
 `results/<dataset>.json`, draws the figures into `docs/figures/`, and rewrites the table
-above. Add `--no-tune` to skip selection and use the default configuration, which is several
-times faster.
+above. **On your own data, pass `--no-tune`.** It uses one default configuration for every
+estimator, which keeps the comparison fair at one ninth of the fitting cost, and on every
+dataset here it would have given the same answer: fifty-four of fifty-four untuned means
+land inside the tuned intervals. The tables above keep the tuned protocol because it was
+fixed before the numbers were seen; [docs/rejected.md](docs/rejected.md) is the evidence and
+the decision.
 
 The Hillstrom run takes about twenty minutes, so two commands exist to avoid repeating it
 when only the presentation has changed:
@@ -1056,10 +1061,14 @@ because the decision is what the budget holder is actually buying.
 
 - [PLAN.md](PLAN.md): scope, evaluation protocol, package design, week-by-week schedule.
 - [docs/estimators.md](docs/estimators.md): where each estimator breaks, with evidence.
+- [docs/rejected.md](docs/rejected.md): the one approach tried and rejected, with four
+  measurements: per-estimator hyperparameter selection.
 - [docs/data/hillstrom.md](docs/data/hillstrom.md),
   [docs/data/ihdp.md](docs/data/ihdp.md), [docs/data/acic.md](docs/data/acic.md),
-  [docs/data/criteo.md](docs/data/criteo.md), [docs/data/lenta.md](docs/data/lenta.md): one
-  card per dataset, with source, licence, treatment definition, quirks and split seeds.
+  [docs/data/criteo.md](docs/data/criteo.md), [docs/data/lenta.md](docs/data/lenta.md),
+  [docs/data/ieee-fraud.md](docs/data/ieee-fraud.md): one card per dataset, with source,
+  licence, treatment definition, quirks and split seeds.
+- [docs/deploy.md](docs/deploy.md): how the demo is hosted and how to redeploy it.
 
 ## Part of a portfolio
 
