@@ -1,0 +1,1 @@
+{"datasets":[{"key":"acic","n_test":961,"outcome_is_binary":false},{"key":"criteo","n_test":279592,"outcome_is_binary":true},{"key":"hillstrom","n_test":8539,"outcome_is_binary":true},{"key":"ihdp","n_test":150,"outcome_is_binary":false},{"key":"lenta","n_test":137406,"outcome_is_binary":true}]}

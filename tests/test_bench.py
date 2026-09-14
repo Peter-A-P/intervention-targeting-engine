@@ -275,10 +275,66 @@ class TestCli:
         assert (tmp_path / "results" / "synthetic-binary.json").exists()
         assert (tmp_path / "figures" / "qini-synthetic-binary.png").exists()
 
-    def test_the_demo_says_it_is_not_built_yet(self):
+    def test_the_demo_lists_its_subcommands_when_given_none(self):
+        # This replaced a test asserting the command said "not built yet: week 7". Week 7
+        # built it, and the stub test failing is how that was noticed.
         result = runner.invoke(app, ["demo"])
+        assert "build" in result.stdout
+
+    def test_the_demo_build_refuses_an_empty_results_directory(self, tmp_path):
+        result = runner.invoke(
+            app,
+            ["demo", "build", "--results-dir", str(tmp_path), "--out-dir", str(tmp_path / "d")],
+        )
         assert result.exit_code == 1
-        assert "week 7" in result.stdout
+        assert "no results" in result.stdout
+
+    def test_the_demo_build_writes_data_the_page_can_read(self, tmp_path):
+        # End to end through the CLI on a synthetic dataset: benchmark, then build, then
+        # check the page's entry point exists and names the dataset.
+        results = tmp_path / "results"
+        benchmarked = runner.invoke(
+            app,
+            [
+                "benchmark",
+                "--dataset",
+                "synthetic-binary",
+                "--estimators",
+                "s-learner",
+                "--seeds",
+                "11",
+                "--resamples",
+                str(RESAMPLES),
+                "--no-plot",
+                "--no-tune",
+                "--results-dir",
+                str(results),
+                "--readme",
+                str(tmp_path / "readme.md"),
+            ],
+        )
+        assert benchmarked.exit_code == 0, benchmarked.stdout
+
+        out = tmp_path / "demo-data"
+        built = runner.invoke(
+            app,
+            [
+                "demo",
+                "build",
+                "--results-dir",
+                str(results),
+                "--out-dir",
+                str(out),
+                "--resamples",
+                "20",
+            ],
+        )
+        assert built.exit_code == 0, built.stdout
+        index = json.loads((out / "index.json").read_text())
+        assert [entry["key"] for entry in index["datasets"]] == ["synthetic-binary"]
+        payload = json.loads((out / "synthetic-binary.json").read_text())
+        assert "s-learner" in payload["estimators"]
+        assert len(payload["budgets"]) == len(payload["estimators"]["s-learner"]["dr"]["value"])
 
 
 def test_ground_truth_metrics_are_skipped_for_a_ranking_baseline(binary_data):

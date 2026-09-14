@@ -159,8 +159,19 @@ def build_payload(
     }
 
 
+#: Name of the file the page loads first, to learn which datasets exist.
+INDEX_NAME = "index.json"
+
+
 def write_payloads(payloads: Sequence[dict[str, Any]], out_dir: Path) -> list[Path]:
-    """Write one JSON file per dataset, plus the index the page loads first.
+    """Write one JSON file per dataset, then rebuild the index from everything present.
+
+    The index is built from the directory rather than from ``payloads``, and that is a fix
+    rather than a preference. Rebuilding one dataset is the normal thing to want, and an
+    index written from the payloads just built would silently drop every dataset that was
+    not in the batch: the files stay on disk, the page stops offering them, and nothing
+    errors. That happened while building this demo in two batches, and the page came out
+    listing three of the five datasets sitting next to it.
 
     Args:
         payloads: Results of :func:`build_payload`.
@@ -176,25 +187,38 @@ def write_payloads(payloads: Sequence[dict[str, Any]], out_dir: Path) -> list[Pa
         path.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
         written.append(path)
 
-    index = out_dir / "index.json"
+    index = out_dir / INDEX_NAME
     index.write_text(
-        json.dumps(
-            {
-                "datasets": [
-                    {
-                        "key": payload["dataset"],
-                        "n_test": payload["n_test"],
-                        "outcome_is_binary": payload["outcome_is_binary"],
-                    }
-                    for payload in payloads
-                ]
-            },
-            separators=(",", ":"),
-        ),
+        json.dumps({"datasets": _catalogue(out_dir)}, separators=(",", ":")),
         encoding="utf-8",
     )
     written.append(index)
     return written
+
+
+def _catalogue(out_dir: Path) -> list[dict[str, Any]]:
+    """What the index says about every payload file in a directory, in name order.
+
+    Args:
+        out_dir: Directory holding the payloads.
+
+    Returns:
+        One entry per dataset, carrying only what the page needs before it has loaded the
+        dataset itself: the key to fetch, and enough to label the picker.
+    """
+    entries: list[dict[str, Any]] = []
+    for path in sorted(out_dir.glob("*.json")):
+        if path.name == INDEX_NAME:
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        entries.append(
+            {
+                "key": payload["dataset"],
+                "n_test": payload["n_test"],
+                "outcome_is_binary": payload["outcome_is_binary"],
+            }
+        )
+    return entries
 
 
 def _curve(

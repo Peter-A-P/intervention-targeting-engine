@@ -203,6 +203,31 @@ class TestWritingItOut:
         assert loaded["budgets"] == list(DEMO_BUDGETS)
         assert set(loaded["estimators"]) == {"oracle", "noise"}
 
+    def test_rebuilding_one_dataset_keeps_the_others_in_the_index(self, payload, tmp_path):
+        # The bug this is here for, found by using the tool rather than by reading it.
+        # Building in two batches wrote an index from the second batch alone: the first
+        # batch's files stayed on disk, the page stopped offering them, and nothing errored.
+        # The shipped demo came out listing three of the five datasets beside it.
+        first = payload | {"dataset": "alpha"}
+        second = payload | {"dataset": "beta"}
+        write_payloads([first], tmp_path)
+        write_payloads([second], tmp_path)
+
+        index = json.loads((tmp_path / "index.json").read_text())
+        assert [entry["key"] for entry in index["datasets"]] == ["alpha", "beta"]
+
+    def test_the_index_is_ordered_so_two_builds_produce_the_same_file(self, payload, tmp_path):
+        write_payloads([payload | {"dataset": "zulu"}], tmp_path)
+        write_payloads([payload | {"dataset": "alpha"}], tmp_path)
+        index = json.loads((tmp_path / "index.json").read_text())
+        keys = [entry["key"] for entry in index["datasets"]]
+        assert keys == sorted(keys)
+
+    def test_the_index_describes_each_dataset_without_loading_it(self, payload, tmp_path):
+        write_payloads([payload], tmp_path)
+        entry = json.loads((tmp_path / "index.json").read_text())["datasets"][0]
+        assert set(entry) == {"key", "n_test", "outcome_is_binary"}
+
     def test_it_creates_the_directory(self, payload, tmp_path):
         target = tmp_path / "does" / "not" / "exist"
         write_payloads([payload], target)
