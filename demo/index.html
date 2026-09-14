@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Intervention Targeting Engine: move the budget, watch the list change</title>
+<meta name="description" content="A budget slider over measured uplift-model rankings on five public datasets. Every number is precomputed from the benchmark; nothing is modelled in the browser.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <h1>Who do you treat, and what does it buy?</h1>
+    <p class="lead">
+      A budget covers a fraction of the population, so somebody chooses the fraction. Move the
+      slider and watch both answers change: who is in the treated set, and how much outcome the
+      budget actually buys.
+    </p>
+    <p class="note">
+      Every number here was computed by <code>itx demo build</code> from the same benchmark that
+      produces the repository's results table. Nothing is modelled in the browser, and no feature
+      values are shipped: units are row numbers in a public dataset's test split.
+    </p>
+    <p class="note">
+      <strong>These are one split, not the headline.</strong> The results table averages five
+      random splits of each dataset; this page shows the first of them, because a slider has to
+      move through a single ranking of actual units rather than an average of five different
+      ones. So the numbers here sit near the table's and will not equal them. On ACIC at a 10%
+      budget, for instance, this split gives the risk-ranking baseline -0.2434 where the
+      five-split average is -0.1971. The repository carries the averages and their intervals.
+    </p>
+  </header>
+
+  <section class="controls">
+    <div class="control">
+      <label for="dataset">Dataset</label>
+      <select id="dataset"></select>
+    </div>
+    <div class="control">
+      <label for="estimator">Ranking</label>
+      <select id="estimator"></select>
+    </div>
+    <div class="control wide">
+      <label for="budget">Budget: treat the top <output id="budget-label">20%</output></label>
+      <input type="range" id="budget" min="1" max="50" value="10" step="1">
+    </div>
+  </section>
+
+  <section class="headline" id="headline" aria-live="polite"></section>
+
+  <section class="chart">
+    <h2>What the budget buys</h2>
+    <p class="note">
+      Realised policy value, doubly robust, against the expected value of spending the same
+      budget at random. The band is a <span id="level-label">95%</span> bootstrap interval. The
+      vertical line is the budget you have selected.
+    </p>
+    <div id="chart" role="img" aria-label="Policy value against budget"></div>
+    <div class="legend">
+      <span class="key selected"></span> selected ranking
+      <span class="key random"></span> random targeting
+    </div>
+  </section>
+
+  <section class="list">
+    <h2>Who is in the treated set</h2>
+    <p class="note" id="list-note"></p>
+    <table id="units">
+      <thead><tr><th>#</th><th>Row</th><th>Predicted uplift</th><th>Cost</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <footer>
+    <p>
+      Part of the Intervention Targeting Engine. The repository carries the results table, the
+      confidence intervals this page abbreviates, and a write-up of where each estimator breaks.
+    </p>
+    <p class="note" id="provenance"></p>
+  </footer>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

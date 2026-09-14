@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Annotated
 import typer
 
 from itx import __version__
+from itx.demo.build import DEMO_RESAMPLES
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -33,6 +34,8 @@ data_app = typer.Typer(help="Download and verify the raw datasets.", no_args_is_
 app.add_typer(data_app, name="data")
 
 DEFAULT_RESULTS_DIR = Path("results")
+#: Where ``itx demo build`` writes; the static page beside it reads ``data/*.json``.
+DEFAULT_DEMO_DIR = Path("demo") / "data"
 DEFAULT_FIGURE_DIR = Path("docs/figures")
 DEFAULT_README = Path("README.md")
 
@@ -696,11 +699,72 @@ def _config_label(chosen: Selection) -> str:
     return f"{chosen.config.min_child_samples}/{chosen.config.num_leaves}"
 
 
-@app.command("demo")
-def demo() -> None:
-    """Build the static budget-slider demo. Arrives in week 7 (PLAN.md section 6)."""
-    typer.echo("not built yet: the demo is week 7. See PLAN.md section 7.")
-    raise typer.Exit(code=1)
+demo_app = typer.Typer(help="Build the static budget-slider demo.", no_args_is_help=True)
+app.add_typer(demo_app, name="demo")
+
+
+@demo_app.command("build")
+def demo_build(
+    datasets: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated dataset keys; every finished result if omitted."),
+    ] = None,
+    results_dir: Annotated[
+        Path, typer.Option(help="Where the per-seed JSON lives.")
+    ] = DEFAULT_RESULTS_DIR,
+    out_dir: Annotated[
+        Path, typer.Option(help="Where the demo's data files go.")
+    ] = DEFAULT_DEMO_DIR,
+    resamples: Annotated[
+        int, typer.Option(help="Bootstrap resamples behind the interval band.")
+    ] = DEMO_RESAMPLES,
+) -> None:
+    """Precompute the JSON the static page reads, from finished benchmark runs.
+
+    The page has no backend (PLAN.md section 7), so every number the slider can show has to
+    exist before anyone opens it. This refits the first seed of each dataset, because the
+    results file stores metrics rather than per-unit scores and the demo needs the ranking
+    itself, then writes one file per dataset next to the page.
+    """
+    from itx.bench.grid import default_selection
+    from itx.bench.runner import refit_seed
+    from itx.bench.table import read_json
+    from itx.demo.build import build_payload, write_payloads
+
+    say = _printer()
+    wanted = (
+        [name.strip() for name in datasets.split(",")]
+        if datasets
+        else sorted(path.stem for path in results_dir.glob("*.json"))
+    )
+    if not wanted:
+        typer.echo(f"no results in {results_dir}; run 'itx benchmark --all' first")
+        raise typer.Exit(code=1)
+
+    payloads = []
+    for name in wanted:
+        path = results_dir / f"{name}.json"
+        if not path.is_file():
+            typer.echo(f"no results at {path}; skipping {name}")
+            continue
+        rows = read_json(path)
+        seed = rows[0].seed
+        selections = {
+            row.estimator: row.selection if row.selection is not None else default_selection()
+            for row in rows
+            if row.seed == seed
+        }
+        say(f"{name}: refitting seed {seed} for its rankings")
+        refitted, split = refit_seed(name, seed, selections=selections)
+        say(f"{name}: pricing {len(refitted)} rankings at every budget")
+        payloads.append(build_payload(name, refitted, split, n_resamples=resamples, seed=seed))
+
+    if not payloads:
+        typer.echo("nothing to build")
+        raise typer.Exit(code=1)
+
+    for written in write_payloads(payloads, out_dir):
+        typer.echo(f"demo data: {written}")
 
 
 if __name__ == "__main__":  # pragma: no cover

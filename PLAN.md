@@ -125,6 +125,7 @@ src/itx/        (src layout, change 2 in section 11)
   metrics/      qini, auuc, uplift_at_k, calibration, bootstrap, ground_truth
   sensitivity/  rosenbaum, evalue, negative_control
   bench/        runner, results table renderer, seeds, grid (change 8)
+  demo/         build: what the static page precomputes (change 52)
   cli.py        typer CLI: itx data pull, itx benchmark, itx report, itx figures,
                 itx demo build (change 20)
 demo/           static site: precomputed rankings as JSON, slider, table
@@ -968,3 +969,43 @@ Dragonnet was "the only estimator there whose DR gain at 20% fails to exclude ze
 refitted numbers the outcome ranking covers zero too, at +0.0023 (-0.0001, +0.0049) against
 Dragonnet's +0.0017 (-0.0001, +0.0035). The accurate statement is that Dragonnet is the weakest
 of the six and that its interval covers zero where the five meta-learners' just exclude it.
+
+**52. The demo's build step is a package, not a script in `demo/`** (week 7). Section 5 put
+`demo/` at the repository root as the static site and gave the CLI an `itx demo build`
+command, without saying where the code behind that command lives. It is `src/itx/demo/`,
+beside the other packages, for the same reason change 40 put `itx diagnose` in
+`itx/metrics/`: a command in `cli.py` should be a thin wrapper over something importable and
+testable, and `tests/test_demo.py` checks the payload against `policy_metrics` rather than
+against a stored copy of itself, which needs an import. The root `demo/` holds what gets
+served: `index.html`, `app.js`, `style.css`, and the `data/` the build writes.
+
+Three decisions inside it are worth recording because each is a limit rather than a feature.
+
+**The page shows one split, and says so in its second paragraph.** The results table averages
+five random splits; a slider cannot, because it has to move through a single ranking of actual
+units rather than an average of five different rankings of five different test sets. So the
+demo refits the first seed and its numbers sit near the table's without equalling them: on
+ACIC at a 10% budget this split gives the risk-ranking baseline -0.2434 where the five-split
+average is -0.1971. Both are correct and they are not the same quantity, which is exactly the
+kind of gap a reader would otherwise find on their own and reasonably read as an error.
+
+**The random baseline is computed exactly rather than sampled.** The benchmark's baseline is
+the mean of 200 random rankings, which is right there because it carries an interval. The demo
+draws a curve at fifty budgets, so it uses the closed form instead: a random subset carries the
+population's average per-unit contribution, so the gain at share `b` is `b` times the gain from
+treating everybody. Same quantity, no wobble for a reader to mistake for structure. A test
+asserts the line is straight and that every ranking meets it at a 100% budget, since treating
+everybody is the same policy however the list was sorted.
+
+**Only the top 200 of each ranking ships.** Criteo's test split is 279,592 rows and the whole
+ranking would be a multi-megabyte page load to render a list nobody scrolls; the page says how
+many more it is not showing. Nothing identifying travels at all: row numbers and predicted
+uplift, never feature values, and a test asserts no feature name appears in the file.
+
+Not done in week 7 and not startable here: the fraud worked case. Section 3 specifies IEEE-CIS
+Fraud Detection features, which is a Kaggle competition dataset behind an account, accepted
+competition rules and an API token. There are none on this machine, and every other loader in
+this project fetches from a direct URL and verifies a committed checksum. It needs either those
+credentials or a substitute dataset, and substituting one is a change to section 3 rather than
+something to do quietly. The cost-aware knapsack it was going to exercise stays built, tested
+and unused, which is now the second week that has been true.

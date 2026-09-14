@@ -612,6 +612,37 @@ version of the same study would have had to argue against. It is not much.
 dashes, why ACIC's E-value is an order of magnitude rather than a number, and why the Gamma
 is quoted to one decimal place. Criteo and Lenta need a full-size fit and are queued.
 
+## The budget slider
+
+`uv run itx demo build` precomputes what a static page needs, and `demo/` is the page. Open
+`demo/index.html` over any static file server. Move the slider and two things change together:
+the list of units the budget treats, and the realised policy value that budget buys against
+spending the same money at random.
+
+It is static because the budget for this project is CA$25 (PLAN.md section 7), and that
+constraint decided the design rather than being worked around. Every number the slider can
+display exists in `demo/data/*.json` before the page opens; the only arithmetic in the browser
+is reading an index out of an array and drawing a line. No backend, no dependencies, no CDN,
+and nothing identifying: units travel as row numbers and predicted uplift, never as feature
+values.
+
+Three things about it are limits rather than features, and the page says all three itself:
+
+- **It shows one split, where the tables above average five.** A slider has to move through a
+  single ranking of actual units, not an average of five rankings of five different test sets.
+  So its numbers sit near the tables' without equalling them. On ACIC at a 10% budget this
+  split gives the risk-ranking baseline -0.2434 against the five-split average of -0.1971.
+  Both are correct; they are not the same quantity.
+- **Only the top 200 of each ranking ships.** Criteo's test split is 279,592 rows and the whole
+  list would be a multi-megabyte download to render something nobody scrolls.
+- **Costs are uniform**, so the cost-aware knapsack in `itx/policy/cost_aware.py` reduces to
+  rank-and-cut here. Varying cost per unit is what the fraud worked case is for, and that is
+  not built: it needs IEEE-CIS, which is behind a Kaggle account and competition rules rather
+  than a URL with a checksum like every other loader here.
+
+Not yet hosted. PLAN.md section 7 puts it on Azure Static Web Apps at
+`targeting.peterparker.ca`; until then it is a directory you can open.
+
 ## What this does not do
 
 - It does not identify effects without an experiment or a credible ignorability
