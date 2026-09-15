@@ -1255,6 +1255,14 @@ locally. The fix is `--extra neural` on all four install steps. The lesson recor
 that a red CI badge on a private repository is easy to stop reading, and the three weeks of
 red were three weeks in which the workflow was proving nothing.
 
+A second failure surfaced once the first was fixed, on the first run where the benchmark
+job got far enough to reach it. The slow test that reads the real IEEE-CIS file, added in
+change 53, fails on a runner rather than skipping: every other dataset arrives from a URL, so
+`--run-slow` could assume the data would be there, and this one cannot arrive at all because
+Kaggle serves it to an authenticated account and the licence forbids a mirror. The class now
+skips unless the file is present and matches its committed digest, which is the honest
+outcome on a machine that is not allowed to have it, and still runs here.
+
 One attempted improvement was reverted in the same change. On Linux the PyPI torch wheel
 declares the CUDA stack, several gigabytes this CPU-only project never uses, and the fix for
 that is to resolve torch from the PyTorch CPU index. Doing so broke every local `uv run`
