@@ -31,6 +31,18 @@ concurrency:
 env:
   UV_FROZEN: "1"
 
+# Every job installs both extras. `neural` is not optional here despite its name: Dragonnet
+# is in DEFAULT_ESTIMATORS, so without torch the type check cannot resolve the module and
+# any test that builds a default benchmark row fails at the import. That is what broke every
+# run between the week 6 commit that added Dragonnet and PLAN.md change 57.
+#
+# On Linux the PyPI torch wheel declares the CUDA stack, several GB this project never uses.
+# Resolving torch from https://download.pytorch.org/whl/cpu instead was tried and reverted:
+# that host's certificate does not verify through the TLS interception on the machine this
+# is developed on, so the change fixed CI and broke every local `uv run`. The download is
+# cached between runs and the cost is install time rather than correctness, so it stays on
+# PyPI until it can be changed without breaking the development machine.
+
 jobs:
   checks:
     name: ruff, mypy, tests
@@ -45,7 +57,7 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install Python 3.13 and the project
-        run: uv sync --all-groups --extra learners
+        run: uv sync --all-groups --extra learners --extra neural
 
       - name: ruff (lint)
         run: uv run ruff check .
@@ -72,7 +84,7 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install Python 3.13 and the project
-        run: uv sync --all-groups --extra learners
+        run: uv sync --all-groups --extra learners --extra neural
 
       # Keyed on the committed checksums: if a digest changes the cache is a miss and the
       # file is downloaded and verified again, which is the point of committing them.
@@ -128,7 +140,7 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install Python 3.13 and the project
-        run: uv sync --all-groups --extra learners
+        run: uv sync --all-groups --extra learners --extra neural
 
       - name: Cache the raw downloads
         uses: actions/cache@v4
@@ -185,7 +197,7 @@ jobs:
           cache-dependency-glob: uv.lock
 
       - name: Install Python 3.13 and the project
-        run: uv sync --all-groups --extra learners
+        run: uv sync --all-groups --extra learners --extra neural
 
       - name: Cache the raw downloads
         uses: actions/cache@v4

@@ -8,7 +8,10 @@ the literature and a table is worthless if the reader has to guess which one:
     means the ranking is worth nothing over picking at random; negative means it is worse
     than random, which happens more often than the literature suggests. The units are
     incremental outcome per unit of population, so on a binary outcome a coefficient of
-    0.01 means the ranking buys one extra event per hundred people over random targeting,
+    0.01 means the ranking buys one extra event per hundred people over random targeting
+    among the *treated* units of the prefix, divided by the whole population, so it scales
+    with the treated share and is not comparable across datasets with different shares
+    (Criteo 85%, Hillstrom 50%, IHDP 19%); compare it within a table, not between them,
     averaged across every budget.
 
 ``auuc_normalised``
@@ -108,8 +111,11 @@ def auuc_normalised(
         seed: Seed for tie-breaking.
 
     Returns:
-        The ratio, at most 1. Returns 0 when the oracle area is 0, which happens only when
-        no ordering of this sample buys anything at all.
+        The ratio. Not bounded by 1: the outcome-ordered reference earns nothing while its
+        prefix holds one arm, so a ranking that interleaves control non-responders can beat
+        it, and random targeting lands anywhere from 0.04 to 0.83 under it depending on the
+        dataset. Read it against the random row. Returns 0 when the oracle area is 0, which
+        happens only when no ordering of this sample buys anything at all.
     """
     ceiling = auuc(outcome, treatment, optimal_scores(outcome, treatment), seed=seed)
     if ceiling == 0.0:

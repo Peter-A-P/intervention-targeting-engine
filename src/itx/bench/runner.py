@@ -41,7 +41,7 @@ from itx.data.synthetic import (
     confounded,
     heterogeneous_effect,
 )
-from itx.estimators.base import BaseUpliftEstimator
+from itx.estimators.base import BaseUpliftEstimator, DegenerateFitError
 from itx.estimators.baselines import OutcomeRanking, RandomRanking
 from itx.estimators.dr_learner import DRLearner
 from itx.estimators.dragonnet import Dragonnet
@@ -251,6 +251,14 @@ def evaluate(
 
     test = split.test
     scores = estimator.predict_uplift(test.features)
+    if not np.isfinite(scores).all():
+        bad = int((~np.isfinite(scores)).sum())
+        msg = (
+            f"{estimator.name} on {split.test.name} seed {split.seed}: {bad:,} of "
+            f"{scores.size:,} test scores are not finite. A NaN sorts to one end of a "
+            f"ranking and the row would report row order as a result."
+        )
+        raise DegenerateFitError(msg)
     metrics = bootstrap_vector(
         _statistics(
             test,

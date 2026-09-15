@@ -70,7 +70,9 @@ function render() {
   const curve = p.estimators[state.estimator];
   const selected = curve.dr;
   const random = p.random.dr;
-  const treated = Math.max(1, Math.round(p.n_test * budget));
+  // ceil, like rank_and_cut: the set the gain describes is the smallest one covering the
+  // budget share, so a 10% budget on 961 rows is 97 rows, not 96.
+  const treated = Math.max(1, Math.ceil(p.n_test * budget));
 
   el("budget-label").textContent = `${Math.round(budget * 100)}%`;
 
@@ -84,7 +86,8 @@ function render() {
       <span class="caption">outcome bought per head
         (${fmt(selected.low[i], digits)} to ${fmt(selected.high[i], digits)})</span></div>
     <div class="stat ${versus >= 0 ? "up" : "down"}"><span class="figure">${fmt(versus, digits)}</span>
-      <span class="caption">against spending the same budget at random</span></div>`;
+      <span class="caption">against spending the same budget at random
+        (${fmt(selected.low[i] - random[i], digits)} to ${fmt(selected.high[i] - random[i], digits)})</span></div>`;
 
   el("list-note").textContent =
     treated <= curve.top.length

@@ -31,8 +31,9 @@ N_UNITS = 747
 N_COVARIATES = 25
 FEATURES = tuple(f"x{i + 1}" for i in range(N_COVARIATES))
 
-#: Columns 7 to 25 of the IHDP covariate block are binary indicators; the first six are
-#: continuous. Recorded here so a reader does not have to infer it from the values.
+#: Columns 7 to 25 of the IHDP covariate block are indicators (x14 takes the values 1 and 2
+#: rather than 0 and 1); the first six are continuous. Recorded here so a reader does not
+#: have to infer it from the values.
 CONTINUOUS_FEATURES = FEATURES[:6]
 BINARY_FEATURES = FEATURES[6:]
 

@@ -81,7 +81,8 @@ def fetch(key: str, *, force: bool = False, quiet: bool = False) -> Path:
 
     if spec.manual:
         msg = (
-            f"{spec.filename} has to be placed by hand and is not in "
+            f"{spec.filename} has to be placed by hand and is missing from, or does not match "
+            f"its committed digest in, "
             f"{target.parent}. {spec.note} "
             f"Get it from {spec.url}, then put it at {target}. "
             f"It is checked against the committed digest {expected[:12]}... like every "
@@ -126,10 +127,10 @@ def require_rows(name: str, actual: int, expected: int) -> None:
     """Fail unless a loaded file has the row count the loader was written against.
 
     The committed SHA-256 already catches a changed file, so this is a second line rather
-    than the first one. It exists because the digest is only checked at download time: a
-    cache directory populated by hand, or an ``ITX_DATA_DIR`` pointed somewhere else, gets
-    past it, and the failure that follows is a results table that is quietly about
-    different data.
+    than the first one, and :func:`fetch` verifies the digest on every read, not only at
+    download time. This exists for the path that bypasses both: a cache directory populated
+    by hand, or an ``ITX_DATA_DIR`` pointed somewhere else, gets past them, and the failure
+    that follows is a results table that is quietly about different data.
 
     Args:
         name: Dataset name, for the message.

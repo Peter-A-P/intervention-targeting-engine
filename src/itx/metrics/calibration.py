@@ -237,6 +237,11 @@ def calibration_error(
 ) -> float:
     """Mean absolute gap between predicted and realised uplift across bins. Zero is perfect.
 
+    A mean of absolute values has a positive noise floor, so a perfectly calibrated model on
+    finite data scores above zero, and a bootstrap percentile interval of it inherits the same
+    floor and can sit entirely above the full-sample point. Read it as an upper bound on
+    miscalibration to compare across estimators on one dataset, not against zero.
+
     Args:
         outcome: Observed outcome per unit.
         treatment: Binary treatment indicator per unit.

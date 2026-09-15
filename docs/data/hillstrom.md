@@ -21,9 +21,12 @@ recorded over the following two weeks.
 
 The loader keeps two of the three arms and drops the third entirely, so the treatment is
 binary and the control genuinely means "no email". By default the treatment is the
-womens-merchandise arm, which is the larger of the two effects and the one usually
-reported. Folding the unused arm into the control would have been the other option and it
-would be wrong: those customers were emailed.
+womens-merchandise arm, which is the one most of the uplift literature reports. It is the
+*smaller* of the two effects on all three outcomes (mens: visit 0.1828, conversion 0.0125,
+spend 1.42 against womens' 0.1514, 0.0089, 1.08), which makes it the harder targeting
+problem; an earlier version of this card said the opposite. Folding the unused arm into the
+control would have been the other option and it would be wrong: those customers were
+emailed.
 
 Because assignment was random and equal across three arms, the probability of treatment
 within any two of them is exactly 0.5. The loader records that as a known propensity
@@ -51,7 +54,7 @@ told which columns are codes rather than being left to infer it.
 |---|---|---|---|
 | `visit` (default) | 0.1514 | 0.1062 | 0.0452 |
 | `conversion` | 0.0089 | 0.0057 | 0.0032 |
-| `spend` | 1.42 | 0.65 | 0.77 |
+| `spend` | 1.08 | 0.65 | 0.43 |
 
 Measured on the womens-email arm against no email, over all 42,693 rows. These match the
 figures usually quoted for this dataset, and the loader test asserts the visit rates, so a

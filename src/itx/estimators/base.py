@@ -56,6 +56,17 @@ class NotFittedError(RuntimeError):
     """An estimator was asked to predict before it was fitted."""
 
 
+class DegenerateFitError(RuntimeError):
+    """An estimator produced non-finite scores on the split it is being measured on.
+
+    A warning was not enough. Change 51 found Dragonnet returning all-NaN scores on Lenta,
+    which sorted to one end, made the ranking row order, and reported numbers that matched
+    random targeting for a week. The benchmark now stops on the first non-finite score
+    rather than writing a row that looks like a measurement (PLAN.md change 56). Fits are
+    checkpointed, so stopping costs the one fit.
+    """
+
+
 class DegenerateFitWarning(UserWarning):
     """A fitted estimator predicts no uplift at all, for anyone.
 

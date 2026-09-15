@@ -116,8 +116,10 @@ if TYPE_CHECKING:
 MIN_PAIRS = 20
 
 #: Caliper for the propensity match, in standard deviations of the propensity score among
-#: eligible units. 0.2 is the conventional choice (Rosenbaum and Rubin 1985) and it is here
-#: rather than as a free parameter so that a Gamma cannot be improved by widening it.
+#: eligible units. 0.2 SD is the conventional width, but the convention (Rosenbaum and Rubin
+#: 1985) is on the logit of the propensity and this is applied to the propensity itself,
+#: which is looser in the tails. It is a constant rather than a parameter so that a Gamma
+#: cannot be improved by widening it.
 DEFAULT_CALIPER_SDS = 0.2
 
 #: Largest Gamma the search will report. A result that survives this is reported as "above

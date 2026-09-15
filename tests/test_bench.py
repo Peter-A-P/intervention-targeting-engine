@@ -1138,6 +1138,31 @@ class TestAnUndefinedMetric:
             if s.estimator == "dragonnet" and s.metric == "calibration_slope"
         )
         assert undefined.across_seeds.value == pytest.approx(0.4)
+        # The rendered cell is the answer of the seeds that had one, not a dash because one
+        # seed did not, and n_seeds says how many that was.
+        assert undefined.pooled.value == pytest.approx(0.4)
+        assert undefined.pooled.low == pytest.approx(0.1)
+        assert undefined.n_seeds == 1
+
+
+class TestANonFiniteScoreStopsTheRun:
+    def test_evaluate_refuses_a_ranking_with_nan_in_it(self):
+        # Change 51: an all-NaN ranking sorted to one end, became row order, and reported
+        # numbers matching random targeting. A warning did not stop it; this does.
+        from itx.estimators.base import DegenerateFitError
+        from itx.estimators.baselines import RandomRanking
+
+        class Broken(RandomRanking):
+            name = "broken"
+
+            def _predict_uplift(self, features):
+                scores = super()._predict_uplift(features)
+                scores[::7] = np.nan
+                return scores
+
+        split = stratified_split(synthetic.binary_outcome(600, seed=3), 11)
+        with pytest.raises(DegenerateFitError, match="not finite"):
+            evaluate(Broken(seed=0), split, budgets=(0.2,), n_resamples=5)
 
 
 class TestSelectionRules:

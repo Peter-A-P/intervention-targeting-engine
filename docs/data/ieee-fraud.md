@@ -62,13 +62,19 @@ identification, and the repository already has ACIC and IHDP for the other argum
 | Legitimate | `+0.03 * amount` (margin earned) | `0` if wrongly declined, `+0.03 * amount` if not |
 
 **The two probabilities**, both functions of a fraud signal built from `TransactionAmt`, `C1`
-and `D1` and scaled to `[0, 1]`:
+and `D1`, each rank-scaled to `[0, 1]`. Two of those columns are heavily tied (`C1` is 1 on
+54% of rows, `D1` is 0 on 47%), and ties are broken by file position, which is time order and
+is in no feature. So about 4% of the signal's variance, and among fraudulent transactions a
+mean absolute $1.75 of a mean effect of $74, is a component no model can learn from these
+features: a small floor under every PEHE and a sliver of the oracle nothing can reach. Stated
+rather than changed, because changing the signal would change every number in the case
+(PLAN.md change 56).
 
 - caught: `0.85 - 0.55 * signal`
 - wrongly declined: `0.01 + 0.14 * signal`
 
 **Review cost**, which is the point of the case: `8 + 22 * (share of numeric fields missing)`
-analyst minutes, so a review takes between 9.2 and 18.4 minutes depending on how complete the
+analyst minutes, so a review takes between 9.2 and 19.0 minutes depending on how complete the
 record is. This is the only dataset in the project where treating a unit has a per-unit cost,
 and therefore the only one where the cost-aware knapsack does anything that rank-and-cut does
 not.
@@ -81,7 +87,8 @@ reaches a human queue, so what arrives is the practised kind.
 
 That single choice is what makes this a worked case for this repository rather than a
 demonstration that expensive things are worth doing. It puts the highest-risk transactions in
-the lost-causes quadrant. Change `CATCH_FALL` to zero and the case becomes one where risk
+the least-persuadable corner: the catch rate bottoms at 0.30, so no fraud is a lost cause here,
+the riskiest-looking is the least movable. Change `CATCH_FALL` to zero and the case becomes one where risk
 ranking is optimal, which is a perfectly reasonable thing to believe about some review
 operations and is a one-line experiment.
 

@@ -102,8 +102,8 @@ cannot support a level of their own at a split.
 | `response_att` | 0.11013 | 0.10258 | 0.00755 |
 
 A 0.75-point lift on a 10.3% base rate. Smaller in relative terms than Hillstrom's email
-effect and much larger in absolute terms than Criteo's, which makes it a useful third point
-on the scale.
+effect and smaller in absolute terms than Criteo's 1.03 points, which makes it the faintest
+signal of the five and a useful third point on the scale.
 
 ## Known quirks
 

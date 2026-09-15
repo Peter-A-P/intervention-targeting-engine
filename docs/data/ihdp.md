@@ -18,7 +18,7 @@ self-consistent.
 ## What is real and what is not
 
 The covariates are real: 25 measurements on the child and the mother, six continuous and
-nineteen binary. The outcome is simulated from a published response surface, so both
+nineteen indicators (one of them, x14, coded 1 and 2 rather than 0 and 1). The outcome is simulated from a published response surface, so both
 potential outcomes exist for every unit and the individual effect is known exactly.
 
 The confounding is deliberate and it is the interesting part. The original programme
@@ -70,7 +70,7 @@ to within 0.2.
   1000 replicates, in-sample or out-of-sample PEHE). Numbers are only comparable within a
   variant. This is `ihdp_npci_1-100`, and PEHE here is computed on a held-out split.
 - **The covariate names are not in the file.** Columns are `x1` to `x25` in file order.
-  The first six are continuous, the rest binary.
+  The first six are continuous, the rest indicators; x14 is coded 1 and 2.
 
 ## Splits
 

@@ -37,7 +37,8 @@ kind, and a human staring at it has a worse chance than the base rate suggests.
 
 That single choice is what makes this a worked case for this repository rather than a
 demonstration that expensive things are worth doing. It puts the highest-risk transactions in
-the lost-causes quadrant, where review buys least, and it was chosen so that ranking the queue
+the least-persuadable corner (the catch rate bottoms at 0.30, so no fraud is a lost cause,
+only less movable), where review buys least, and it was chosen so that ranking the queue
 by fraud risk would not be ranking it by what review is worth. It is an assumption, it is
 stated here, and a reader who thinks real review works the other way can change one constant
 and rerun.
@@ -274,9 +275,12 @@ def _fraud_signal(frame: pl.DataFrame) -> FloatArray:
     """How much a transaction looks like fraud, in ``[0, 1]``, from observable columns only.
 
     Built from three real columns rather than from the label, so that a model fitted on the
-    features can see what drives the effect. It is deliberately crude: this is the
-    simulation's own notion of "looks risky", not a fraud model, and a good fraud model on
-    this data would beat it easily.
+    features can see most of what drives the effect. Not all of it: ``C1`` and ``D1`` are
+    heavily tied and ties are broken by file position, which is time order and is in no
+    feature, so about 4% of the signal's variance is unlearnable from the features (a mean
+    absolute $1.75 of the effect among fraud; docs/data/ieee-fraud.md). It is deliberately
+    crude: this is the simulation's own notion of "looks risky", not a fraud model, and a good
+    fraud model on this data would beat it easily.
 
     Args:
         frame: The loaded columns.
@@ -330,8 +334,11 @@ def _missing_share(frame: pl.DataFrame) -> FloatArray:
 def _encode(name: str) -> pl.Expr:
     """Integer-encode one string column, reserving 0 for missing.
 
-    Codes come from the sorted distinct values, so they do not depend on row order and a
-    subsample encodes the same category to the same integer as the full file.
+    Polars assigns the codes by first appearance, so they depend on row order and a subsample
+    can encode a category to a different integer than the full file does. That is harmless
+    here: LightGBM treats a declared categorical by identity, so any permutation of the codes
+    fits the same model, and Dragonnet one-hot encodes them. Nothing may read the codes as
+    ordered.
 
     Args:
         name: Column name.

@@ -6,7 +6,7 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
-**Status: week 7 of 8.** Seven estimators benchmarked on all five datasets, each reported with
+**Status: week 8 of 8.** Seven estimators benchmarked on all five datasets, each reported with
 what its ranking actually buys at a budget rather than only how well it ranks, plus a
 sensitivity section, a fraud worked case that declares itself semi-synthetic in its first
 sentence, and a budget-slider demo live at [targeting.peterparker.ca](https://targeting.peterparker.ca). The
@@ -29,11 +29,25 @@ model, before any of the rest of this is worth running.
 ## Results
 
 Every table on this page is written by `uv run itx benchmark --dataset <name>` and is
-never edited by hand. Each number is the mean across five committed split seeds, with the
-95% bootstrap interval alongside it. Hyperparameters are chosen per seed on a validation
-split from a grid that is identical for every estimator, and the test split is never
-touched until the numbers below are computed. There are no bare point estimates here by
-design: a Qini without an interval is treated in this repository as a defect.
+never edited by hand. Each number is the mean across five committed split seeds. The interval
+beside it is the mean of the five per-seed 95% bootstrap intervals: it shows the sampling
+uncertainty of a typical split and carries no across-seed variance, so "the interval excludes
+zero" on this page means the typical split's interval does, and where the five seeds disagree
+about that the text says so. The per-seed numbers are in `results/<dataset>.json`. The
+`random-200` row is different again: its interval is the spread across 200 random rankings of
+the fixed test split, not a bootstrap over rows, because what varies for random targeting is
+the ranking. Hyperparameters are chosen per seed on a validation split from a grid that is
+identical for every estimator, and the test split is never touched until the numbers below
+are computed. There are no bare point estimates here by design: a Qini without an interval
+is treated in this repository as a defect.
+
+Two columns need a word on how to read them. **Normalised AUUC** divides the area under a
+ranking's uplift curve by the area under the curve of ranking on the true outcome; that
+reference is not a ceiling, because a ranking can beat it, and random targeting lands anywhere
+from 0.04 on Lenta to 0.83 on IHDP under it, so read the column against the random row rather
+than against 1. **Calibration error** is a mean absolute gap across bins, which cannot reach
+zero on finite data and whose bootstrap interval inherits the same floor, so it is an upper
+bound on miscalibration to compare across estimators, not a quantity to read against zero.
 
 Each dataset carries two tables. The first is the ranking metrics: how good the ordering is.
 The second is **what each ranking buys**, which is the question a budget holder is actually
@@ -42,8 +56,10 @@ top b% rather than treating nobody, estimated two ways: by inverse-probability w
 which relies only on knowing how treatment was assigned, and by a doubly robust estimator,
 which adds outcome models and survives either one of the two being wrong. Both are reported
 because a disagreement between them is worth seeing. On a binary outcome a gain of 0.017
-means seventeen extra events per thousand people in the population, and at a budget of 100%
-the number is the average treatment effect.
+means seventeen extra events per thousand people in the population. At a budget of 100% the
+doubly robust number is the average treatment effect; the IPW number is its Horvitz-Thompson
+form, which equals the difference in arm means only when the realised treated share matches
+the design propensity, and the Criteo section below is about the gap when it does not.
 
 ### Hillstrom, 42,693 customers, randomised email campaign
 
@@ -86,8 +102,8 @@ Selected on the validation split from the committed grid:
 
 At a budget covering a tenth of the customers, the outcome ranking buys 0.0043 extra visits
 per customer in the population and random targeting buys 0.0044. On the tightest budget, the
-ordinary way of doing this job is worth exactly nothing over a coin flip, while every uplift
-model here buys about twice that and excludes zero. The gap narrows as the budget widens:
+ordinary way of doing this job is worth exactly nothing over a coin flip, while the five
+LightGBM estimators buy about twice that, Dragonnet about 1.6 times, and all six exclude zero. The gap narrows as the budget widens:
 measured as the share of the distance from random targeting to the best estimator, the
 outcome ranking covers none of it at 10%, about a fifth at 20% and about a third at 30%. The
 trap is worst exactly where budgets are tightest, which is where budgets usually are.
@@ -99,7 +115,7 @@ rather than about the estimators.
 
 The outcome ranking is the ordinary way this job is done: model who is likely to respond,
 spend the budget from the top of that list. Its Qini interval contains zero, so on this
-dataset it has not been shown to beat picking at random. All five estimators' intervals
+dataset it has not been shown to beat picking at random. All six modelled rankings' intervals
 exclude zero.
 
 At a budget covering 20% of the population, the S-learner's targeted group shows an
@@ -109,12 +125,14 @@ doing this properly. The five estimators' intervals overlap heavily, so the hone
 is that they are distinguishable from the two baselines and not from each other.
 
 The calibration columns tell a different story from the ACIC ones below, and the difference
-is the point. Every estimator here has a slope well under 1, meaning its predictions are
-more spread out than the uplift that actually materialises: on a dataset whose real effect
+is the point. Every LightGBM estimator here has a slope well under 1, meaning its predictions
+are more spread out than the uplift that actually materialises: on a dataset whose real effect
 is small and fairly uniform, a flexible model finds heterogeneity that is mostly noise. The
-S-learner is the least wrong of them at 0.69, for the same reason it is the most wrong on
+S-learner is the least wrong of the five at 0.69, for the same reason it is the most wrong on
 ACIC at 1.53. It shrinks predicted effects toward a constant, which is a liability where the
-effect genuinely varies and a virtue where it does not.
+effect genuinely varies and a virtue where it does not. Dragonnet's slope is 1.06 (0.52, 1.60),
+the closest to 1 in the table and the widest interval, so it is the one estimator here whose
+predicted heterogeneity is not shown to be noise, and not shown to be real either.
 
 ![Qini curves on Hillstrom](docs/figures/qini-hillstrom.png)
 
@@ -157,12 +175,18 @@ Selected on the validation split from the committed grid:
 | `random-200` | 2.2266 (-0.2722, 7.9707) | 0.5154 (0.0215, 1.4131) | 4.4459 (-0.0230, 11.1432) | 1.0135 (0.2956, 2.0037) | 0.0434 (-0.0807, 0.1625) | 6.7272 (0.5701, 14.1585) | 1.5292 (0.6507, 2.6437) |
 <!-- itx:end:ihdp-policy -->
 
-This table is mostly a warning about itself, and it is left at full size for that reason.
+This table is mostly a warning about itself, and it is left at full size for that reason. It
+is the first of IHDP's hundred simulated replicates, not an average over them; PLAN.md
+section 4 asked for the average and change 56 records why one replicate is reported.
 
 Nothing in it separates. Every estimator's doubly robust gain at a 10% budget has an interval
 containing zero, and random targeting's is the largest point estimate on the page. The test
 split is 150 units; a policy value read off a tenth of it is being estimated from fifteen
-people, and no amount of bootstrapping fixes that.
+people, and no amount of bootstrapping fixes that. The `uplift@10%` intervals in the ranking
+table are thinner than they look for the same reason: a fifteen-row prefix with about three
+treated units often loses an arm in a resample, and the bootstrap drops those resamples, so
+the interval is conditional on the prefix holding both arms and was formed from as few as 640
+of 1,000 draws.
 
 The IPW column is worse than uninformative and shows why the propensity diagnostic exists.
 IHDP's treatment was assigned observationally and its probabilities have to be estimated: on
@@ -184,7 +208,7 @@ distance. Its doubly robust guarantee is asymptotic; its pseudo-outcome's varian
 and at this size the variance wins. Predicting a constant zero would score 4.11.
 
 Read the two right-hand columns, not the Qini. On the first seed the outcome ranking has
-the **best Qini coefficient of the three** and buys 0.05 at a 10% budget, against random
+the **best Qini coefficient of the three** and buys 1.00 at a 10% budget, against random
 targeting's 3.69. The curve ranks the worst policy first. Two reasons, both in
 [docs/estimators.md](docs/estimators.md): the Qini is only identified when treatment was
 assigned at random, and IHDP is confounded on purpose; and even on randomised data the
@@ -239,8 +263,8 @@ Selected on the validation split from the committed grid:
 <!-- itx:end:acic-policy -->
 
 **This is the table the project was built to produce.** At a budget covering a tenth of the
-population, the outcome ranking buys **-0.1971 (-0.357, -0.032)**. Negative, with the whole
-interval below zero. Spending the budget on the highest-risk tenth of this population is
+population, the outcome ranking buys **-0.1971 (-0.357, -0.032)**. Negative, with the mean
+interval below zero and four of the five seeds' own intervals entirely below it. Spending the budget on the highest-risk tenth of this population is
 worse than spending nothing at all: not worse than uplift modelling, not worse than picking
 names out of a hat, worse than leaving the money in the account. The five uplift models buy
 0.67 to 0.84 at the same budget, and random targeting buys 0.26.
@@ -269,10 +293,12 @@ against the estimators:
 | Random targeting | -0.0000 | 3.42 |
 | Outcome ranking | **-0.0233** | **0.34** |
 
-Spending the budget on the highest-risk tenth of this population buys 0.34. Spending it on a
-random tenth buys 3.42. Ranking by risk is not leaving return on the table here, it is ten
-times worse than not thinking about it at all, and its Qini is negative rather than merely
-unimpressive. That happens when the people most likely to have the outcome are the people
+By the within-prefix arm difference, spending the budget on the highest-risk tenth buys 0.34
+and a random tenth buys 3.42. That is the metric the previous paragraph said is confounded
+here, and its interval, (-1.59, 2.40), overlaps random's, so "ten times worse" is not a claim
+this table can make. The doubly robust column, which is not confounded, puts the same queue at
+-0.20 against random's +0.26: a change of sign, which is the claim this table can make, and
+its Qini is negative rather than merely unimpressive. That happens when the people most likely to have the outcome are the people
 least susceptible to the intervention, which is the shape a fraud queue or a clinical
 follow-up list is usually assumed to have. The fraud worked case below was built on exactly
 that assumption and shows it is not sufficient on its own: what decides the outcome is how
@@ -290,8 +316,11 @@ The calibration columns are the only ones in the table that notice magnitude. Qi
 uplift at k are all unchanged if every prediction is multiplied by a constant, so a model
 that ranks perfectly and predicts effects half the size they should be scores identically to
 one that gets them right, and then forecasts half the return. The S-learner's calibration
-slope of 1.53 is the only one whose interval excludes 1: its predictions are too compressed,
-and realised uplift varies half as much again as it says.
+slope of 1.53 is the furthest from 1 and its mean interval is the only one that excludes 1,
+though per seed it does so on two of five, and the DR- and R-learners also exclude 1 on two
+seeds each, on opposite sides, which averaging the endpoints hides. Read it as: the S-learner's
+predictions are too compressed, realised uplift varies half as much again as it says, and the
+others are not shown to be calibrated either.
 
 ### Lenta, 687,029 grocery customers, randomised SMS campaign
 
@@ -337,11 +366,13 @@ Selected on the validation split from the committed grid:
 <!-- itx:end:lenta-policy -->
 **Changing the metric turned this dataset from a null into a faint signal, which is the
 result week 4 predicted and could not produce.** Not one Qini interval in the table above
-excludes zero. In this table, at a budget covering a fifth of the customers, all five uplift
-models do: 0.0024, 0.0021, 0.0020, 0.0025 and 0.0024, against random targeting's 0.0012 and
-an outcome ranking whose interval still contains zero. Two of those five clear zero by less
-than a hundred-thousandth and should be read as touching it rather than clearing it, but the
-direction is consistent and the S-learner and DR-learner are not marginal.
+excludes zero. In this table, at a budget covering a fifth of the customers, the mean
+intervals of all five LightGBM models do: 0.0024, 0.0021, 0.0020, 0.0025 and 0.0024, against
+random targeting's 0.0012 and an outcome ranking whose interval still contains zero. Per seed
+it is thinner than the means suggest. The DR-learner clears zero on all five seeds, the
+R-learner on four, the S-learner on three, and the T- and X-learners on two; the X-learner's
+mean lower bound is +0.0000017. So the direction is consistent, the DR-learner's result is
+established, and the rest are suggestive.
 
 Dragonnet arrived after that paragraph was written and does not join it. At 0.0017
 (-0.0001, +0.0035) its interval covers zero, as the outcome ranking's does, which makes Lenta
@@ -379,19 +410,21 @@ are indistinguishable from each other and from picking names out of a hat.
 | Outcome ranking | 0.0005 (-0.0005, 0.0014) | 0.0075 (-0.0118, 0.0267) |
 | Random targeting | -0.0000 (-0.0008, 0.0007) | 0.0073 (-0.0034, 0.0175) |
 
-There is exactly one thread worth pulling. The S-learner is the only estimator whose realised
-uplift excludes zero at every budget: 0.0184 at 10%, 0.0132 at 20%, 0.0118 at 30%, against
-random targeting's flat 0.0074. That is about two and a half times random at a tight budget,
-and it is consistent across all three budgets and all five seeds. But its interval overlaps
-random's heavily, and the Qini, which integrates the whole curve rather than one cut of it,
-declines to confirm anything. So it is a hint and it is reported as a hint.
+There is exactly one thread worth pulling. The S-learner is the only estimator whose mean
+interval on realised uplift excludes zero at every budget: 0.0184 at 10%, 0.0132 at 20%,
+0.0118 at 30%, against random targeting's 0.0073 to 0.0075. That is about two and a half times
+random at a tight budget. Per seed it is three of five at 10% and 20% and four at 30%, and on
+the first seed its top decile is worth 0.0043 against random's 0.0069, below random. Its
+interval overlaps random's heavily, and the Qini, which integrates the whole curve rather than
+one cut of it, declines to confirm anything. So it is a hint and it is reported as a hint.
 
 **Why this dataset cannot answer the question.** The average effect is 0.75 percentage points
 on a 10.3% base rate. The test split is 137,406 rows and only about a quarter of them are
 controls, so roughly 34,000 control rows carry the comparison. Detecting *heterogeneity*
-inside an effect that small, from that many controls, is a lot to ask. Criteo has twice the
-effect in absolute terms and twice the test rows with far more events, which is why its
-intervals are tight enough to separate things and Lenta's are not.
+inside an effect that small, from that many controls, is a lot to ask. Criteo's effect is
+about a third larger in absolute terms, 1.03 points against 0.75, and it has twice the test
+rows with far more events, which is why its intervals are tight enough to separate things and
+Lenta's are not.
 
 This is worth more to the reader than a fifth win would have been. A benchmark where every
 dataset produces a clean answer is a benchmark that has quietly selected its datasets. Lenta
@@ -475,8 +508,8 @@ enough that a real gap would show, the baseline this repository exists to catch 
 indistinguishable from every estimator built to beat it, at every budget. Uplift modelling
 buys nothing on Criteo.
 
-What all six of them do buy is large: random targeting gets 0.0008, so any ranking at all is
-worth about seven times a coin flip here. The choice that matters on this dataset is whether
+What all seven rankings do buy is large: random targeting gets 0.0008, so any ranking at all
+is worth about seven times a coin flip here. The choice that matters on this dataset is whether
 to target, not what to target with.
 
 Put the two tables side by side and the whole argument is in one line. At a 10% budget the
@@ -499,8 +532,10 @@ Decomposed on seed 11, it is exact. The top 10% of the S-learner's ranking has a
 treated share of **0.8667**, not 0.85: about eight standard errors away from the design value.
 Horvitz-Thompson divides the control arm by 1 - 0.85, so each control unit carries a weight of
 6.67, and a prefix that is short of control units by 1.7 points is an estimate short of the
-thing it subtracts. The arithmetic closes to the last digit: that deviation predicts a gap of
-+0.003866 and the observed gap is +0.003866.
+thing it subtracts. On the committed fit the observed gap is +0.0040. The exact closure of the
+arithmetic, predicted gap equal to observed gap to the last digit, was verified in week 5 on
+that week's fit and is asserted by `tests/test_policy_value.py`; the tables have been
+remeasured since and the last digits moved while the mechanism did not.
 
 The reason a covariate-based ranking can shift the treated share at all is that Criteo's arms
 are not quite balanced. Every one of its twelve covariates leans the same way, the largest
@@ -530,8 +565,8 @@ useful result in the project.**
 
 On 279,592 held-out rows, ranking by predicted risk matches every uplift model in the table.
 Its interval overlaps the best estimator's almost exactly. Compare that with ACIC above, where
-the same baseline has a *negative* Qini and buys a tenth of what picking names out of a hat
-buys. Same baseline, same code, opposite verdict.
+the same baseline has a *negative* Qini and buys less than nothing, where picking names out
+of a hat buys 0.26. Same baseline, same code, opposite verdict.
 
 The reason is visible in one table. Ranking the test rows by predicted risk and reading the
 two arms inside each decile:
@@ -556,13 +591,13 @@ datasets are three points on that spectrum, and the same decile table separates 
 | | Risk spread across deciles | Uplift follows risk | Outcome ranking |
 |---|---|---|---|
 | Criteo | about 1,500x | -0.60 | at parity with the best |
-| Hillstrom | about 6x | -0.24 | roughly two thirds of the way |
+| Hillstrom | about 6x | -0.24 | none of the way at 10%, a third at 30% |
 | ACIC 2016 | effect runs against risk | positive | worse than random |
 
 So the honest claim this project can make is not "the intervention list is never the risk
 list". It is that the two lists differ by an amount you cannot guess in advance and can
-measure cheaply, and that the cost of assuming they agree runs from nothing to ten times worse
-than doing nothing. On a fraud queue or a clinical follow-up list, where the most at-risk
+measure cheaply, and that the cost of assuming they agree runs from nothing to worse than
+doing nothing. On a fraud queue or a clinical follow-up list, where the most at-risk
 cases are often the least movable, ACIC is the relevant picture. On an advertising set where
 the high-risk group is a hundred times more likely to act, Criteo is. Building an uplift model
 is worth it in the first case and close to pointless in the second, and a decile table like
@@ -592,8 +627,8 @@ runs all three. At a 20% budget on the T-learner's ranking, seed 11:
 | Dataset | E-value | Rosenbaum Gamma | Negative control |
 |---|---|---|---|
 | Hillstrom | 2.52, falling to 1.79 at the interval | 1.3 | -0.013 (-0.050, 0.026) |
-| ACIC 2016 | 9.95, order of magnitude only | 6.6 | -0.021 (-0.203, 0.169) |
-| IHDP | too few units to form one | too few pairs to form one | -0.527 (-2.379, 0.756) |
+| ACIC 2016 | not computed: crude contrast is confounded | 6.6 | -0.021 (-0.203, 0.169) |
+| IHDP | not computed: crude contrast is confounded | too few pairs to form one | -0.527 (-2.379, 0.756) |
 
 The E-value is how strongly something unmeasured would have to be associated with both the
 treatment and the outcome to explain the result away. The Gamma is how far it would have to
@@ -601,23 +636,34 @@ shift the odds of being treated. The negative control runs the whole pipeline on
 pre-treatment covariate, where the true effect is zero by construction, and reports what came
 back in standard deviations.
 
-**Only the third one can fail, and none of them do here.** That is worth stating plainly
-rather than as reassurance. ACIC's Gamma of 6.6 looks like a contradiction on a dataset this
-page has spent two sections showing is badly confounded, and it is not one: ACIC's confounding
-is severe and entirely *measured*, since assignment is simulated from the recorded covariates,
-so there is no unmeasured confounding for any of these devices to find. They are reporting
-the truth. They would report the same thing on data where it was false for a reason they
-cannot see, which is why the evidence that the negative control works is a test that plants a
-confounder outside the covariate set and requires it to be caught, not these three rows.
+**What each of these can and cannot say here.** The E-value is defined for an *adjusted*
+estimate, and the ratio this repository forms is the crude treated-to-control contrast inside
+the targeted group. On a randomised design the two coincide, so Hillstrom's E-value is a real
+one. On ACIC and IHDP the crude contrast is confounded by the measured covariates, so an
+E-value of it would price the confounding the covariates already explain rather than anything
+unmeasured, and it is not computed there; an earlier version of this table reported 9.95 for
+ACIC and read it as reassurance, which PLAN.md change 56 records as a mistake. The Gamma is a
+function of the matched effect's size and the number of pairs: it says how much hidden bias a
+result of that size would survive and detects nothing. ACIC's 6.6 says its matched effect is
+large relative to its noise, and since ACIC's confounding is entirely measured (assignment is
+simulated from the recorded covariates), the number is unfalsifiable there rather than
+confirmed. The negative control is the only device that can fail, and on a design where
+assignment depends on the covariates it is a leave-one-covariate-out balance check: it comes
+back non-zero whenever the held-out covariate drives assignment and is not predicted by the
+rest, which can happen with no unmeasured confounding at all. That it passes on ACIC is a fact
+about which covariate was held out. The evidence that it works is a test that plants a
+measured confounder, removes it from the covariate set, and requires the estimate to move.
 
 **Hillstrom's Gamma of 1.3 is the number to sit with.** The strongest cleanly-readable result
 here would be overturned by a hidden factor shifting the odds of treatment by a third. It was
 a randomised experiment, so nothing is hiding, and the reading is what an observational
 version of the same study would have had to argue against. It is not much.
 
-[docs/estimators.md](docs/estimators.md) carries the rest, including why IHDP's row is three
-dashes, why ACIC's E-value is an order of magnitude rather than a number, and why the Gamma
-is quoted to one decimal place. Criteo and Lenta need a full-size fit and are queued.
+[docs/estimators.md](docs/estimators.md) carries the rest, including why IHDP's row has
+nothing but a negative control in it and why the Gamma is quoted to one decimal place. Criteo
+and Lenta need a full-size fit and are queued, and Lenta also needs a declared design
+propensity before the Rosenbaum bound means anything on it, because matching on a propensity
+estimated from a randomised design is pairing on noise.
 
 ## The fraud worked case
 
@@ -647,8 +693,10 @@ to make the risk queue lose. It did not. The tables say by how much and the text
 says why, because the why is the useful part.
 
 The two tables below are the standard ones, on 118,108 held-out transactions per seed, five
-seeds. `outcome-ranking` here is the risk queue: a model of dollars retained under no
-review, fitted on the untreated rows, with the *lowest* predicted value reviewed first. The
+seeds. `outcome-ranking` here is a risk queue: a model of dollars retained, fitted on every
+row, reviewed and not, with the *lowest* predicted value reviewed first. The allocation
+table further down uses the same kind of model fitted on the unreviewed rows only, which is
+what a fraud team's risk score actually is; the two are close and are not the same model. The
 dataset declares that its risk is a low outcome and the baseline reads the declaration
 (PLAN.md change 54, which is also the record of what the table said before it did).
 
@@ -701,8 +749,8 @@ reviewing everybody, and the top decile of any meta-learner is worth seven times
 top decile is worth $17.97 a transaction and its realised value at a 20% budget is 1.9751,
 and both are the highest numbers in their columns. It is the best-ranked baseline this
 project has measured on any dataset, and the reason is in the design: review helps only
-fraud, and a model of dollars lost under no review is very nearly a model of which
-transactions are fraud. That
+fraud, and a model of dollars retained is very nearly a model of which transactions are
+fraud. That
 is a different picture from ACIC, where the effect runs against risk, and it is what the
 allocation below is about.
 
@@ -713,16 +761,18 @@ budget on the first seed. Two values per queue: what the simulation's written ef
 queue was worth, and the doubly robust estimate this package would have reported on real
 data, where the first number does not exist.
 
-| Queue at 1,000 analyst hours | Reviewed | Hours used | True value | DR estimate | $/analyst hour |
+| Queue at 1,000 analyst hours | Reviewed | Hours used | True value | DR estimate (95% CI) | $/analyst hour |
 |---|---|---|---|---|---|
-| `uplift-knapsack` | 4,312 | 1,000 | $156,549 | $131,724 | $157 |
-| `uplift-rank-and-cut` | 4,248 | 1,000 | $156,357 | $127,033 | $156 |
-| `risk` | 4,281 | 1,000 | $169,398 | $148,739 | $169 |
-| `random` | 4,264 | 1,000 | $8,366 | $5,096 | $8 |
-| `oracle` | 4,122 | 947 | $305,052 | $307,446 | $322 |
+| `uplift-knapsack` | 4,312 | 1,000 | $156,549 | $131,724 ($90,236, $172,246) | $157 |
+| `uplift-rank-and-cut` | 4,248 | 1,000 | $156,357 | $127,033 ($84,739, $167,967) | $156 |
+| `risk` | 4,281 | 1,000 | $169,398 | $148,739 ($108,747, $188,973) | $169 |
+| `random` | 4,264 | 1,000 | $8,366 | $5,096 (-$3,395, $12,406) | $8 |
+| `oracle` | 4,122 | 947 | $305,052 | $307,446 ($254,563, $356,773) | $322 |
 
 Seed 11, 118,108 held-out transactions worth $15.9M. `oracle` ranks by the effect the
-simulation wrote and is available only because the case is semi-synthetic.
+simulation wrote and is available only because the case is semi-synthetic. The S-learner here
+is fitted at the default configuration rather than the tuned one in the table above. The DR
+estimate's interval is a bootstrap over the test rows with each queue held fixed.
 
 **The risk queue beats every fitted uplift model, and not narrowly.** $169,398 against the
 S-learner's $156,549, and the S-learner is the best of them: the X-learner's knapsack buys
@@ -749,12 +799,18 @@ a case where uplift modelling has nothing to add. It is a case where these estim
 these features, could not reach what there was to add, and a reader deciding whether to build
 one should know that those are different situations with the same table.
 
-**What the package would have reported without the truth.** The doubly robust column is
-within 1% of the truth for the oracle and 12% to 19% low for the three fitted queues. At 250
-hours it puts the uplift knapsack ($84,968) *above* the risk queue ($82,409) when the truth is the other way round by $13,000. So on real data, at that budget, this
-package would have called the comparison for the uplift model and been wrong. The estimate is
-honest about its interval on the benchmark tables; here it is quoted as a point because that
-is how a decision would have read it, and the point was on the wrong side.
+**What the package would have reported without the truth: that it cannot tell the queues
+apart.** Every true value sits inside its doubly robust interval, and every fitted queue's
+interval covers every other's: at 1,000 hours the risk queue's estimate is $148,739 ($108,747,
+$188,973) against the knapsack's $131,724 ($90,236, $172,246), and at 250 hours the two
+estimates are $82,409 and $84,968 with intervals $65,000 wide. Only the oracle and random
+separate from the rest. An earlier version of this paragraph read the two points at 250 hours
+as the estimator "calling the comparison for the uplift model and being wrong", which was a
+conclusion from a $2,500 gap inside a $65,000 interval, in a repository whose first rule is
+that a bare point is a defect; PLAN.md change 56 records it. The honest statement is the one
+above: on 1,000 reviews out of 118,000 transactions, the doubly robust estimate is too wide to
+rank these queues, and a fraud team deciding between them on real data would need the truth
+this simulation happens to have, or a much larger review sample.
 
 **The knapsack bought nothing over rank-and-cut.** $192 at 1,000 hours, $431 at 250, and
 $1,560 *less* at 100. Review costs run from 9 to 18 minutes and are set by how much of the
@@ -824,8 +880,9 @@ repository; [docs/deploy.md](docs/deploy.md) records the route and the DNS recor
   the targeting decision flips; it does not remove the assumption.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
-- Not yet done: `docs/rejected.md`, and the clean-environment rerun that closes week 8. Nothing above is a placeholder for any of them:
-  the numbers reported are the numbers measured.
+- Not yet done: the clean-environment rerun that closes week 8, which is running as this is
+  written and has reproduced the first datasets exactly. Nothing above is a placeholder for
+  it: the numbers reported are the numbers measured.
 - **The fraud case's IEEE-CIS file is the one input this repository cannot fetch for you.**
   It sits behind a Kaggle account and accepted competition rules and may not be redistributed,
   so [docs/data/ieee-fraud.md](docs/data/ieee-fraud.md) gives three steps and the loader
@@ -841,7 +898,13 @@ repository; [docs/deploy.md](docs/deploy.md) records the route and the DNS recor
   confounds "a neural network with a propensity head" with "two gradient-boosted trees". It
   also runs at the paper's published defaults, because the committed grid is over LightGBM's
   leaf size and tree width and a bespoke grid for the one estimator that could not use the
-  shared one would be worse than none. PLAN.md change 45.
+  shared one would be worse than none. Two more things its column confounds: it is fitted on
+  at most 200,000 training rows, so on Lenta, Criteo and the fraud case it saw less than half
+  the training split the LightGBM learners saw; and it does not standardise the outcome, so on
+  a dollar-scale outcome like the fraud case's the outcome loss dwarfs the treatment loss the
+  paper's defaults were tuned against, which is the likeliest reason its fraud row is last on
+  every column. Both are stated in `docs/estimators.md`; neither is fixed in this version.
+  PLAN.md changes 45 and 56.
 - **Lenta has no licence.** Not from the publisher, not in the package that distributes it.
   This repository downloads it and redistributes nothing, but nobody reading this is being
   told their own use of that dataset is permitted. See

@@ -86,6 +86,7 @@ template for measuring it and the same measurement is owed here.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
@@ -448,6 +449,13 @@ class _Encoder:
             for name in categorical
             if np.unique(features[name].to_numpy()).size > max_categories
         }
+        if wide:
+            warnings.warn(
+                f"dragonnet: {sorted(wide)} have more than {max_categories} levels and are "
+                f"passed through as numbers rather than one-hot encoded",
+                UserWarning,
+                stacklevel=3,
+            )
         one_hot = tuple(name for name in features.columns if name in set(categorical) - wide)
         numeric = tuple(name for name in features.columns if name not in set(one_hot))
 

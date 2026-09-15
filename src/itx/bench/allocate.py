@@ -30,15 +30,24 @@ point: a reader can see how close the estimate gets without being told.
 Both are totals in dollars rather than per-head rates, because a fraud manager's question is
 how much a shift of analyst time is worth, and a per-transaction average over half a million
 transactions is not a number anybody can hold.
+
+The doubly robust total carries a bootstrap interval over the test rows, with the queue held
+fixed, because a point beside a true value invites the reader to read their difference as an
+error, and on 4,000 reviewed transactions that difference is inside the noise (PLAN.md change
+56). The "never buy predicted harm" stop applies only to queues whose score is a predicted
+effect; a risk score or a random draw has no zero that means harm, so those queues spend the
+whole budget the way a real queue would.
 """
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy as np
 
+from itx.metrics.bootstrap import DEFAULT_LEVEL, DEFAULT_RESAMPLES, bootstrap_ci
 from itx.policy.cost_aware import cost_aware_policy
 from itx.policy.policy_value import dr_gain
 
@@ -64,6 +73,8 @@ class Queue:
             is the number this package would report on data whose truth is missing.
         true_value: What it is actually worth, from the effects the simulation wrote. Only
             available because the case is semi-synthetic.
+        dr_low: Lower bound of the bootstrap interval on ``dr_value``.
+        dr_high: Upper bound.
     """
 
     name: str
@@ -71,6 +82,8 @@ class Queue:
     minutes: float
     dr_value: float
     true_value: float
+    dr_low: float = math.nan
+    dr_high: float = math.nan
 
     @property
     def dollars_per_hour(self) -> float:
@@ -95,6 +108,9 @@ def compare_queues(
     nuisances: Nuisances,
     truth: FloatArray,
     knapsack_for: Sequence[str] = (),
+    harm_aware_for: Sequence[str] | None = None,
+    n_resamples: int = DEFAULT_RESAMPLES,
+    level: float = DEFAULT_LEVEL,
     seed: int = 0,
 ) -> list[Queue]:
     """Score several queues against the same budget of analyst time.
@@ -109,7 +125,13 @@ def compare_queues(
         truth: The true per-unit effect the simulation wrote.
         knapsack_for: Which queues spend by effect per minute rather than by effect. The
             rest take units in score order until the budget runs out.
-        seed: Tie-breaking seed, shared with the metrics.
+        harm_aware_for: Which of the rest stop at a score of zero because their score is a
+            predicted effect and a non-positive one means review is expected to do harm.
+            None, the default, means all of them, which is right when every score is an
+            effect; a risk score or a random draw should be listed out of it.
+        n_resamples: Bootstrap resamples behind the interval on the doubly robust total.
+        level: Nominal coverage of that interval.
+        seed: Tie-breaking seed, shared with the metrics, and the bootstrap seed.
 
     Returns:
         One :class:`Queue` per entry in ``scores``, in the order given.
@@ -118,27 +140,52 @@ def compare_queues(
     n_units = outcome.size
     queues: list[Queue] = []
     for name, score in scores.items():
+        stop_at_harm = harm_aware_for is None or name in harm_aware_for
         treat = (
             cost_aware_policy(score, costs, budget, seed=seed).treat
             if name in knapsack_for
-            else _spend_in_score_order(score, costs, budget, seed=seed)
+            else _spend_in_score_order(
+                score, costs, budget, seed=seed, stop_at_harm=stop_at_harm
+            )
+        )
+
+        # dr_gain is a per-head rate over the whole population, so multiplying by the
+        # population returns the total the queue is worth. The queue itself is fixed and
+        # the rows are resampled, so the interval is about the estimate, not the policy.
+        def dr_total(index: IntArray, treat: BoolArray = treat) -> float:
+            return (
+                float(
+                    dr_gain(
+                        outcome[index], treatment[index], treat[index], nuisances.take(index)
+                    )
+                )
+                * n_units
+            )
+
+        estimate = bootstrap_ci(
+            dr_total, n_units, n_resamples=n_resamples, level=level, seed=seed
         )
         queues.append(
             Queue(
                 name=name,
                 n_reviewed=int(treat.sum()),
                 minutes=float(costs[treat].sum()),
-                # dr_gain is a per-head rate over the whole population, so multiplying by
-                # the population returns the total the queue is worth.
-                dr_value=float(dr_gain(outcome, treatment, treat, nuisances)) * n_units,
+                dr_value=estimate.value,
                 true_value=float(truth[treat].sum()),
+                dr_low=estimate.low,
+                dr_high=estimate.high,
             )
         )
     return queues
 
 
 def _spend_in_score_order(
-    scores: FloatArray, costs: FloatArray, budget: float, *, seed: int
+    scores: FloatArray,
+    costs: FloatArray,
+    budget: float,
+    *,
+    seed: int,
+    stop_at_harm: bool = True,
 ) -> BoolArray:
     """Take units in score order until the money runs out, skipping what no longer fits.
 
@@ -153,6 +200,9 @@ def _spend_in_score_order(
         costs: Cost of treating each unit.
         budget: Money available.
         seed: Tie-breaking seed.
+        stop_at_harm: Stop at the first non-positive score. Right when the score is a
+            predicted effect, wrong when it is a risk score or a random draw, whose zero
+            means nothing about harm.
 
     Returns:
         A boolean mask of the units to treat.
@@ -164,7 +214,7 @@ def _spend_in_score_order(
     for position in rank_order(scores, seed=seed):
         # Never buy a unit the model expects to do harm, however much budget is left. On
         # this case that is most of the population.
-        if scores[position] <= 0.0:
+        if stop_at_harm and scores[position] <= 0.0:
             break
         if spent + costs[position] <= budget:
             treat[position] = True
@@ -184,14 +234,26 @@ def to_markdown(queues: Sequence[Queue], budget_hours: float) -> str:
     """
     lines = [
         f"| Queue at {budget_hours:,.0f} analyst hours | Reviewed | Hours used "
-        f"| True value | DR estimate | $/analyst hour |",
+        f"| True value | DR estimate (95% CI) | $/analyst hour |",
         "|---|---|---|---|---|---|",
     ]
     for queue in queues:
+        interval = (
+            f" ({_dollars(queue.dr_low)}, {_dollars(queue.dr_high)})"
+            if math.isfinite(queue.dr_low) and math.isfinite(queue.dr_high)
+            else ""
+        )
         lines.append(
             f"| `{queue.name}` | {queue.n_reviewed:,} "
             f"| {queue.minutes / MINUTES_PER_HOUR:,.0f} "
-            f"| ${queue.true_value:,.0f} | ${queue.dr_value:,.0f} "
-            f"| ${queue.dollars_per_hour:,.0f} |"
+            f"| {_dollars(queue.true_value)} | {_dollars(queue.dr_value)}{interval} "
+            f"| {_dollars(queue.dollars_per_hour)} |"
         )
     return "\n".join(lines)
+
+
+def _dollars(value: float) -> str:
+    """Whole dollars with the sign before the symbol, so a loss reads -$3,395."""
+    if not math.isfinite(value):
+        return "-"
+    return f"-${-value:,.0f}" if value < 0 else f"${value:,.0f}"

@@ -296,6 +296,33 @@ class TestTheMatcher:
             match_pairs(np.zeros(5), np.zeros(4, dtype=np.int64), np.zeros(5))
 
 
+class TestThePropensityMatchedPath:
+    def test_a_confounded_design_is_matched_on_the_estimated_propensity(self):
+        # Every other end-to-end test here uses a constant propensity, so the path the
+        # method is written around, pairs formed on a varying propensity, had no test.
+        from itx.bench.runner import nuisances_for
+        from itx.data import synthetic
+        from itx.data.splits import stratified_split
+        from itx.policy.rank_and_cut import rank_and_cut
+
+        split = stratified_split(synthetic.confounded(6_000, seed=2), 11)
+        nuisances = nuisances_for(split)
+        test = split.test
+        targeted = rank_and_cut(test.require_true_effect(), 0.5, seed=0)
+        result = targeting_rosenbaum(
+            nuisances.propensity,
+            test.treatment,
+            test.outcome,
+            targeted,
+            budget=0.5,
+            prognostic=nuisances.mu0,
+            seed=1,
+        )
+        assert result.matched_on == "propensity"
+        assert result.n_pairs >= MIN_PAIRS
+        assert math.isfinite(result.gamma) or result.censored
+
+
 class TestTheWholeThingOnKnownData:
     def make(self, n: int, effect: float, seed: int):
         """Randomised assignment, so the true Gamma is 1 and any effect is real."""

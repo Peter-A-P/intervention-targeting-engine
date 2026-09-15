@@ -96,18 +96,32 @@ def summarise(rows: Sequence[BenchmarkRow]) -> list[Summary]:
                     dataset=estimator_rows[0].dataset,
                     estimator=estimator,
                     metric=metric,
+                    # The mean of the seeds that produced a value, and the mean of their
+                    # interval endpoints. One seed with an undefined metric leaves the
+                    # others' answer standing rather than blanking the cell, and n_seeds
+                    # says how many stood (PLAN.md change 56).
                     pooled=Estimate(
-                        value=float(np.mean(values)),
-                        low=float(np.mean([e.low for e in estimates])),
-                        high=float(np.mean([e.high for e in estimates])),
+                        value=_finite_mean(values),
+                        low=_finite_mean(
+                            np.array([e.low for e in estimates], dtype=np.float64)
+                        ),
+                        high=_finite_mean(
+                            np.array([e.high for e in estimates], dtype=np.float64)
+                        ),
                         level=estimates[0].level,
                         n_resamples=sum(e.n_resamples for e in estimates),
                     ),
                     across_seeds=across,
-                    n_seeds=len(estimates),
+                    n_seeds=int(np.isfinite(values).sum()),
                 )
             )
     return summaries
+
+
+def _finite_mean(values: np.ndarray) -> float:
+    """Mean of the finite entries, or NaN when there are none."""
+    finite = values[np.isfinite(values)]
+    return float(finite.mean()) if finite.size else math.nan
 
 
 def to_markdown(

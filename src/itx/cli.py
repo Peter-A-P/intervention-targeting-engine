@@ -316,7 +316,14 @@ def _benchmark_one(
 
     if plot:
         first_seed = seed_values[0]
-        seed_rows = [row for row in rows if row.seed == first_seed]
+        # The random reference row carries one of its 200 draws as `scores`; drawn as a
+        # solid curve under the 200-draw label it would be a picture of the wrong thing.
+        # The figure's dashed line already is the random reference (PLAN.md change 56).
+        seed_rows = [
+            row
+            for row in rows
+            if row.seed == first_seed and not row.estimator.startswith("random-")
+        ]
         # A row read back from a checkpoint carries its metrics but not its per-unit
         # scores, which are large and are not serialised. The tables need the metrics and
         # the figures need the scores, so a resumed run can write the first and not the
@@ -474,7 +481,7 @@ def diagnose(
     before fitting anything (PLAN.md change 32).
     """
     from itx.bench.runner import DATASETS
-    from itx.bench.seeds import SEEDS
+    from itx.bench.seeds import SEEDS, TIE_SEED
     from itx.data.splits import stratified_split
     from itx.metrics.risk_deciles import risk_deciles
 
@@ -486,7 +493,12 @@ def diagnose(
     split = stratified_split(DATASETS[dataset](), SEEDS[0] if seed is None else seed)
     say(f"{dataset}: one outcome model on {split.train.n_units:,} training rows")
     table = risk_deciles(
-        split.train, split.test, bins=bins, seed=split.seed, n_resamples=resamples
+        split.train,
+        split.test,
+        bins=bins,
+        seed=split.seed,
+        tie_seed=TIE_SEED,
+        n_resamples=resamples,
     )
 
     typer.echo("")
@@ -547,15 +559,29 @@ def sensitivity(
     nuisances = nuisances_for(split)
     targeted = rank_and_cut(scores, budget, seed=TIE_SEED)
 
-    say("E-value")
-    e_value = targeting_e_value(
-        test.outcome,
-        test.treatment,
-        scores,
-        budget=budget,
-        n_resamples=resamples,
-        seed=chosen_seed,
-    )
+    # The E-value prices the confounding that would explain away an *adjusted* estimate.
+    # The ratio here is the crude treated-to-control contrast inside the targeted group,
+    # which equals the adjusted one only when assignment was randomised. On a confounded
+    # design it would be the E-value of the confounding the covariates already explain,
+    # which is not the question (PLAN.md change 56).
+    randomised = nuisances.propensity_fit.known
+    e_value = None
+    if randomised:
+        say("E-value")
+        e_value = targeting_e_value(
+            test.outcome,
+            test.treatment,
+            scores,
+            budget=budget,
+            n_resamples=resamples,
+            seed=chosen_seed,
+            tie_seed=TIE_SEED,
+        )
+    else:
+        say(
+            "E-value not computed: assignment is not randomised, "
+            "so the crude contrast is confounded"
+        )
     say("Rosenbaum bound")
     bound = targeting_rosenbaum(
         nuisances.propensity,
@@ -585,14 +611,20 @@ def sensitivity(
     typer.echo("")
     typer.echo("| Device | Number | Reading |")
     typer.echo("|---|---|---|")
-    typer.echo(
-        f"| E-value, point | {_maybe(e_value.point)} | "
-        f"confounder association that moves the estimate to no effect |"
-    )
-    typer.echo(
-        f"| E-value, interval | {_maybe(e_value.limit)} | "
-        f"association that stops it excluding no effect |"
-    )
+    if e_value is None:
+        typer.echo(
+            "| E-value | not computed | needs an adjusted estimate; on a design that is not "
+            "randomised the crude contrast is confounded by the measured covariates |"
+        )
+    else:
+        typer.echo(
+            f"| E-value, point | {_maybe(e_value.point)} | "
+            f"confounder association that moves the estimate to no effect |"
+        )
+        typer.echo(
+            f"| E-value, interval | {_maybe(e_value.limit)} | "
+            f"association that stops it excluding no effect |"
+        )
     typer.echo(
         f"| Rosenbaum Gamma | {_gamma(bound)} | "
         f"hidden bias the result survives, on {bound.matched_on} pairs |"
@@ -602,7 +634,10 @@ def sensitivity(
         f"effect on `{control_result.column}`, which must be zero |"
     )
     typer.echo("")
-    for paragraph in (e_value.summary(), bound.summary(), control_result.summary()):
+    paragraphs = [bound.summary(), control_result.summary()]
+    if e_value is not None:
+        paragraphs.insert(0, e_value.summary())
+    for paragraph in paragraphs:
         typer.echo(paragraph)
         typer.echo("")
 
@@ -780,13 +815,19 @@ def allocate(
         nuisances=nuisances_for(split),
         truth=truth,
         knapsack_for=("uplift-knapsack", "oracle"),
+        # Only the uplift queues stop at a predicted effect of zero. A risk score's zero is
+        # not a prediction of harm and a random draw's zero is nothing, so those spend the
+        # whole budget, as a real risk queue does.
+        harm_aware_for=("uplift-rank-and-cut",),
         seed=TIE_SEED,
     )
 
     typer.echo("")
     typer.echo(
         f"{dataset}, seed {chosen_seed}, {test.n_units:,} held-out transactions worth "
-        f"${test.features['TransactionAmt'].sum():,.0f}"
+        f"${test.features['TransactionAmt'].sum():,.0f}. The `{estimator}` ranking is fitted "
+        f"at the default configuration, not the tuned one in the benchmark table. The DR "
+        f"estimate's interval is a bootstrap over test rows with each queue held fixed."
     )
     typer.echo("")
     typer.echo(to_markdown(queues, hours))
@@ -820,15 +861,23 @@ def demo_build(
     itself, then writes one file per dataset next to the page.
     """
     from itx.bench.grid import default_selection
-    from itx.bench.runner import refit_seed
+    from itx.bench.runner import BENCHMARK_DATASETS, refit_seed
     from itx.bench.table import read_json
     from itx.demo.build import build_payload, write_payloads
 
     say = _printer()
+    # By default only the benchmark datasets, and only the ones with results. results/ also
+    # holds the fraud worked case (semi-synthetic, not a benchmark row), the synthetic
+    # generators, and possibly a checkpoint, none of which belong on the page unasked.
+    present = sorted(
+        path.stem
+        for path in results_dir.glob("*.json")
+        if not path.stem.endswith(".checkpoint")
+    )
     wanted = (
         [name.strip() for name in datasets.split(",")]
         if datasets
-        else sorted(path.stem for path in results_dir.glob("*.json"))
+        else [name for name in BENCHMARK_DATASETS if name in present] or present
     )
     if not wanted:
         typer.echo(f"no results in {results_dir}; run 'itx benchmark --all' first")

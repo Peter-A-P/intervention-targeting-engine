@@ -22,7 +22,7 @@ Two simulated datasets look like redundancy until you compare them.
 | Units | 747 | 4,802 |
 | Covariates | 25 | 58, three of them categorical |
 | Treated share | 18.6% | 17.9% |
-| True average effect | 4.02 | 2.13 (replicate 1; the ten range from 1.5 to 4.8) |
+| True average effect | 4.02 | 2.13 (the first replicate, index 0 in code; the ten range from 1.5 to 4.8) |
 | Effect standard deviation | 0.86 | 3.98 |
 | Effect spread relative to its mean | 0.21 | 1.87 |
 | Naive difference in arm means | 4.02, close to the truth by luck | 3.58 against a truth of 2.13 |
@@ -57,7 +57,9 @@ with the estimator.
 
 Each replicate is a different simulation setting rather than another draw from one, so the
 ten are ten different problems over the same people, and averaging PEHE across them is
-averaging across problem types.
+averaging across problem types. Two of the ten, indices 1 and 2, have a constant individual
+effect, so a ranking metric on them is meaningless; the benchmark uses index 0 only and
+`load_acic_replicates` is there for a reader who wants the others, with that warning.
 
 ## Known quirks
 

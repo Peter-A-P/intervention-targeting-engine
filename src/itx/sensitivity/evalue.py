@@ -209,6 +209,11 @@ def e_value_of_limit(risk_ratio: float, low: float, high: float) -> float:
         return math.nan
     if low <= 1.0 <= high:
         return 1.0
+    if (risk_ratio > 1.0) != (low > 1.0):
+        # A skewed bootstrap on a thin group can put the whole interval on the other side
+        # of the null from the point. That is a result that does not exclude the null in
+        # any direction the point supports, so it needs no confounding to overturn.
+        return 1.0
     return e_value_of(low if risk_ratio > 1.0 else high)
 
 
@@ -251,6 +256,7 @@ def targeting_e_value(
     n_resamples: int = DEFAULT_RESAMPLES,
     level: float = DEFAULT_LEVEL,
     seed: int = 0,
+    tie_seed: int | None = None,
 ) -> EValue:
     """E-values for what one ranking buys at one budget.
 
@@ -267,13 +273,16 @@ def targeting_e_value(
         binary: Whether the outcome is 0/1. Detected from the data if omitted.
         n_resamples: Bootstrap resamples for the risk ratio's interval.
         level: Nominal coverage.
-        seed: Seed for the resampling and for tie-breaking in the ranking.
+        seed: Seed for the resampling, and for tie-breaking in the ranking unless
+            ``tie_seed`` is given.
+        tie_seed: Tie-breaking seed for the ranking, so that the targeted group can be the
+            same one every other device and every benchmark table used.
 
     Returns:
         The E-values with the risk ratio they came from.
     """
     is_binary = _looks_binary(outcome) if binary is None else binary
-    targeted = rank_and_cut(scores, budget, seed=seed)
+    targeted = rank_and_cut(scores, budget, seed=seed if tie_seed is None else tie_seed)
     difference = (
         math.nan
         if is_binary

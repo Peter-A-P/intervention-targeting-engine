@@ -44,6 +44,8 @@ from dataclasses import asdict, dataclass
 from typing import TYPE_CHECKING, Any
 
 from itx.bench.runner import nuisances_for
+from itx.bench.seeds import TIE_SEED
+from itx.data.ieee_fraud import COST_COLUMN
 from itx.metrics.bootstrap import DEFAULT_LEVEL, bootstrap_vector
 from itx.metrics.curves import rank_order
 from itx.policy.policy_value import dr_contributions, gain_key, policy_metrics
@@ -113,7 +115,11 @@ def build_payload(
         budgets: Budget points to evaluate at.
         n_resamples: Bootstrap resamples behind the band.
         level: Nominal coverage.
-        seed: Seed for the resampling and for tie-breaking.
+        seed: Seed for the resampling. Ties in a ranking are broken with the benchmark's
+            own tie seed, so the units and the numbers are the ones the results table
+            describes; before change 56 the split seed was used and on Criteo and Lenta,
+            where LightGBM scores tie, the page's numbers differed from the table's in the
+            fourth decimal and its unit lists were a different treated set.
 
     Returns:
         A JSON-serialisable mapping.
@@ -132,6 +138,11 @@ def build_payload(
 
     test = split.test
     nuisances = nuisances_for(split)
+    # Per-unit cost where the dataset has one (the fraud case's review minutes); every
+    # other dataset treats each unit at the same cost and the page shows 1.
+    costs = (
+        test.features[COST_COLUMN].to_numpy() if COST_COLUMN in test.features.columns else None
+    )
     estimators: dict[str, Any] = {}
     for row in scored:
         estimators[row.estimator] = _curve(
@@ -142,7 +153,7 @@ def build_payload(
             n_resamples=n_resamples,
             level=level,
             seed=seed,
-        ) | {"top": [asdict(unit) for unit in _top_units(row.scores, seed=seed)]}
+        ) | {"top": [asdict(unit) for unit in _top_units(row.scores, costs=costs)]}
 
     return {
         "dataset": dataset,
@@ -244,7 +255,7 @@ def _curve(
         budgets: Budget points.
         n_resamples: Bootstrap resamples.
         level: Nominal coverage.
-        seed: Seed for resampling and tie-breaking.
+        seed: Seed for resampling. Tie-breaking uses the benchmark's tie seed.
 
     Returns:
         Point estimates and bounds per estimator, each a list aligned with ``budgets``.
@@ -257,7 +268,7 @@ def _curve(
             scores[index],
             nuisances.take(index),
             budgets=budgets,
-            seed=seed,
+            seed=TIE_SEED,
         )
 
     estimates = bootstrap_vector(
@@ -295,23 +306,30 @@ def _random_curve(
     return {"dr": [round(everybody * float(budget), 6) for budget in budgets]}
 
 
-def _top_units(scores: FloatArray, *, seed: int, limit: int = TOP_UNITS) -> list[Unit]:
+def _top_units(
+    scores: FloatArray, *, costs: FloatArray | None = None, limit: int = TOP_UNITS
+) -> list[Unit]:
     """The head of one ranking, in the order the policy would treat them.
 
-    Ordered by :func:`itx.metrics.curves.rank_order` rather than by a fresh sort, so the
-    people the page lists are exactly the people the curve beside it is pricing. Two
-    different orderings of the same scores would be a very hard thing to notice.
+    Ordered by :func:`itx.metrics.curves.rank_order` with the benchmark's tie seed rather
+    than by a fresh sort, so the people the page lists are exactly the people the curve
+    beside it is pricing and the people the results table counted. Two different orderings
+    of the same scores would be a very hard thing to notice.
 
     Args:
         scores: Predicted uplift per test row.
-        seed: Tie-breaking seed, matching the one the curve used.
+        costs: Per-unit treatment cost where the dataset has one; 1 otherwise.
         limit: How many to keep.
 
     Returns:
         Up to ``limit`` units, best first.
     """
-    order = rank_order(scores, seed=seed)[:limit]
+    order = rank_order(scores, seed=TIE_SEED)[:limit]
     return [
-        Unit(row=int(position), uplift=round(float(scores[position]), 6), cost=1.0)
+        Unit(
+            row=int(position),
+            uplift=round(float(scores[position]), 6),
+            cost=1.0 if costs is None else round(float(costs[position]), 2),
+        )
         for position in order
     ]

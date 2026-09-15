@@ -1138,3 +1138,127 @@ than a step that cost compute and changed nothing; the README tells anyone reusi
 pass `--no-tune`; the per-seed selection blocks are provenance, not findings; a future version
 that re-measures everything drops the step. Section 4's protocol text is unchanged for that
 reason. The definition of done's Rule C line is ticked.
+
+**56. The review before publication: what seven independent readings of the code and the
+prose found, and what changed** (week 8). With every table measured and the clean rerun
+under way, the whole repository was read again, in seven parts by seven reviewers who had not
+written it: data and splits, ranking metrics and uncertainty, policy value and allocation,
+estimators and tuning, sensitivity, prose against numbers, and the demo and CLI. Each finding
+was verified against the code or the results files before anything moved. No benchmark
+number changed. What follows is what did.
+
+*Statistical claims that were wrong.* (a) The E-value was formed from the crude contrast
+inside the targeted group, which equals the adjusted estimate only under randomisation; on
+ACIC and IHDP it priced measured confounding, and the README read ACIC's 9.95 as the devices
+"reporting the truth". The E-value is now not computed where the propensity is not a design
+constant, and the section says what a Gamma is (a function of effect size and pair count,
+detecting nothing) and what a negative control is on a confounded design (a
+leave-one-covariate-out balance check). Three places said the negative-control test "plants
+a confounder outside the covariate set"; it plants a measured one and removes it. (b) The
+fraud allocation table's doubly robust estimate was a bare point, and the README concluded
+from a $2,500 gap at 250 hours that the estimator "would have picked the wrong queue". The
+column now carries a bootstrap interval over test rows with the queue fixed; the intervals
+are about $65,000 wide, every truth is inside its interval, and the paragraph now says the
+estimate cannot rank the queues. (c) The interval beside every README number is the mean of
+the five per-seed bootstrap intervals, not an interval for the five-seed mean, and several
+sentences leaned on it: "all five uplift models exclude zero" on Lenta at 20% is five of
+five seeds for the DR-learner, four for R, three for S, two for T and X; "the whole interval
+below zero" on ACIC is four of five seeds; the Lenta S-learner thread "consistent across all
+five seeds" is three of five and below random on one; the S-learner's ACIC slope "the only
+one whose interval excludes 1" is two of five seeds with the DR- and R-learners also excluding
+it on two, on opposite sides. The README now says what the interval is and each of those
+sentences says what the seeds say. (d) "Ten times worse than random" on ACIC was computed
+from `uplift@10%`, the metric the same page says is confounded there; replaced by the doubly
+robust sign change. (e) Hillstrom's "two thirds of the way" contradicted the same page; it is
+none at 10% and a third at 30%. (f) Lenta's card and the README both had the Lenta-Criteo
+effect-size comparison backwards; Criteo's is a third larger.
+
+*Descriptions that did not match the code.* The fraud table's `outcome-ranking` row was
+described as fitted on unreviewed rows; it is fitted on all rows, and only `itx allocate`
+and `itx diagnose` fit on controls. Hillstrom's card justified the default arm as "the larger
+of the two effects"; mens is larger on all three outcomes, and its spend cell was the mens
+value. The fraud loader's categorical encoder promised sorted, row-order-independent codes;
+polars assigns them by first appearance, which is harmless for LightGBM and Dragonnet and
+now said. The fraud signal's tie-breaking is by file position, which is time order and in no
+feature: about 4% of the signal's variance, $1.75 of a $74 mean effect among fraud, is
+unlearnable, stated in the card as a floor under every PEHE rather than changed. The
+review-minutes range was 9.2 to 19.0, not 18.4. "Lost-causes quadrant" overstated a catch
+rate that bottoms at 0.30. IHDP's indicator x14 is coded 1 and 2. The IHDP seed-11 table in
+`docs/estimators.md` was a week 2 fit and the README inherited "buys 0.05" for a row that
+buys 1.00. The Criteo decomposition's "+0.003866 predicts +0.003866" was the week 5 fit; the
+committed fit's gap is +0.0040 and the closure is asserted by test rather than quoted.
+Normalised AUUC's docstring said "at most 1"; the outcome-ordered reference is not a ceiling
+and random targeting lands anywhere from 0.04 to 0.83 under it. The Qini docstring's "one
+extra event per hundred people" omitted that the coefficient scales with the treated share.
+Calibration error is a mean absolute gap with a noise floor that its interval inherits, so it
+is an upper bound to compare, not a quantity to read against zero; three committed rows have
+the point outside their own interval for that reason and the README averaging hid them.
+
+*Defects in what tools produced.* The demo tie-broke rankings with the split seed where the
+benchmark uses its own tie seed, so on Criteo and Lenta, where LightGBM scores tie, the
+page's numbers differed from the table's in the fourth decimal and its unit lists were a
+different treated set; it now uses the benchmark's seed, and the units-treated count uses
+the same ceiling as the policy (97 rows at 10% of 961, not 96). `itx benchmark` drew the
+random reference's single stored draw as a solid Qini curve under the 200-draw label; the
+dashed line was already the reference and the solid curve is gone. `itx demo build` with no
+arguments would have published the fraud case and two synthetic sets; it now defaults to
+the benchmark datasets. The E-value and the Rosenbaum bound in one `itx sensitivity` run
+could be priced on marginally different top-20% sets because they used different tie seeds;
+one seed now. `itx diagnose` used a tie seed of 0; the benchmark's now. The "never buy
+predicted harm" stop in the allocation applied to the risk score and the random draw, whose
+zero means nothing about harm; it now applies to the uplift queues only, and no published
+number moved because the budget bound first. A non-finite test score now stops the run with
+`DegenerateFitError` rather than a warning, which is what change 51 should have done. A seed
+with an undefined metric no longer blanks a table cell; the cell is the mean of the seeds
+that had one and `n_seeds` says how many. Dragonnet warns when it passes a wide categorical
+through as a number, as its docstring already claimed.
+
+*Deviations recorded rather than fixed.* IHDP and ACIC are reported on their first replicate
+(index 0) rather than averaged over replicates as section 4 said; one replicate is one
+problem, and ACIC's ten are ten different problems of which two have a constant effect, so
+the average was never the right object. Dragonnet's 200,000-row cap binds on three of six
+datasets and it does not standardise the outcome, both stated in the README limitation and
+`docs/estimators.md`; a fix changes three tables and is for a later version. The DR-learner
+alone estimates the propensity on randomised data, and its binary-outcome models are L2 on
+0/1 where the S/T/X first stages are classifiers; both stated. The Rosenbaum caliper is 0.2
+SD of the propensity rather than of its logit; stated. Lenta needs a declared design
+propensity before its Rosenbaum bound means anything; stated. The risk-decile diagnostic does
+not handle an intervention that reduces a bad outcome; stated.
+
+*The claim that no benchmark number moved, measured rather than asserted.* IHDP and ACIC
+were refitted from scratch with every fix above in place and compared with the committed
+results by `itx compare` at zero tolerance: both reproduce exactly. Those are the two
+datasets the changes could plausibly have touched, since they are the ones with a true
+effect, the confounded propensity and the calibration columns. The remaining four are
+covered by the clean-environment rerun.
+
+*What the reviewers confirmed correct*, for the record: the doubly robust formula and its
+fast path; nuisances fitted once per split on training rows and shared by every estimator,
+with test rows never reaching any nuisance, tuning or selection model; the design
+propensities of Hillstrom (0.5, two of three equal arms), Criteo (0.85) and the fraud case
+(0.5); the splits' stratification, disjointness and seeding; every loader's feature set
+free of treatment, outcome and counterfactual columns; the Qini, AUUC, uplift-at-k and
+calibration-slope arithmetic against hand values; PEHE and ATE error on test rows only; the
+knapsack's budget, ties and reduction to rank-and-cut; every meta-learner's formula, the
+X-learner's weight direction included; the fraud simulation's truth equal to the expected
+effect; and every number in the fraud section traceable to a table cell.
+
+**57. CI had been failing since Dragonnet arrived, for a reason none of the tables could
+show** (week 8). The GitHub workflow installs the project with the `learners` extra and not
+`neural`, so PyTorch was absent on the runner. Dragonnet is in `DEFAULT_ESTIMATORS`, so
+`mypy --strict` could not resolve the module and every test that builds a default benchmark
+row stopped at the import. Both jobs had failed on every push since week 6, including the
+scheduled weekly run, and the two jobs that reproduce the committed numbers were skipped
+because they depend on the ones that failed. Nothing about the measurements is implicated:
+the benchmark steps never ran, and every number in the README was produced and reproduced
+locally. The fix is `--extra neural` on all four install steps. The lesson recorded here is
+that a red CI badge on a private repository is easy to stop reading, and the three weeks of
+red were three weeks in which the workflow was proving nothing.
+
+One attempted improvement was reverted in the same change. On Linux the PyPI torch wheel
+declares the CUDA stack, several gigabytes this CPU-only project never uses, and the fix for
+that is to resolve torch from the PyTorch CPU index. Doing so broke every local `uv run`
+immediately: that host's certificate does not verify through the TLS interception on the
+development machine, so uv could not reach the index it had just been told was the only
+source for torch. It is reverted, the reason is in the workflow beside the install step, and
+the download stays on PyPI where the cost is install time rather than correctness.

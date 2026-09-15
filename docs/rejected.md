@@ -131,8 +131,8 @@ protocols on all three metrics.
 The orderings on IHDP and ACIC do change, and that is the point rather than a caveat. Those
 are the two datasets where the estimators' intervals overlap almost entirely, so any
 perturbation reorders them; the grid is one such perturbation, and the order it produced is
-not more meaningful than the order without it. Hillstrom, where the S-learner's lead is
-outside the others' intervals, keeps its order under both.
+not more meaningful than the order without it. Hillstrom, where the S-learner leads on the
+point estimate though inside the others' intervals, keeps its order under both.
 
 What the step costs is easiest to read off the fraud case, where the benchmark log records
 the wall time of each estimator's selection-plus-refit and the results file records the

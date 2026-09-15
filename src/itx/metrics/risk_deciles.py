@@ -38,8 +38,11 @@ what ACIC does.
 
 "Risk" is the predicted outcome under no intervention on a churn, response or readmission
 outcome, and its negation on an outcome that is a value the harm reduces, such as dollars
-retained. The dataset says which (:attr:`~itx.types.UpliftDataset.risk_is_low_outcome`) and
-the bands, the correlation and the verdict all follow it. Before it did, this table on the
+retained. One shape is not handled: an intervention that *reduces* a bad outcome has negative
+uplift on the outcome's scale, and this table's correlation would then run the wrong way;
+none of the six datasets here is of that shape. The dataset says which
+(:attr:`~itx.types.UpliftDataset.risk_is_low_outcome`) and the bands, the correlation and the
+verdict all follow it. Before it did, this table on the
 fraud worked case put the most profitable legitimate transactions in band 1, called them the
 riskiest, and announced with a confident interval that the effect ran against risk, when the
 risk queue was in fact beating random by two orders of magnitude (PLAN.md change 54).

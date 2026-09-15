@@ -74,6 +74,7 @@ def run(
         truth=truth,
         knapsack_for=knapsack_for,
         seed=TIE_SEED,
+        n_resamples=50,
     )
 
 
@@ -98,6 +99,43 @@ class TestTheBudgetIsRespected:
         assert queue.n_reviewed == int((truth > 0).sum())
         assert queue.true_value == pytest.approx(truth[truth > 0].sum())
         assert queue.minutes == pytest.approx(costs[truth > 0].sum())
+
+
+class TestWhichQueuesStopAtZero:
+    def test_a_risk_score_spends_the_whole_budget_when_told_it_is_not_an_effect(
+        self, population
+    ):
+        # A risk score is a negated predicted outcome; its zero is not a prediction of harm.
+        # Listed out of harm_aware_for it spends everything, as a real risk queue does, and
+        # listed in (the default) it stops, which is right only for an effect estimate.
+        outcome, treatment, truth, costs, nuisances = population
+        rng = np.random.default_rng(5)
+        risk_like = rng.normal(size=truth.size)  # half the scores are negative
+        common = {
+            "costs": costs,
+            "budget_hours": 1e6,
+            "outcome": outcome,
+            "treatment": treatment,
+            "nuisances": nuisances,
+            "truth": truth,
+            "seed": TIE_SEED,
+            "n_resamples": 20,
+        }
+        (stopped,) = compare_queues({"risk": risk_like}, **common)
+        (spent,) = compare_queues({"risk": risk_like}, harm_aware_for=(), **common)
+        assert stopped.n_reviewed == int((risk_like > 0).sum())
+        assert spent.n_reviewed == truth.size
+
+    def test_the_doubly_robust_total_carries_an_interval_that_covers_the_truth(
+        self, population
+    ):
+        _, _, truth, _, _ = population
+        (queue,) = run(population, {"oracle": truth}, hours=150.0, knapsack_for=("oracle",))
+        assert queue.dr_low < queue.dr_value < queue.dr_high
+        assert queue.dr_low <= queue.true_value <= queue.dr_high
+        table = to_markdown([queue], 150.0).splitlines()
+        assert "(95% CI)" in table[0]
+        assert "(" in table[2]
 
 
 class TestKnapsackAgainstRankAndCut:
