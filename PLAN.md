@@ -1270,3 +1270,63 @@ immediately: that host's certificate does not verify through the TLS interceptio
 development machine, so uv could not reach the index it had just been told was the only
 source for torch. It is reverted, the reason is in the workflow beside the install step, and
 the download stays on PyPI where the cost is install time rather than correctness.
+
+**58. The fraud loader encoded its categories differently in every process, and the
+clean-environment rerun is what caught it** (week 8). `_encode` in
+`src/itx/data/ieee_fraud.py` took the physical codes of a polars `Categorical`. Those are
+assigned in order of first appearance, and the appearance order depends on how the read is
+split across threads, so the same file on the same machine encoded to different integers in
+different processes. Measured with a digest of the loaded columns: `ProductCD` has five
+levels and came back as codes 1, 5, 7, 12, 14 in one process and 3, 5, 9, 16, 18 in the
+next. The fix is `rank("dense")`, so a level's code is its position in the sorted list of
+levels and nothing but the set of levels can move it. `acic.py` had used that idiom since
+week 2; this loader was the only one that did not.
+
+The instability is a permutation, not an offset. Reading the raw file three times gives
+`ProductCD` the level orders W,S,H,R,C then W,R,C,S,H then W,C,R,S,H: polars reads the CSV in
+parallel chunks, so first appearance means first appearance in whichever chunk registered
+first, and neither the codes nor their order survives.
+
+The docstring on the old `_encode` had noticed the instability and argued it was harmless, in
+two parts, and the refit shows the first part nearly right and the second part wrong.
+
+Wrong first: it said Dragonnet one-hot encodes these columns, as though that ended the matter.
+The one-hot block is ordered by sorted code, so a permutation reorders the block; the
+network's weight initialisation is drawn in a fixed column order, so the same seed puts
+different weights on the same category. Seed 11 early-stops at 21 epochs in one process and
+33 in another. All five Dragonnet rows moved on all eighteen metrics.
+
+Nearly right second: a tree does split a declared categorical by identity, and LightGBM
+sorts categories by their gradient statistics before searching for a partition, so
+relabelling almost always fits the same model. Almost. On four of the five seeds every
+LightGBM row came back identical under the new encoding, and the clone's rerun had already
+reproduced all five under a second unstable encoding. On seed 71 the tie broke the other way:
+the nuisance models changed, and with them the doubly robust gain of every row including the
+random baseline, whose own ranking cannot depend on a feature at all; and the T, X and
+DR-learner fits changed too, with the tuning grid selecting the identical configuration in
+every case, so this is the same hyperparameters fitting a different tree. The moves are
+small, mostly under half a percent, the largest being the DR-learner's Qini at 0.4263 to
+0.4541, and all of them sit inside the intervals they had before. The lesson is that
+invariance to relabelling is a near-certainty rather than a guarantee, and a claim of exact
+reproducibility cannot rest on a near-certainty.
+
+All five Dragonnet rows of the fraud table were therefore not reproducible by anyone,
+including by this machine, and 270 metric values moved between the committed file and the
+rerun. Every one of them stayed inside its own bootstrap interval and no statement in the
+README depended on any of them, which is the only reason this is a reproducibility defect
+rather than a wrong result. The refit under the fixed encoding moved a further 162 values
+across the other seven rows, all of them on seed 71 and all inside their old intervals. It is still a wrong result in the sense that matters here: the
+project's whole claim is a number a stranger can check, and a stranger could not have got
+that number.
+
+Two things about how it was found are worth keeping. It was invisible to the test suite,
+which checked that the encoder produced codes and never that it produced the *same* codes,
+so the new tests include row-order independence, the property the old encoding actually
+failed. And it was invisible to every within-process check: two fits in one process are
+byte-identical, so it could only surface in a comparison between two runs, which is exactly
+what the clean-environment rerun is for and the reason section 10 asks for one. The first
+attempt at that rerun reported a Criteo reproduction that had not happened, because the
+script compared a file the interrupted benchmark had never rewritten against the untouched
+copy it had been taken from. Both defects are the same defect: a check that cannot fail
+tells you nothing, and both were caught only by asking what the passing check had actually
+compared.

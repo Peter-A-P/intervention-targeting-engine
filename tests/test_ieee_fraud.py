@@ -14,6 +14,8 @@ the one that also confirms the digest, since a wrong file would fail there.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 import numpy as np
 import polars as pl
 import pytest
@@ -32,6 +34,7 @@ from itx.data.ieee_fraud import (
     NUMERIC,
     REVIEW_MINUTES_BASE,
     REVIEW_MINUTES_PER_MISSING,
+    _encode,
     catch_probability,
     decline_probability,
     load_ieee_fraud,
@@ -209,6 +212,70 @@ class TestTheLoader:
         tiny_transactions().write_csv(path)
         with pytest.raises(ValueError, match="fraction"):
             load_ieee_fraud(fraction=0.0, path=path)
+
+
+class TestTheCategoryCodes:
+    """The codes must be a function of the level alone.
+
+    They were not. Until 2026-09-16 the encoder took the physical codes of a polars
+    Categorical, which are assigned by first appearance, and the appearance order varies
+    with how a read is split across threads. The same file therefore encoded differently in
+    different processes, and the five Dragonnet rows of the fraud benchmark could not be
+    reproduced by anyone, including by this machine. PLAN.md change 58.
+    """
+
+    def a_frame(self, values: Sequence[str | None]) -> pl.DataFrame:
+        return pl.DataFrame({"c": values})
+
+    def test_the_code_is_the_position_in_the_sorted_levels(self):
+        frame = self.a_frame(["gmail", "aol", "zoho", "aol"])
+        codes = frame.select(_encode("c")).to_series().to_list()
+        # aol, gmail, zoho sorted, so 1, 2, 3; nothing here is missing.
+        assert codes == [2.0, 1.0, 3.0, 1.0]
+
+    def test_missing_takes_the_reserved_zero(self):
+        frame = self.a_frame(["gmail", None, "aol"])
+        assert frame.select(_encode("c")).to_series().to_list() == [2.0, 0.0, 1.0]
+
+    def test_row_order_does_not_change_the_mapping(self):
+        """The property the old encoding failed: shuffling the rows must not relabel."""
+        levels = ["gmail", "aol", "zoho", "yahoo", None]
+        first = self.a_frame(levels)
+        second = self.a_frame(list(reversed(levels)))
+        mapping = dict(
+            zip(levels, first.select(_encode("c")).to_series().to_list(), strict=True)
+        )
+        reversed_mapping = dict(
+            zip(
+                list(reversed(levels)),
+                second.select(_encode("c")).to_series().to_list(),
+                strict=True,
+            )
+        )
+        assert mapping == reversed_mapping
+
+    def test_a_subsample_encodes_a_level_the_same_way_the_whole_column_does(self):
+        whole = self.a_frame(["aol", "gmail", "zoho"])
+        part = self.a_frame(["aol", "gmail"])
+        whole_codes = dict(
+            zip(["aol", "gmail", "zoho"], whole.select(_encode("c")).to_series(), strict=True)
+        )
+        part_codes = dict(
+            zip(["aol", "gmail"], part.select(_encode("c")).to_series(), strict=True)
+        )
+        # Dropping a level above them cannot move the levels below it.
+        assert part_codes["aol"] == whole_codes["aol"]
+        assert part_codes["gmail"] == whole_codes["gmail"]
+
+    def test_the_loader_gives_the_same_codes_every_time_it_is_called(self, tmp_path):
+        path = tmp_path / "t.csv"
+        tiny_transactions().write_csv(path)
+        first = load_ieee_fraud(path=path)
+        second = load_ieee_fraud(path=path)
+        for name in CATEGORICAL:
+            assert np.array_equal(
+                first.features[name].to_numpy(), second.features[name].to_numpy()
+            ), name
 
 
 def the_real_file_is_here() -> bool:

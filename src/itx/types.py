@@ -30,7 +30,12 @@ class UpliftDataset:
         treatment: Binary treatment indicator, 0 or 1, one per row.
         outcome: Observed outcome, one per row. Binary outcomes are 0.0 or 1.0.
         categorical: Names of the columns in ``features`` that are integer-encoded
-            categories rather than numbers, passed through to LightGBM.
+            categories rather than numbers, passed through to LightGBM. A loader must make
+            the code a function of the level alone, stable across processes and row orders:
+            sort the levels and take the position, as ``rank("dense")`` does. Codes assigned
+            by first appearance are not stable, and although a tree is invariant to
+            relabelling, Dragonnet's one-hot block is ordered by code and is not. See
+            PLAN.md change 58, which is what that cost.
         propensity: Per-unit probability of treatment where it is known by design (a
             randomised experiment), otherwise None and it has to be estimated.
         true_effect: Per-unit treatment effect where the data is simulated and the truth

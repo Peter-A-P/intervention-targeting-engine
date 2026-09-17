@@ -332,13 +332,25 @@ def _missing_share(frame: pl.DataFrame) -> FloatArray:
 
 
 def _encode(name: str) -> pl.Expr:
-    """Integer-encode one string column, reserving 0 for missing.
+    """Integer-encode one string column by sorted level, reserving 0 for missing.
 
-    Polars assigns the codes by first appearance, so they depend on row order and a subsample
-    can encode a category to a different integer than the full file does. That is harmless
-    here: LightGBM treats a declared categorical by identity, so any permutation of the codes
-    fits the same model, and Dragonnet one-hot encodes them. Nothing may read the codes as
-    ordered.
+    The code for a level is its position in the sorted list of levels, so the same string
+    encodes to the same integer in every process and in every subsample that contains it.
+    That is the point of using a rank here rather than the obvious
+    ``cast(pl.Categorical).to_physical()``, which assigns codes by first appearance: those
+    codes vary from one process to the next, because the order in which values reach the
+    string cache depends on how the read was split across threads.
+
+    That instability was shipped and measured. Dragonnet one-hot encodes these columns and
+    orders the one-hot block by sorted code, so a relabelling permutes the block, the
+    network's fixed weight initialisation lands on different categories, and the fitted
+    model differs. The clean-environment rerun on 2026-09-16 caught it: every LightGBM row
+    of the fraud benchmark reproduced exactly, because a tree splits a declared categorical
+    by identity and is invariant to relabelling, and all five Dragonnet rows moved. See
+    PLAN.md change 58.
+
+    Nothing may read the codes as ordered. Sorted-by-level is a reproducibility property,
+    not a claim that ``aol < gmail`` means anything.
 
     Args:
         name: Column name.
@@ -346,8 +358,7 @@ def _encode(name: str) -> pl.Expr:
     Returns:
         An expression producing the encoded column.
     """
-    codes = pl.col(name).cast(pl.Categorical).to_physical().cast(pl.Float64)
-    return (codes.fill_null(-1.0) + 1.0).alias(name)
+    return pl.col(name).rank("dense").cast(pl.Float64).fill_null(0.0).alias(name)
 
 
 def _stratified_subsample(frame: pl.DataFrame, fraction: float, seed: int) -> pl.DataFrame:

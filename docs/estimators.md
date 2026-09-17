@@ -1119,17 +1119,17 @@ this section is what they mean.
 ### The ranking table
 
 Five seeds, 118,108 held-out transactions each. The S-learner and X-learner lead on Qini,
-0.4652 (0.3447, 0.5906) and 0.4578 (0.3358, 0.5863), tied on realised value at 20% to the
-third decimal, with the T-, DR- and R-learners a step behind at 0.42 to 0.43 and every
-interval overlapping every other's. Dragonnet is last on every ranking column, 0.3216, and
-its ATE error of 1.05 is the one number in the table that is not close to the others'. PEHE
+0.4652 (0.3447, 0.5906) and 0.4578 (0.3358, 0.5863), agreeing on realised value at 20% to
+within 0.002, with the T-, DR- and R-learners a step behind at 0.42 to 0.43 and every
+interval overlapping every other's. Dragonnet is last on every ranking column, 0.3139, and
+its ATE error of 0.83 is the one number in the table that is not close to the others'. PEHE
 runs from 22.99 (X) to 24.85 (R), on a population where the true effect is -$0.37 for 96.5%
 of transactions and averages +$74 on the rest, so no estimator's individual-effect error is
 small against the effect it is looking for; they rank well and forecast badly, which is the
 calibration section's point on a fourth dataset.
 
 The risk queue's Qini is 0.4625 (0.3395, 0.5875), level with the S-learner's 0.4652, and its
-uplift in the top decile, $17.97, and its realised value at 20%, 1.9751, are the highest
+uplift in the top decile, $17.97, and its realised value at 20%, 1.9765, are the highest
 numbers in their columns. It is the best this baseline has scored anywhere in the project,
 and the ranking table agrees with the allocation below on which queue to run.
 
