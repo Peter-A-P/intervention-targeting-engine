@@ -10,8 +10,9 @@ shows the intervention list changing as the budget moves.
 what its ranking actually buys at a budget rather than only how well it ranks, plus a
 sensitivity section, a fraud worked case that declares itself semi-synthetic in its first
 sentence, and a budget-slider demo live at [targeting.peterparker.ca](https://targeting.peterparker.ca). The
-numbers below are real and reproducible. Still to come: the clean-environment rerun and the
-flip to public. Build plan: [PLAN.md](PLAN.md).
+numbers below are real and reproducible: every table here has been regenerated from a fresh
+clone and a fresh virtual environment and compared at zero tolerance. Still to come: the flip
+to public. Build plan: [PLAN.md](PLAN.md).
 
 **The same baseline, the same code, opposite conclusions.** Ranking people by risk is how this
 job is usually done. At a budget covering a tenth of the population it buys **-0.20 on ACIC**
@@ -881,9 +882,13 @@ repository; [docs/deploy.md](docs/deploy.md) records the route and the DNS recor
   the targeting decision flips; it does not remove the assumption.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
-- Not yet done: the clean-environment rerun that closes week 8, which is running as this is
-  written and has reproduced the first datasets exactly. Nothing above is a placeholder for
-  it: the numbers reported are the numbers measured.
+- Every table above has been reproduced from a fresh clone, a fresh virtual environment
+  built from the lockfile, and raw files checked against their committed digests, with
+  `itx compare` at zero tolerance. That rerun is also what found the defect in
+  [PLAN.md](PLAN.md) change 58: the fraud loader encoded its categories differently in
+  different processes, which made its five Dragonnet rows unreproducible by anyone. The
+  fraud table was remeasured under the fixed encoding and then reproduced. Nothing above is
+  a placeholder: the numbers reported are the numbers measured.
 - **The fraud case's IEEE-CIS file is the one input this repository cannot fetch for you.**
   It sits behind a Kaggle account and accepted competition rules and may not be redistributed,
   so [docs/data/ieee-fraud.md](docs/data/ieee-fraud.md) gives three steps and the loader

@@ -155,7 +155,7 @@ bootstrap intervals cover the truth at the nominal rate on synthetic data.
 | 5 | Oct 5 - 11 | Policy module: rank-and-cut, cost-aware knapsack, IPW and DR policy value; the outcome-ranking trap demonstrated on every dataset; `itx diagnose`, the risk-decile table of change 32 | **Done 2026-09-13.** All five policy tables measured with both baselines, from one `itx benchmark --all` taking 10h19m. The trap is demonstrated on every dataset and turns out to change sign across them: the same baseline buys -0.20 on ACIC and +0.0055 on Criteo at a 10% budget. Also closed change 9's second selection rule, and the cost-aware knapsack, which is built and tested but not applied until the fraud case in week 7. Three findings the week did not set out to get: the policy value reverses the sign of the ACIC recommendation where `uplift@k` cannot see it (change 36 and the ground-truth check), it turns Lenta's null into a signal (change 42), and a known propensity is not sufficient to trust IPW (change 43). 484 tests |
 | 6 | Oct 12 - 18 | Sensitivity: Rosenbaum bounds, E-values, negative control; Dragonnet in PyTorch; `docs/estimators.md` "where each estimator breaks"; causal forest if on schedule | **Done 2026-09-13 except one refit.** All three sensitivity devices built with `itx sensitivity`, reported on three datasets, and the section leads on the limitation that none of the three can fail there (changes 46, 47). Dragonnet built, registered and in four of five tables; Lenta's row is being refitted after change 51. The treated-share column of change 43 landed and reproduced week 5's hand decomposition to four decimals on Criteo. The second selection rule's cost is measured and is nothing (change 49). Two defects found and fixed: a run-ending exception on an undefined metric (change 50) and a dead Dragonnet fit reporting random targeting as a result (change 51). Causal forest not started. 637 tests |
 | 7 | Oct 19 - 25 | Fraud worked case (semi-synthetic, declared); static demo built from precomputed rankings; Azure Static Web Apps at targeting.peterparker.ca | **Done 2026-09-14 except hosting.** Demo built and tested (change 52). Fraud case built on IEEE-CIS, which was already on the machine for project 09 (53), benchmarked with seven estimators over five seeds, and allocated: the risk queue a fraud team already runs beats every fitted uplift model at every budget tried, $169,398 against the S-learner's $156,549 at 1,000 analyst hours with the oracle at $305,052, because separating fraud from legitimate is worth a step of $74 and ordering within fraud a slope the estimators cannot resolve. The sign defect that made the benchmark row and the decile diagnostic report the opposite was found by running the diagnostic and fixed with a declaration on the dataset (54). Hosted the same afternoon at https://targeting.peterparker.ca: a second free-tier Static Web App beside the portfolio site's, published from this machine with the deployment token so the repository carries no workflow and no credential, one DNS-only CNAME at Cloudflare, certificate managed by Azure; `docs/deploy.md` records it. 698 tests |
-| 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | **Started 2026-09-14.** README already in Rule A shape. `docs/rejected.md` written on the tuning grid with a fourth measurement made for it (change 55). Clean-environment rerun running in a fresh clone and virtual environment, all six datasets in cost order, each compared with `itx compare`; IHDP reproduced exactly. Tag and flip to public wait on the rerun and on Peter |
+| 8 | Oct 26 - Nov 1 | README to Rule A shape; `docs/rejected.md`; clean-environment rerun of the full benchmark; tag v0.1.0; flip the repository public | **Started 2026-09-14.** README already in Rule A shape. `docs/rejected.md` written on the tuning grid with a fourth measurement made for it (change 55). Clean-environment rerun done in a fresh clone and virtual environment: all six datasets reproduce under `itx compare` at zero tolerance, the first five at commit f89b91e and the fraud case at faadc2b after change 58 fixed its loader. Tag and flip to public wait on Peter |
 
 Slack: week 6's causal forest and week 7's cost-aware policy are the first things to
 drop if behind. Neither is in the definition of done. Dragonnet stays: it is the
@@ -222,7 +222,14 @@ Mirrors the portfolio's definition for this project:
 - [x] `docs/estimators.md` written: where each estimator breaks (weeks 2 to 7)
 - [x] One rejected approach documented with evidence (week 8, change 55: the tuning grid,
       four measurements)
-- [ ] Clean-environment rerun reproduces the table
+- [x] Clean-environment rerun reproduces the table (week 8: fresh clone, fresh venv from
+      the lockfile, raw data verified against the committed digests, every dataset
+      re-benchmarked and compared with `itx compare` at zero tolerance. IHDP, ACIC,
+      Hillstrom, Criteo and Lenta at commit f89b91e; the fraud case at faadc2b, because the
+      rerun is what found the encoding defect in change 58 and the fraud table had to be
+      remeasured before it could reproduce. On the fraud case all 40 rows match on every
+      metric and every tuning selection, `fit_seconds` is the only field that differs
+      anywhere, and README.md and both figures regenerated byte for byte)
 - [ ] Repository public, v0.1.0 tagged
 
 ---
@@ -1330,3 +1337,27 @@ script compared a file the interrupted benchmark had never rewritten against the
 copy it had been taken from. Both defects are the same defect: a check that cannot fail
 tells you nothing, and both were caught only by asking what the passing check had actually
 compared.
+
+**59. The rerun, finished** (week 8). All six datasets reproduce from a fresh clone, a fresh
+virtual environment built from the lockfile, and raw files verified against their committed
+digests, compared with `itx compare` at zero tolerance. IHDP, ACIC, Hillstrom, Criteo and
+Lenta reproduced at commit f89b91e. The fraud case reproduced at faadc2b, one commit later,
+because the rerun itself found the defect in change 58 and the fraud table had to be
+remeasured under the fixed encoding before there was anything stable to reproduce. The only
+source difference between those two commits is `_encode` in the fraud loader; the other
+change is a docstring and the rest is tests, so the first five datasets' result stands at the
+released commit.
+
+On the fraud case the match is total: all 40 rows agree on every one of the 18 metrics and on
+the configuration the tuning grid selected, `fit_seconds` is the only field that differs
+anywhere in the file, and `README.md` and both figures regenerated byte for byte.
+
+Two things this exercise is worth recording for. It was supposed to be a formality that
+confirmed tables already believed correct, and instead it was the only check in the project
+capable of finding change 58, because that defect was invisible within a single process and
+invisible to a test suite that asked whether the encoder produced codes rather than whether
+it produced the same codes twice. And the first attempt at it reported a Criteo reproduction
+that had not happened, because the script compared a file the interrupted benchmark had never
+rewritten against the untouched copy it had been taken from. A reproduction check is worth
+exactly as much as the answer to "what did the passing check actually compare", and that
+question had to be asked twice here to get two different defects out.
