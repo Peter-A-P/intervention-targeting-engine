@@ -1361,3 +1361,50 @@ that had not happened, because the script compared a file the interrupted benchm
 rewritten against the untouched copy it had been taken from. A reproduction check is worth
 exactly as much as the answer to "what did the passing check actually compare", and that
 question had to be asked twice here to get two different defects out.
+
+**60. Three additions that answer the question this repository could not: what do I do if I
+have no data** (week 8, after the definition of done was met). Everything here had assumed a
+reader who already ran a randomised intervention and kept the records. That is a narrow
+audience, and the honest reading of the limitation is not "come back when you have data" but
+"here is the smallest study that could answer your question".
+
+`itx power` sizes it, in both directions: units needed from an assumed effect, and, with
+`--have`, the heterogeneity a study of that size could have found. It reports two thresholds
+because they differ by more than people expect. Detecting that an intervention does anything
+needs one sample; showing that targeting beats random needs `1 / (budget x (lift - 1)^2)`
+times more, which at a 20% budget and a top group twice as good is five times, and at a 10%
+budget and a top group half again as good is forty times. A pilot sized for the first
+produces a targeting table that is noise and does not look like noise.
+
+The formula is checked the way everything else here is checked. Given four summary numbers
+per dataset, the test size, the outcome spread, the average effect and the treated share, and
+no model, no features and no ranking, it predicts which of the six benchmarks could be ranked
+on. It gets all six right, including both failures: Lenta, where 687,029 customers needed a
+top group responding 2.61x the average and got 2.03x, and IHDP. That retrodiction is in
+`tests/test_power.py` and is the only reason the module ships.
+
+`itx diagnose --csv` accepts a stranger's file. Most of that loader is refusal, because the
+failure worth preventing is not a crash but a clean table computed on data that could never
+have supported one. Two declarations have no default and no guess: `--design`, because on an
+observational file each band's number mixes the effect with whoever was likelier to be
+treated and nothing here can detect that, and the caveat prints above the table rather than
+only in the docs because the table is what gets copied out; and `--outcome-polarity`, for the
+reason below.
+
+**And building it found a defect in the diagnostic, on the project's own headline example.**
+Every dataset here has a good outcome at the high end: a response, a conversion, dollars
+retained. A churn dataset does not, and a retention campaign is the first example in this
+repository's opening paragraph. The verdict reads the correlation between a band's risk and
+its uplift, and treated a positive uplift as a benefit unconditionally, so on churn, where a
+working intervention makes the number smaller, it read success as harm. Measured on one
+synthetic file encoded both ways: as `churned` the correlation was -0.903 and the verdict was
+"the effect runs against risk ... the difference between helping and doing harm"; as
+`retained`, the same population gave +0.867 and "worth measuring". `UpliftDataset` now carries
+`higher_outcome_is_better`, separate from `risk_is_low_outcome` because a churn dataset has
+risk at the high end and benefit at the low end and one flag cannot carry both. Every existing
+dataset is True, so no committed number moves, and that is exactly why nothing caught it.
+
+This is the third sign defect in the project, after change 51 and change 54, and the third to
+be found by running the same data through two paths and noticing they disagreed rather than
+by any test. The pattern is worth naming: a sign convention is invisible to a test suite whose
+fixtures all share the same convention.

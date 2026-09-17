@@ -24,8 +24,31 @@ Lenta nothing separates from random, including the uplift models.
 
 So risk ranking is not a trap and it is not safe: it is one or the other depending on the data,
 the difference is worth a change of sign, and nobody can guess which case they are in. Anybody
-can measure it. `uv run itx diagnose --dataset <name>` decides it for the price of one outcome
-model, before any of the rest of this is worth running.
+can measure it. `uv run itx diagnose` decides it for the price of one outcome model, before any
+of the rest of this is worth running, and it takes `--csv` so it can decide it on your data
+rather than on these six.
+
+## What you need before any of this is usable
+
+**You need an intervention that has already happened to some people and not others.** Not a
+customer list: a record of who got the offer, who did not, and what happened to both. Nothing
+here, and nothing anywhere, can tell you the effect of an action nobody has ever taken. If you
+have never withheld the intervention from anybody, the first thing to do is start withholding
+it from a random slice, and `uv run itx power` sizes that slice.
+
+**For the cheap diagnostic, that assignment should have been random.** Each band's number is a
+plain difference between the treated and untreated people in it, so on an observational design
+it mixes what the intervention did with whatever made those people likelier to be treated, and
+the diagnostic cannot detect this. `--design observational` prints that caveat above its own
+table. The expensive machinery is built for the harder case: the doubly robust estimator, the
+propensity weighting and the whole sensitivity section exist for data that was not randomised,
+and two of the six datasets here are confounded on purpose.
+
+**And it has to be big, which is not the same as large.** Lenta is a real randomised campaign
+with 687,029 customers and nothing in it separates from random targeting, including every
+uplift model here. A 0.75 point effect on a 10.3% base rate is too small to rank on at that
+size. What binds is the effect against the outcome's spread, not the row count, and
+`uv run itx power` says which side of the line you are on before you fit anything.
 
 ## Results
 
@@ -879,7 +902,11 @@ repository; [docs/deploy.md](docs/deploy.md) records the route and the DNS recor
 
 - It does not identify effects without an experiment or a credible ignorability
   assumption. The sensitivity analysis quantifies how wrong that assumption can be before
-  the targeting decision flips; it does not remove the assumption.
+  the targeting decision flips; it does not remove the assumption. "What you need before any
+  of this is usable" above says what that means in practice, and it rules out more readers
+  than this bullet used to admit: you need an intervention that already happened to some
+  people and not others, and for the cheap diagnostic you need that assignment to have been
+  random.
 - It does not handle continuous or multi-valued treatments, or online allocation.
 - The fraud worked case uses a simulated review intervention on public data and says so.
 - Every table above has been reproduced from a fresh clone, a fresh virtual environment
@@ -943,6 +970,47 @@ uv run itx benchmark --dataset ieee-fraud # the worked case; needs the one file 
 `itx data pull hillstrom ihdp-train ihdp-test acic-x acic-zymu-1` fetches only the small
 sets, about 20 MB, which is enough for the first three benchmarks. Criteo is 297 MB and
 Lenta is 138 MB.
+
+### On your own data
+
+Two commands, and neither needs the datasets above.
+
+**Before you have any data**, size the holdout you would need:
+
+```bash
+uv run itx power --base-rate 0.10 --relative-effect 0.10 --budget 0.2
+```
+
+It answers twice, because detecting that an intervention works and being able to rank who
+should get it are different problems. At a 10% base rate, a 10% relative effect and a 20%
+budget, showing the intervention does anything takes about 28,000 people; showing that
+targeting beats random takes 141,000 if the top group responds twice as well as average, and
+2.3 million if it responds only a quarter better. That spread is the honest uncertainty,
+because how much better the top group responds is the thing the study exists to find out. Both
+numbers are floors: they price measuring a ranking, not learning one from the same rows.
+
+With `--have 50000` it runs the other way and reports the weakest heterogeneity that study
+could have found.
+
+**Once you have data**, run the diagnostic on it:
+
+```bash
+uv run itx diagnose --csv customers.csv   --treatment got_offer --outcome churned   --features age,tenure,plan,region --categorical plan,region   --design randomised --outcome-polarity lower-is-better
+```
+
+`--design` and `--outcome-polarity` have no defaults and are not guessed. The first because an
+observational file cannot support the reading and nothing here can detect that it is one. The
+second because the same file encoded as `churned` and as `retained` got opposite verdicts out
+of this command until PLAN.md change 60 fixed it: on churn a working intervention makes the
+number smaller, and a verdict that assumes bigger is better reads success as harm.
+
+The loader refuses rather than guesses: a missing column, a treatment that is not binary, an
+arm with nobody in it, an outcome that is constant or missing or text, the outcome or the
+treatment smuggled in as a feature, and a file too thin to cut into the bands you asked for,
+which points you back at `itx power`. What it cannot check is whether your features were
+recorded before the intervention. A column measured afterwards carries part of the answer and
+will make any model here look excellent and mean nothing, and that is a fact about your data
+collection that no file can reveal.
 
 Or run the whole table in one command, which is what PLAN.md section 4 asks for and takes a
 few hours on a laptop:

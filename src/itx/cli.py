@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from itx.bench.runner import BenchmarkRow
     from itx.sensitivity.rosenbaum import RosenbaumBound
 
+from itx.metrics.power import DEFAULT_ALPHA, DEFAULT_POWER
+
 app = typer.Typer(
     name="itx",
     help="Intervention Targeting Engine: uplift modelling with honest evaluation.",
@@ -464,9 +466,161 @@ def figures(
         typer.echo(f"figure: {calibration_path}")
 
 
+@app.command("power")
+def power(
+    base_rate: Annotated[
+        float | None,
+        typer.Option(help="Outcome rate without the intervention, for a 0/1 outcome."),
+    ] = None,
+    outcome_sd: Annotated[
+        float | None,
+        typer.Option(help="Outcome standard deviation, for a continuous outcome."),
+    ] = None,
+    effect: Annotated[
+        float | None, typer.Option(help="Average treatment effect expected, in outcome units.")
+    ] = None,
+    relative_effect: Annotated[
+        float | None,
+        typer.Option(help="Average effect as a share of the base rate; 0.1 is a 10% lift."),
+    ] = None,
+    budget: Annotated[
+        float, typer.Option(help="Share of the population the intervention budget covers.")
+    ] = 0.2,
+    treated_share: Annotated[
+        float, typer.Option(help="Share assigned to treatment; 0.5 is the cheapest split.")
+    ] = 0.5,
+    have: Annotated[
+        int | None,
+        typer.Option(help="Units you already have, to score instead of sizing from scratch."),
+    ] = None,
+    alpha: Annotated[float, typer.Option(help="Two-sided significance level.")] = DEFAULT_ALPHA,
+    target_power: Annotated[
+        float, typer.Option("--target-power", help="Power to quote everything at.")
+    ] = DEFAULT_POWER,
+) -> None:
+    """Size the holdout a targeting decision needs, before collecting anything.
+
+    Every other command here reads data that exists. This one is for the question that comes
+    first: is the study worth running, and how big does it have to be. It answers in two
+    parts, because detecting that an intervention works and being able to rank who should
+    get it are different problems and the second is far more expensive.
+
+    With ``--have`` it runs the other way, and reports how strong the heterogeneity would
+    have to be for a study of that size to find it.
+    """
+    from itx.metrics.power import binary_outcome_sd, detectable_lift, requirement_table
+
+    if (base_rate is None) == (outcome_sd is None):
+        typer.echo("give exactly one of --base-rate (a 0/1 outcome) or --outcome-sd")
+        raise typer.Exit(code=2)
+    if (effect is None) == (relative_effect is None):
+        typer.echo("give exactly one of --effect or --relative-effect")
+        raise typer.Exit(code=2)
+
+    try:
+        spread = (
+            binary_outcome_sd(base_rate) if base_rate is not None else float(outcome_sd or 0.0)
+        )
+        if relative_effect is not None:
+            if base_rate is None:
+                typer.echo(
+                    "--relative-effect needs --base-rate; with --outcome-sd use --effect"
+                )
+                raise typer.Exit(code=2)
+            absolute = relative_effect * base_rate
+        else:
+            absolute = float(effect or 0.0)
+
+        if have is not None:
+            needed = detectable_lift(
+                n_units=have,
+                outcome_sd=spread,
+                average_effect=absolute,
+                budget=budget,
+                treated_share=treated_share,
+                alpha=alpha,
+                power=target_power,
+            )
+            typer.echo("")
+            typer.echo(
+                f"With {have:,} units, an average effect of {absolute:.4g} and a "
+                f"{budget:.0%} budget:"
+            )
+            typer.echo("")
+            typer.echo(
+                f"  only a top group responding at least {needed:.2f}x the average could be "
+                f"told from random targeting."
+            )
+            typer.echo(
+                "\nAnd that is a floor: it prices measuring a ranking, not learning "
+                "one from the same rows.\nIf you cannot argue the top group is that "
+                "much better, this study cannot answer the targeting question, whatever "
+                "a table of Qini numbers computed on it may look like."
+            )
+            return
+
+        report = requirement_table(
+            outcome_sd=spread,
+            average_effect=absolute,
+            budget=budget,
+            treated_share=treated_share,
+            alpha=alpha,
+            power=target_power,
+        )
+    except ValueError as err:
+        typer.echo(str(err))
+        raise typer.Exit(code=2) from err
+
+    typer.echo("")
+    typer.echo(
+        f"Units needed at a {budget:.0%} budget, {alpha:.0%} significance, "
+        f"{target_power:.0%} power"
+    )
+    typer.echo("")
+    typer.echo(report.to_markdown())
+    typer.echo(report.summary())
+
+
 @app.command("diagnose")
 def diagnose(
     dataset: Annotated[str, typer.Option(help="Dataset key to diagnose.")] = "hillstrom",
+    csv: Annotated[
+        Path | None,
+        typer.Option(help="Your own CSV instead of a built-in dataset."),
+    ] = None,
+    treatment: Annotated[
+        str | None, typer.Option(help="With --csv: the 0/1 intervention column.")
+    ] = None,
+    outcome: Annotated[str | None, typer.Option(help="With --csv: the outcome column.")] = None,
+    features: Annotated[
+        str | None, typer.Option(help="With --csv: comma-separated feature columns.")
+    ] = None,
+    categorical: Annotated[
+        str | None, typer.Option(help="With --csv: which features are categories.")
+    ] = None,
+    design: Annotated[
+        str | None,
+        typer.Option(
+            help="With --csv: 'randomised' or 'observational'. No default, on purpose."
+        ),
+    ] = None,
+    risk_is_low_outcome: Annotated[
+        bool,
+        typer.Option(
+            "--risk-is-low-outcome",
+            help="With --csv: set when a LOW outcome is the risky end, as on dollars retained.",
+        ),
+    ] = False,
+    outcome_polarity: Annotated[
+        str | None,
+        typer.Option(
+            "--outcome-polarity",
+            help=(
+                "With --csv: 'higher-is-better' (a response, dollars kept) or "
+                "'lower-is-better' (churn, a readmission). No default, on purpose."
+            ),
+        ),
+    ] = None,
     seed: Annotated[
         int | None, typer.Option(help="Split seed; the first committed one if omitted.")
     ] = None,
@@ -483,15 +637,76 @@ def diagnose(
     from itx.bench.runner import DATASETS
     from itx.bench.seeds import SEEDS, TIE_SEED
     from itx.data.splits import stratified_split
+    from itx.data.user_csv import ColumnSpec, UnusableDataError, load_csv
     from itx.metrics.risk_deciles import risk_deciles
 
-    if dataset not in DATASETS:
-        typer.echo(f"unknown dataset {dataset!r}; known: {', '.join(sorted(DATASETS))}")
-        raise typer.Exit(code=1)
-
     say = _printer()
-    split = stratified_split(DATASETS[dataset](), SEEDS[0] if seed is None else seed)
-    say(f"{dataset}: one outcome model on {split.train.n_units:,} training rows")
+    caveat = ""
+    if csv is not None:
+        missing = [
+            flag
+            for flag, value in (
+                ("--treatment", treatment),
+                ("--outcome", outcome),
+                ("--features", features),
+                ("--design", design),
+                ("--outcome-polarity", outcome_polarity),
+            )
+            if value is None
+        ]
+        if missing:
+            typer.echo(f"--csv needs {', '.join(missing)}")
+            raise typer.Exit(code=2)
+        if outcome_polarity not in ("higher-is-better", "lower-is-better"):
+            typer.echo(
+                f"--outcome-polarity must be 'higher-is-better' or 'lower-is-better', got "
+                f"{outcome_polarity!r}. There is no default: the same file encoded as "
+                f"'churned' and as 'retained' gets opposite verdicts out of this command, "
+                f"and only you know which way yours runs."
+            )
+            raise typer.Exit(code=2)
+        if design not in ("randomised", "observational"):
+            typer.echo(
+                f"--design must be 'randomised' or 'observational', got {design!r}. There is "
+                f"no default: on an observational design every band's number mixes the effect "
+                f"with whoever was likelier to be treated, and nothing here can detect that."
+            )
+            raise typer.Exit(code=2)
+        try:
+            data = load_csv(
+                csv,
+                ColumnSpec(
+                    treatment=str(treatment),
+                    outcome=str(outcome),
+                    features=tuple(c.strip() for c in str(features).split(",") if c.strip()),
+                    categorical=tuple(
+                        c.strip() for c in (categorical or "").split(",") if c.strip()
+                    ),
+                    design="randomised" if design == "randomised" else "observational",
+                    higher_outcome_is_better=outcome_polarity == "higher-is-better",
+                    risk_is_low_outcome=risk_is_low_outcome,
+                ),
+                bins=bins,
+            )
+        except UnusableDataError as err:
+            typer.echo("")
+            typer.echo("this data cannot answer the question:")
+            typer.echo("")
+            typer.echo(f"  {err}")
+            typer.echo("")
+            raise typer.Exit(code=1) from err
+        if design == "observational":
+            from itx.data.user_csv import OBSERVATIONAL_WARNING
+
+            caveat = OBSERVATIONAL_WARNING
+    else:
+        if dataset not in DATASETS:
+            typer.echo(f"unknown dataset {dataset!r}; known: {', '.join(sorted(DATASETS))}")
+            raise typer.Exit(code=1)
+        data = DATASETS[dataset]()
+
+    split = stratified_split(data, SEEDS[0] if seed is None else seed)
+    say(f"{data.name}: one outcome model on {split.train.n_units:,} training rows")
     table = risk_deciles(
         split.train,
         split.test,
@@ -502,6 +717,11 @@ def diagnose(
     )
 
     typer.echo("")
+    if caveat:
+        # Above the table rather than below it, and above rather than only in the docs,
+        # because the table is what gets copied out and the caveat has to travel with it.
+        typer.echo(f"READ THIS FIRST. {caveat}")
+        typer.echo("")
     typer.echo(f"Risk bands on {table.dataset}, {table.n_test:,} test rows, band 1 riskiest")
     typer.echo("")
     typer.echo(table.to_markdown())

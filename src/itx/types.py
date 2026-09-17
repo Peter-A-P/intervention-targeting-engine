@@ -36,6 +36,14 @@ class UpliftDataset:
             by first appearance are not stable, and although a tree is invariant to
             relabelling, Dragonnet's one-hot block is ordered by code and is not. See
             PLAN.md change 58, which is what that cost.
+        higher_outcome_is_better: Whether a larger outcome is the good end. True for a
+            response, a conversion or dollars retained; False for churn, a readmission
+            or a loss, where the intervention is trying to push the number down. It
+            decides the sign of a benefit, so on a False dataset a negative uplift is a
+            good result, and the risk-band verdict reads the correlation accordingly.
+            All six datasets here are True, which is why nothing exercised it until a
+            churn file arrived through the CSV loader and got the opposite verdict from
+            the same data encoded the other way.
         propensity: Per-unit probability of treatment where it is known by design (a
             randomised experiment), otherwise None and it has to be estimated.
         true_effect: Per-unit treatment effect where the data is simulated and the truth
@@ -60,6 +68,7 @@ class UpliftDataset:
     true_effect: FloatArray | None = None
     replicate: int | None = None
     risk_is_low_outcome: bool = False
+    higher_outcome_is_better: bool = True
 
     def __post_init__(self) -> None:
         """Reject a malformed dataset at construction rather than mid-benchmark."""

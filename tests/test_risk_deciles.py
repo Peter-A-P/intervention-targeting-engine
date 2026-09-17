@@ -199,6 +199,87 @@ class TestAValueOutcome:
         assert np.isnan(values["multiplier_spread"])
 
 
+def churn_population(n: int, *, seed: int = 0) -> UpliftDataset:
+    """A churn population: the outcome is bad, and the intervention pushes it down.
+
+    Every dataset in this repository has a good outcome at the high end, so until the CSV
+    loader arrived nothing here had a bad one. The same numbers encoded as ``retained``
+    rather than ``churned`` are the value population above. Encoded this way, a working
+    intervention shows up as a *negative* uplift, and a verdict that assumes bigger is
+    better reads it as the effect running against risk, which is the opposite of the truth.
+    PLAN.md change 60.
+    """
+    rng = np.random.default_rng(seed)
+    driver = rng.uniform(0.0, 1.0, n)
+    noise = rng.normal(0.0, 0.3, n)
+    baseline = 0.02 + 0.6 * driver
+    prevented = 0.4 * baseline
+    treatment = (rng.random(n) < 0.5).astype(np.int64)
+    probability = np.clip(baseline - treatment * prevented, 0.0, 1.0)
+    churn = (rng.random(n) < probability).astype(np.float64)
+    return UpliftDataset(
+        name="synthetic-churn",
+        features=pl.DataFrame({"driver": driver, "noise": noise}),
+        treatment=treatment,
+        outcome=churn,
+        propensity=np.full(n, 0.5),
+        true_effect=-prevented,
+        risk_is_low_outcome=False,
+        higher_outcome_is_better=False,
+    )
+
+
+class TestABadOutcome:
+    """Churn, where the intervention works by making the number smaller.
+
+    The project's own headline example is a retention offer, and a retention dataset is
+    usually recorded as churn rather than as retention. Nothing exercised that until a
+    stranger could hand this package a CSV.
+    """
+
+    def table(self, *, higher_outcome_is_better: bool, n: int = 30_000, seed: int = 0):
+        data = churn_population(n, seed=seed)
+        if higher_outcome_is_better:
+            data = UpliftDataset(
+                name=data.name,
+                features=data.features,
+                treatment=data.treatment,
+                outcome=data.outcome,
+                propensity=data.propensity,
+                true_effect=data.true_effect,
+                risk_is_low_outcome=data.risk_is_low_outcome,
+                higher_outcome_is_better=True,
+            )
+        half = n // 2
+        return risk_deciles(
+            data.take(np.arange(half)),
+            data.take(np.arange(half, n), name=data.name),
+            n_resamples=200,
+            seed=seed,
+        )
+
+    def test_the_correlation_is_positive_when_the_outcome_is_declared_bad(self):
+        """Risk high, benefit high: the two rankings agree and the sign must say so."""
+        table = self.table(higher_outcome_is_better=False)
+        assert table.correlation.value > 0.0
+
+    def test_the_old_reading_gets_the_sign_exactly_backwards(self):
+        """The defect, reproduced: the same data read as though bigger were better."""
+        declared = self.table(higher_outcome_is_better=False)
+        assumed = self.table(higher_outcome_is_better=True)
+        assert assumed.correlation.value == pytest.approx(-declared.correlation.value)
+
+    def test_the_verdict_does_not_announce_harm_where_the_intervention_works(self):
+        table = self.table(higher_outcome_is_better=False)
+        assert "runs against risk" not in table.verdict
+
+    def test_the_uplifts_stay_in_the_outcomes_own_units(self):
+        """The table describes the data; only the verdict knows which way is up."""
+        table = self.table(higher_outcome_is_better=False)
+        # Treatment prevents churn, so every band's uplift is negative as recorded.
+        assert table.deciles[0].uplift.value < 0.0
+
+
 class TestTheBands:
     def test_the_bands_are_ordered_with_the_riskiest_first(self):
         table = diagnose("with-risk")

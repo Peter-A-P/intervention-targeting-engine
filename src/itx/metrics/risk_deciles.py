@@ -329,8 +329,19 @@ def risk_deciles(
     # correlation and the spread have to be taken against the risk, or on a value outcome
     # they would report the sign of the wrong thing.
     sign = -1.0 if test.risk_is_low_outcome else 1.0
+    # Whether a bigger number is a better one. Separate from `sign`, which is about
+    # which end of the prediction counts as risk: a churn dataset has risk at the high
+    # end AND a benefit at the low end, and one flag cannot carry both.
+    benefit_sign = 1.0 if test.higher_outcome_is_better else -1.0
     estimates = bootstrap_vector(
-        _statistics(test.outcome, test.treatment, band_of, bins, sign=sign),
+        _statistics(
+            test.outcome,
+            test.treatment,
+            band_of,
+            bins,
+            sign=sign,
+            benefit_sign=benefit_sign,
+        ),
         test.n_units,
         n_resamples=n_resamples,
         level=level,
@@ -380,7 +391,13 @@ def _band_assignment(scores: FloatArray, bins: int, *, tie_seed: int) -> IntArra
 
 
 def _statistics(
-    outcome: FloatArray, treatment: IntArray, band_of: IntArray, bins: int, *, sign: float = 1.0
+    outcome: FloatArray,
+    treatment: IntArray,
+    band_of: IntArray,
+    bins: int,
+    *,
+    sign: float = 1.0,
+    benefit_sign: float = 1.0,
 ) -> Callable[[IntArray], dict[str, float]]:
     """Every number in the table, as one function of the resampled row positions.
 
@@ -392,6 +409,13 @@ def _statistics(
     ``sign`` is +1 when risk is a high outcome and -1 when it is a low one. It enters the
     risk spread and the correlation, which are statements about risk, and not the per-band
     rates, which are statements about the outcome and are reported in its units.
+
+    ``benefit_sign`` is +1 when a larger outcome is the good end and -1 when the
+    intervention is trying to push the number down, as on churn or a readmission. It
+    enters the correlation only: a band where treatment cut churn has a negative
+    uplift and a positive benefit, and without this the verdict reads a working
+    intervention as a harmful one. Reported uplifts stay in the outcome's own units
+    and are not flipped, because the table is a description of the data.
     """
 
     def statistics(index: IntArray) -> dict[str, float]:
@@ -419,7 +443,8 @@ def _statistics(
         risks = sign * np.array(control_rates)
         values["risk_spread"] = _spread(risks)
         values["multiplier_spread"] = _spread(np.array(multipliers))
-        values["correlation"] = _rank_correlation(risks, np.array(uplifts))
+        benefits = benefit_sign * np.array(uplifts)
+        values["correlation"] = _rank_correlation(risks, benefits)
         return values
 
     return statistics
