@@ -1408,3 +1408,39 @@ This is the third sign defect in the project, after change 51 and change 54, and
 be found by running the same data through two paths and noticing they disagreed rather than
 by any test. The pattern is worth naming: a sign convention is invisible to a test suite whose
 fixtures all share the same convention.
+
+**61. The demo rebuilt for two audiences at once** (week 8). The page had a dataset dropdown
+reading "acic", a ranking dropdown reading "dr-learner", and a headline figure reading
+"+0.214 outcome bought per head". Every one of those is meaningless to a reader who does not
+already know this project, which is every reader it is for. Rebuilt around that.
+
+Each dataset and each method now carries written copy: what it is, what the outcome measures,
+why it is in the repository and what to watch out for. The headline number is stated in units
+a person can hold, so Hillstrom reads "extra site visits per 1,000 people" and the fraud case
+reads dollars, rather than a bare decimal. A new chart above the old one puts every method on
+one axis against random targeting, which is the comparison the whole project is about and
+which the page previously made a visitor discover one dropdown selection at a time.
+
+**The fraud case is now on the page**, labelled as semi-synthetic wherever it appears. It was
+excluded on the grounds that a worked case is not a benchmark row, which was right about what
+it is and wrong about what the page is for: it is the only dataset here whose units are
+dollars, and "$1.61 a transaction" reaches a reader that "+0.0055 per head" does not.
+`itx demo build` now includes it by default, so the committed page is still what one command
+produces.
+
+The sample-size calculator from change 60 is on the page with sliders, which required a second
+implementation of the arithmetic in JavaScript. Two copies of a formula drift, and the copy
+that drifts is the one nobody runs, so `tests/test_power_js.py` puts 960 input combinations
+through both and requires the rounded-up integer to match exactly. It earned its place
+immediately: the first JavaScript quantile was a cheap approximation good to 1e-8, and the test
+caught the two sides disagreeing by 217 people out of 621 million, because an error that small
+can still land on the wrong side of a rounding boundary. The fix was a better quantile,
+Wichura's AS241, rather than a looser assertion.
+
+Two things were found by rendering the page and reading it rather than by any test. The verdict
+line under the comparison chart announced that risk ranking was worse than random whenever its
+point estimate was lower, which on a single split is exactly the bare-point claim this
+repository argues against; it is now gated on the interval and says "cannot be told apart" when
+the range covers the random line, which is what Hillstrom actually shows. And the chart labelled
+all eight lines at the right edge, where the curves converge, so the labels sat on top of each
+other; it now names only random, risk ranking, and whatever is highlighted.

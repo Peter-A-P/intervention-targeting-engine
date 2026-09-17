@@ -868,16 +868,26 @@ where the risk queue is optimal by construction rather than by a narrow margin.
 ## The budget slider
 
 `uv run itx demo build` precomputes what a static page needs, and `demo/` is the page. Open
-`demo/index.html` over any static file server. Move the slider and two things change together:
-the list of units the budget treats, and the realised policy value that budget buys against
-spending the same money at random.
+`demo/index.html` over any static file server. It carries four things: every method on one
+axis against random targeting, so the comparison this project is about is the first chart a
+reader meets; a budget slider over one method at a time with its interval band and the list of
+units it treats; the sample-size calculator from change 60, with sliders; and the plain-language
+account of what each dataset and each method is, because a dropdown reading `acic` and a figure
+reading `+0.214` tell a reader nothing.
+
+All six datasets are on it, the fraud worked case included and labelled semi-synthetic wherever
+it appears. Numbers are shown in units a reader can hold: extra site visits per 1,000 people on
+Hillstrom, dollars a transaction on the fraud case, and on the two simulated sets an explicit
+statement that the units are arbitrary. The page's state is in its URL, so
+`?dataset=ieee-fraud&highlight=x-learner` is a link to one view.
 
 It is static because the budget for this project is CA$25 (PLAN.md section 7), and that
-constraint decided the design rather than being worked around. Every number the slider can
-display exists in `demo/data/*.json` before the page opens; the only arithmetic in the browser
-is reading an index out of an array and drawing a line. No backend, no dependencies, no CDN,
-and nothing identifying: units travel as row numbers and predicted uplift, never as feature
-values.
+constraint decided the design rather than being worked around. Every number that came out of a
+fitted model exists in `demo/data/*.json` before the page opens; the only arithmetic in the
+browser is reading an index out of an array, drawing a line, and the sample-size formula, which
+is closed form rather than a model and is checked against the Python it mirrors by
+`tests/test_power_js.py` on 960 input combinations. No backend, no dependencies, no CDN, and
+nothing identifying: units travel as row numbers and predicted uplift, never as feature values.
 
 Three things about it are limits rather than features, and the page says all three itself:
 

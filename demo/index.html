@@ -3,84 +3,388 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Intervention Targeting Engine: move the budget, watch the list change</title>
-<meta name="description" content="A budget slider over measured uplift-model rankings on five public datasets. Every number is precomputed from the benchmark; nothing is modelled in the browser.">
+<title>Intervention Targeting Engine: who do you treat, and what does it buy?</title>
+<meta name="description" content="Interactive results from an uplift-modelling benchmark on six datasets. Move a budget slider and see what each way of choosing who to treat actually buys. Every number is precomputed from a reproducible benchmark.">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
-  <header>
-    <h1>Who do you treat, and what does it buy?</h1>
+
+  <header class="hero">
+    <p class="eyebrow">Measured results, reproducible from one command</p>
+    <h1>Every budget picks some people and skips others. Who should it pick?</h1>
     <p class="lead">
-      A budget covers a fraction of the population, so somebody chooses the fraction. Move the
-      slider and watch both answers change: who is in the treated set, and how much outcome the
-      budget actually buys.
+      Retention offers, outreach calls, fraud reviews, follow-up appointments. The money covers a
+      fraction of the population, so somebody chooses the fraction. The usual answer is to rank
+      people by risk and treat the top of the list. <strong>Sometimes that works. Sometimes it is
+      worse than picking at random.</strong> This page shows both, on real data, and how to tell
+      which case you are in.
     </p>
-    <p class="note">
-      Every number here was computed by <code>itx demo build</code> from the same benchmark that
-      produces the repository's results table. Nothing is modelled in the browser, and no feature
-      values are shipped: units are row numbers in a public dataset's test split.
-    </p>
-    <p class="note">
-      <strong>These are one split, not the headline.</strong> The results table averages five
-      random splits of each dataset; this page shows the first of them, because a slider has to
-      move through a single ranking of actual units rather than an average of five different
-      ones. So the numbers here sit near the table's and will not equal them. On ACIC at a 10%
-      budget, for instance, this split gives the risk-ranking baseline -0.2434 where the
-      five-split average is -0.1971. The repository carries the averages and their intervals.
+    <div class="hero-points">
+      <div class="point">
+        <span class="point-figure" id="hero-best">&mdash;</span>
+        <span class="point-label">what the best method buys at a 10% budget, on the dataset below</span>
+      </div>
+      <div class="point">
+        <span class="point-figure" id="hero-risk">&mdash;</span>
+        <span class="point-label">what ranking by risk buys, on the same budget and the same data</span>
+      </div>
+      <div class="point">
+        <span class="point-figure" id="hero-random">&mdash;</span>
+        <span class="point-label">what picking at random buys, the floor everything must beat</span>
+      </div>
+    </div>
+    <p class="hero-note">
+      Six datasets, eight ways of choosing, one budget slider. Nothing is modelled in your
+      browser: every number was computed in advance by the benchmark and is checkable in the
+      repository.
     </p>
   </header>
 
-  <section class="controls">
-    <div class="control">
-      <label for="dataset">Dataset</label>
-      <select id="dataset"></select>
-    </div>
-    <div class="control">
-      <label for="estimator">Ranking</label>
-      <select id="estimator"></select>
-    </div>
-    <div class="control wide">
-      <label for="budget">Budget: treat the top <output id="budget-label">20%</output></label>
-      <input type="range" id="budget" min="1" max="50" value="10" step="1">
-    </div>
-  </section>
-
-  <section class="headline" id="headline" aria-live="polite"></section>
-
-  <section class="chart">
-    <h2>What the budget buys</h2>
-    <p class="note">
-      Realised policy value, doubly robust, against the expected value of spending the same
-      budget at random. The band is a <span id="level-label">95%</span> bootstrap interval. The
-      vertical line is the budget you have selected. The random line is the closed-form
-      expectation, the budget share times the value of treating everybody; the results table's
-      random row is the average of 200 actual random draws, so the two sit close and differ.
+  <section class="section" id="explainer">
+    <h2>The idea in one table</h2>
+    <p>
+      If you could see what your action does to each person, there would be four kinds of people.
+      Only one kind is worth the money.
     </p>
-    <div id="chart" role="img" aria-label="Policy value against budget"></div>
-    <div class="legend">
-      <span class="key selected"></span> selected ranking
-      <span class="key random"></span> random targeting
+    <div class="table-wrap">
+      <table class="four-types">
+        <thead>
+          <tr><th>Kind of person</th><th>If you do nothing</th><th>If you act</th><th>Worth the budget?</th></tr>
+        </thead>
+        <tbody>
+          <tr class="good"><td><strong>Persuadables</strong></td><td>bad outcome</td><td>good outcome</td><td><strong>Yes.</strong> They are the entire return.</td></tr>
+          <tr><td><strong>Sure things</strong></td><td>good outcome</td><td>good outcome</td><td>No. They were fine anyway.</td></tr>
+          <tr><td><strong>Lost causes</strong></td><td>bad outcome</td><td>bad outcome</td><td>No. Nothing on offer helps.</td></tr>
+          <tr class="bad"><td><strong>Sleeping dogs</strong></td><td>good outcome</td><td>bad outcome</td><td>No. Acting does damage.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      Ranking by risk sorts on the first column alone. It puts lost causes at the top, because
+      they really are the highest risk, and it cannot see sleeping dogs at all. Persuadables sit
+      in the middle of a risk list and get missed. <strong>Uplift modelling tries to sort on the
+      difference between the two columns instead</strong>, which is the thing you actually care
+      about and the thing you can never observe for any individual, because only one of the two
+      ever happens to them.
+    </p>
+  </section>
+
+  <section class="section" id="compare">
+    <h2>Every method against random targeting</h2>
+    <p class="section-lead">
+      One line per way of choosing who to treat. Higher is better. The
+      <span class="inline-key random"></span><strong>red dashed line is random targeting</strong>,
+      the floor: any method below it is worse than picking names out of a hat. Change the dataset
+      to see how completely the picture changes.
+    </p>
+
+    <div class="controls">
+      <div class="control">
+        <label for="dataset">Dataset</label>
+        <select id="dataset"></select>
+      </div>
+      <div class="control">
+        <label for="highlight">Highlight</label>
+        <select id="highlight">
+          <option value="">all methods</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="dataset-card" id="dataset-card"></div>
+
+    <figure class="chart-figure">
+      <div id="chart-all" class="chart" role="img" aria-label="Policy value against budget for every ranking method"></div>
+      <figcaption id="caption-all"></figcaption>
+    </figure>
+
+    <div class="legend" id="legend-all"></div>
+
+    <div class="verdict" id="verdict"></div>
+  </section>
+
+  <section class="section" id="slider">
+    <h2>Pick a method and move the budget</h2>
+    <p class="section-lead">
+      The same measurement, one method at a time, with its uncertainty band and the list of who
+      actually gets treated. <strong>If the band crosses the red line, the method has not been
+      shown to beat random targeting at that budget.</strong>
+    </p>
+
+    <div class="controls">
+      <div class="control">
+        <label for="estimator">Method</label>
+        <select id="estimator"></select>
+      </div>
+      <div class="control wide">
+        <label for="budget">Budget: treat the top <output id="budget-label">20%</output></label>
+        <input type="range" id="budget" min="1" max="50" value="10" step="1">
+      </div>
+    </div>
+
+    <div class="method-card" id="method-card"></div>
+
+    <section class="headline" id="headline" aria-live="polite"></section>
+
+    <figure class="chart-figure">
+      <div id="chart" class="chart" role="img" aria-label="Policy value against budget for the selected ranking"></div>
+      <figcaption id="caption-one"></figcaption>
+    </figure>
+
+    <details class="disclose">
+      <summary>Who is in the treated set</summary>
+      <p class="note" id="list-note"></p>
+      <div class="table-wrap">
+        <table id="units">
+          <thead><tr><th>#</th><th>Row</th><th>Predicted uplift</th><th>Cost</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <p class="note">
+        Units are row numbers in a public dataset's held-out split. No personal or feature values
+        are shipped to your browser.
+      </p>
+    </details>
+  </section>
+
+  <section class="section" id="power">
+    <h2>Could your own data answer this at all?</h2>
+    <p class="section-lead">
+      Most data cannot, and finding out afterwards is expensive. Two very different questions
+      hide behind one word, "enough":
+    </p>
+    <ol class="two-questions">
+      <li><strong>Does the intervention do anything?</strong> The easy question, and the one most pilots are sized for.</li>
+      <li><strong>Is targeting better than picking at random?</strong> Much harder, because you now need to tell one group apart from the average rather than from zero.</li>
+    </ol>
+
+    <div class="power-grid">
+      <div class="power-controls">
+        <div class="control">
+          <label for="p-base">
+            Base rate: <output id="p-base-label">10%</output>
+            <span class="hint">how often the outcome happens with no intervention</span>
+          </label>
+          <input type="range" id="p-base" min="1" max="50" value="10" step="1">
+        </div>
+        <div class="control">
+          <label for="p-lift">
+            Effect size: <output id="p-lift-label">10%</output> relative
+            <span class="hint">how much the intervention moves that rate, on average</span>
+          </label>
+          <input type="range" id="p-lift" min="1" max="50" value="10" step="1">
+        </div>
+        <div class="control">
+          <label for="p-budget">
+            Budget: top <output id="p-budget-label">20%</output>
+            <span class="hint">the share of people you can afford to treat</span>
+          </label>
+          <input type="range" id="p-budget" min="5" max="50" value="20" step="5">
+        </div>
+        <div class="control">
+          <label for="p-holdout">
+            Holdout: <output id="p-holdout-label">50%</output> treated
+            <span class="hint">an even split is the cheapest; a small holdout costs you</span>
+          </label>
+          <input type="range" id="p-holdout" min="5" max="95" value="50" step="5">
+        </div>
+      </div>
+      <div class="power-output" id="power-output" aria-live="polite"></div>
+    </div>
+
+    <p class="note">
+      These are floors, not estimates. They price <em>measuring</em> a ranking you already have,
+      and a real study also has to <em>learn</em> the ranking from the same rows, which costs
+      more. How much better the top group responds is the thing the study exists to discover, so
+      it cannot be known in advance, which is why the answer is a range rather than a number.
+    </p>
+    <p class="note">
+      The same arithmetic, run on the six datasets above from four summary numbers each and no
+      model at all, gets every one of the six verdicts right: the four that could be ranked on,
+      and the two that could not. That check is a test in the repository, so it cannot quietly
+      stop being true.
+    </p>
+  </section>
+
+  <section class="section" id="howto">
+    <h2>Running this on your own data</h2>
+
+    <div class="cards">
+      <div class="card">
+        <h3>1. Check you have the right kind of data</h3>
+        <p>
+          You need an intervention that <strong>already happened to some people and not
+          others</strong>, and a record of what happened to both. Not a customer list. Nothing
+          here, and nothing anywhere, can tell you the effect of an action nobody has ever taken.
+        </p>
+        <p>
+          Ideally who got it was decided <strong>at random</strong>. If it was not, the numbers
+          mix what the intervention did with whatever made those people likelier to be chosen,
+          and the tool will say so rather than quietly pretending otherwise.
+        </p>
+      </div>
+      <div class="card">
+        <h3>2. If you have no data yet, size the pilot</h3>
+        <p>Use the calculator above, then run a holdout of that size. One command does the arithmetic:</p>
+        <pre><code>uv run itx power \
+  --base-rate 0.10 \
+  --relative-effect 0.10 \
+  --budget 0.2</code></pre>
+        <p>It reports the easy threshold and the hard one separately, because sizing for the easy one is the usual mistake.</p>
+      </div>
+      <div class="card">
+        <h3>3. Spend one model finding out if it is worth continuing</h3>
+        <p>
+          Before fitting anything sophisticated, ask whether risk ranking already does the job on
+          your population. It costs a single model:
+        </p>
+        <pre><code>uv run itx diagnose \
+  --csv customers.csv \
+  --treatment got_offer \
+  --outcome churned \
+  --features age,tenure,plan \
+  --categorical plan \
+  --design randomised \
+  --outcome-polarity lower-is-better</code></pre>
+        <p>
+          The last two have no defaults and are never guessed. The same file labelled "churned"
+          and "retained" gave opposite answers until that was fixed.
+        </p>
+      </div>
+      <div class="card">
+        <h3>4. Only then, run the full benchmark</h3>
+        <p>
+          If the diagnostic says there is room, fit everything and compare it against both
+          baselines with intervals on every number, the way this page does.
+        </p>
+        <pre><code>uv run itx benchmark \
+  --dataset hillstrom</code></pre>
+        <p>And pass <code>--no-tune</code>. The tuning search was measured four times and bought nothing.</p>
+      </div>
     </div>
   </section>
 
-  <section class="list">
-    <h2>Who is in the treated set</h2>
-    <p class="note" id="list-note"></p>
-    <table id="units">
-      <thead><tr><th>#</th><th>Row</th><th>Predicted uplift</th><th>Cost</th></tr></thead>
-      <tbody></tbody>
-    </table>
+  <section class="section" id="takeaways">
+    <h2>What this project found</h2>
+    <div class="takeaways">
+      <div class="takeaway">
+        <h3>Risk ranking is neither a trap nor safe</h3>
+        <p>
+          It depends on the data, the difference is worth a change of sign, and nobody can guess
+          which case they are in. On ACIC it destroys value. On Criteo it matches every
+          sophisticated method. Both results came out of the same code.
+        </p>
+      </div>
+      <div class="takeaway">
+        <h3>You can tell which case you are in, cheaply</h3>
+        <p>
+          One outcome model, before any of the expensive work. That diagnostic is the most useful
+          thing this project produced, and it was not what the project set out to build.
+        </p>
+      </div>
+      <div class="takeaway">
+        <h3>The fraud case was rigged against risk ranking, and lost</h3>
+        <p>
+          It was designed so that the highest-risk transactions are the ones where review does
+          least good. Risk ranking still beat every uplift model at every budget. A team that
+          kept its existing model and ignored this repository would be better off.
+        </p>
+      </div>
+      <div class="takeaway">
+        <h3>Most data cannot answer the question</h3>
+        <p>
+          Lenta has 687,029 customers in a real randomised trial and still cannot support a
+          targeting decision. Size alone is not enough, and the calculator above says so before
+          you spend the money.
+        </p>
+      </div>
+      <div class="takeaway">
+        <h3>Every number here has an interval</h3>
+        <p>
+          A result without one is treated as a defect in this codebase. That rule is what kept
+          the conclusions standing through six defects found during the build: every corrected
+          number stayed inside the range already published.
+        </p>
+      </div>
+      <div class="takeaway">
+        <h3>The checks caught real mistakes</h3>
+        <p>
+          Rebuilding every result from a fresh copy found a bug that made part of a table
+          impossible for anyone to reproduce. It was fixed, remeasured, and written up next to
+          the result rather than quietly corrected.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="method">
+    <h2>How to read these numbers</h2>
+
+    <details class="disclose" open>
+      <summary>What "outcome bought per head" means</summary>
+      <p id="units-explainer"></p>
+      <p>
+        It is measured <strong>per person in the whole population</strong>, not per person
+        treated. That is deliberate: it lets a 5% budget and a 40% budget sit on the same axis
+        and be compared honestly. Treating 5% of people very well can still buy less in total
+        than treating 40% adequately.
+      </p>
+    </details>
+
+    <details class="disclose">
+      <summary>Why every number has a range after it</summary>
+      <p>
+        The range is a 95% confidence interval: where the answer would likely fall if you ran the
+        whole thing again on fresh data. <strong>A method whose range crosses the random line has
+        not been shown to beat random targeting</strong>, whatever its headline number says.
+        Reporting the number alone would make several results on this page look far more certain
+        than they are.
+      </p>
+    </details>
+
+    <details class="disclose">
+      <summary>This page shows one split, the repository averages five</summary>
+      <p>
+        The results table in the repository averages five random splits of each dataset. This page
+        shows the first of them, because a slider has to move through a single ranking of actual
+        people rather than an average of five different ones. So these numbers sit near the
+        table's and will not equal them. On ACIC at a 10% budget this split gives risk ranking
+        -0.2434 where the five-split average is -0.1971.
+      </p>
+    </details>
+
+    <details class="disclose">
+      <summary>Where the numbers come from</summary>
+      <p id="provenance"></p>
+      <p>
+        The random line is the closed-form expectation: the budget share times the value of
+        treating everybody. The repository's random row is the average of 200 actual random
+        draws, so the two sit close together and differ slightly.
+      </p>
+    </details>
+
+    <details class="disclose">
+      <summary>Glossary</summary>
+      <dl class="glossary" id="glossary"></dl>
+    </details>
   </section>
 
   <footer>
-    <p>
-      Part of the Intervention Targeting Engine. The repository carries the results table, the
-      confidence intervals this page abbreviates, and a write-up of where each estimator breaks.
+    <p class="footer-lead">
+      Part of the Intervention Targeting Engine: an uplift-modelling and budget-constrained
+      targeting toolkit with honest evaluation.
     </p>
-    <p class="note" id="provenance"></p>
+    <p class="note">
+      Five LightGBM meta-learners, a PyTorch neural network, and two baselines, on six datasets.
+      Every table regenerated by one command and reproduced from a fresh clone at zero tolerance.
+      The repository carries the results tables, the confidence intervals this page abbreviates,
+      a write-up of where each method breaks, and one approach tried and rejected with evidence.
+    </p>
   </footer>
 </main>
+<script src="content.js"></script>
+<script src="power.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

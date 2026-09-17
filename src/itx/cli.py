@@ -1086,9 +1086,17 @@ def demo_build(
     from itx.demo.build import build_payload, write_payloads
 
     say = _printer()
-    # By default only the benchmark datasets, and only the ones with results. results/ also
-    # holds the fraud worked case (semi-synthetic, not a benchmark row), the synthetic
-    # generators, and possibly a checkpoint, none of which belong on the page unasked.
+    # By default the benchmark datasets plus the fraud worked case, and only the ones with
+    # results. results/ also holds the synthetic generators and possibly a checkpoint, which do
+    # not belong on the page.
+    #
+    # The fraud case is here deliberately rather than by default-of-everything. It is
+    # semi-synthetic, and the page labels it as such wherever it appears, but it is the only
+    # dataset whose units are dollars, and "this budget saves $1.61 a transaction" is legible
+    # to a reader who bounces off "+0.0055 outcome per head". Leaving the project's most
+    # striking result out of the page that exists to show the project's results was the wrong
+    # call, and this is the correction.
+    on_the_page = (*BENCHMARK_DATASETS, "ieee-fraud")
     present = sorted(
         path.stem
         for path in results_dir.glob("*.json")
@@ -1097,7 +1105,7 @@ def demo_build(
     wanted = (
         [name.strip() for name in datasets.split(",")]
         if datasets
-        else [name for name in BENCHMARK_DATASETS if name in present] or present
+        else [name for name in on_the_page if name in present] or present
     )
     if not wanted:
         typer.echo(f"no results in {results_dir}; run 'itx benchmark --all' first")
