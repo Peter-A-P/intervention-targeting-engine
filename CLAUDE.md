@@ -40,6 +40,6 @@ hand-edit it. `docs/rejected.md` records one approach tried and rejected, with e
 
 "How it works" is the plain-language explanation of the problem, written for a reader who
 is not a causal-inference specialist, with the depth below a `### In more detail`
-heading. peterparker.ca carries the same explanation as this project's stand-in page
-until this repository is public, in `content/01-intervention-targeting.md` there; if one
-changes, change both in the same change.
+heading. This repository went public on 2026-09-18, so peterparker.ca renders this
+README as the project's page and no longer shows the stand-in explainer it carried until
+then (`content/01-intervention-targeting.md` there, now unused). Change this file alone.
