@@ -6,13 +6,18 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
+**[Open the live demo: targeting.peterparker.ca](https://targeting.peterparker.ca)** Six
+datasets, eight ways of choosing who to treat, and a budget slider. It shows where ranking
+people by risk beats every uplift model here, where it is worse than picking names out of a
+hat, and a calculator for whether your own data is large enough to answer the question at
+all. Every figure on it comes from the tables below.
+
 **Status: v0.1.0, the build finished.** Seven estimators benchmarked on all five
 datasets, each reported with what its ranking actually buys at a budget rather than only how
 well it ranks, plus a sensitivity section, a fraud worked case that declares itself
-semi-synthetic in its first sentence, and a budget-slider demo live at
-[targeting.peterparker.ca](https://targeting.peterparker.ca). The numbers below are real and
-reproducible: every table here has been regenerated from a fresh clone and a fresh virtual
-environment and compared at zero tolerance. What is unfinished is listed under
+semi-synthetic in its first sentence, and the budget-slider demo above. The numbers below are
+real and reproducible: every table here has been regenerated from a fresh clone and a fresh
+virtual environment and compared at zero tolerance. What is unfinished is listed under
 [What this does not do](#what-this-does-not-do) rather than left out. Build plan:
 [PLAN.md](PLAN.md).
 
