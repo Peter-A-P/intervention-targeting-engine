@@ -10,7 +10,9 @@
 "use strict";
 
 // Every dataset on the page. `units` is the single most important field here: without it
-// "+0.214 outcome bought per head" is a number with no noun attached.
+// "+0.214 outcome bought per head" is a number with no noun attached. `unitsShort` is the same
+// phrase with the qualifier dropped, for the three figures at the top of the page where the
+// full form is repeated three times and the qualifier is what makes it wrap.
 const DATASETS = {
   hillstrom: {
     title: "Hillstrom email campaign",
@@ -21,6 +23,7 @@ const DATASETS = {
       "page uses the men's-email arm against the control.",
     outcome: "Whether the customer visited the website in the following two weeks.",
     units: "extra site visits per 1,000 people in the population",
+    unitsShort: "extra site visits per 1,000 people",
     scale: 1000,
     decimals: 1,
     why:
@@ -38,6 +41,7 @@ const DATASETS = {
       "shown the ad and 15% held back at random. The page uses the committed 10% subsample.",
     outcome: "Whether the person converted, meaning they took the action the advertiser wanted.",
     units: "extra conversions per 1,000 people in the population",
+    unitsShort: "extra conversions per 1,000 people",
     scale: 1000,
     decimals: 2,
     why:
@@ -55,6 +59,7 @@ const DATASETS = {
       "or not.",
     outcome: "Whether the customer made a purchase in the following period.",
     units: "extra purchases per 1,000 people in the population",
+    unitsShort: "extra purchases per 1,000 people",
     scale: 1000,
     decimals: 2,
     why:
@@ -72,6 +77,7 @@ const DATASETS = {
       "effect of the intervention on every single child is known.",
     outcome: "A simulated cognitive test score.",
     units: "simulated test-score points per head",
+    unitsShort: "simulated points per head",
     scale: 1,
     decimals: 3,
     why:
@@ -89,6 +95,7 @@ const DATASETS = {
       "others, who gets treated here depends on their characteristics, on purpose.",
     outcome: "A simulated continuous outcome.",
     units: "simulated outcome units per head",
+    unitsShort: "simulated units per head",
     scale: 1,
     decimals: 3,
     why:

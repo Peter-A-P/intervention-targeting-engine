@@ -1444,3 +1444,47 @@ repository argues against; it is now gated on the interval and says "cannot be t
 the range covers the random line, which is what Hillstrom actually shows. And the chart labelled
 all eight lines at the right edge, where the curves converge, so the labels sat on top of each
 other; it now names only random, risk ranking, and whatever is highlighted.
+
+**62. The demo now looks like the site it belongs to** (week 8). Peter read the rebuilt page
+and found four things, all of them right. The page used its own palette and type, so a visitor
+arriving from peterparker.ca met a different-looking site at a subdomain of the same name; it
+now takes that site's tokens, its two fonts and its 3px rule over the page. The fonts are
+copied into `demo/fonts/` rather than linked from the main host, because the page's standing
+claim is that it makes no off-origin request, and a font is a request; `font-src 'self'` was
+added to the Content-Security-Policy in the same change, since the policy is `default-src
+'none'` and would otherwise have blocked them.
+
+The other three were plain defects. Prose had three different measures on the same column,
+62ch for the hero lead, 64ch for a section lead and unbounded for everything else, so
+paragraphs in the same column stopped at three different places; there is now one `--measure`.
+The three figures at the top of the page carried no unit, which on a page whose argument is
+that a number without its noun is not a measurement was the worst place on the site for that
+to be true; each now states its unit, and random targeting's figure is no longer coloured with
+the green this page uses for "beats the floor". And the how-to and takeaway tiles were
+`auto-fit`, which at this width gave three columns of four-word lines rather than the two the
+content wants, so the column count is now stated.
+
+The disclosure arrows sat in the summary's margin box, which put them on top of the card
+border. The native marker is off and the chevron is an ordinary flex child, so it is inside
+the padding like everything else and a wrapped summary lines up under itself.
+
+**The restyle found a live defect, and the way it was found is the point.** Checking whether
+the copied fonts would load meant serving the page under its own content security policy for
+the first time, rather than under `python -m http.server`, which sends no policy at all. The
+fonts were fine. The chart legend was not: `style-src 'self'` blocks a style attribute that
+arrives in markup, which is how the eight colour swatches were being coloured, so every chip
+in the legend has been rendering as an empty outline on the live site since the page went up.
+Locally it looked correct every time, because locally the policy was not there.
+
+The colour now goes on from script through the CSSOM, which the policy permits and which is
+the distinction it is drawing. The policy is not loosened. `itx demo serve` reads
+`globalHeaders` out of the committed `staticwebapp.config.json` and sends exactly those, so
+the gap between the checked page and the served page closes; `tests/test_demo_serve.py` holds
+both halves, that the server sends what the config declares and that the page contains no
+style attribute for the policy to block.
+
+Nothing measured changed. This is the fourth and fifth time on this project that looking at
+the thing itself found something no test could: the first three were the bare-point verdict
+line, the colliding chart labels, and the units that were missing from the headline figures.
+The fifth needed the page to be looked at through the headers it is actually served with,
+which is a reminder that "I checked it" is only ever true of the thing that was checked.

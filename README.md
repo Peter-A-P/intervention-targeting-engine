@@ -888,6 +888,14 @@ browser is reading an index out of an array, drawing a line, and the sample-size
 is closed form rather than a model and is checked against the Python it mirrors by
 `tests/test_power_js.py` on 960 input combinations. No backend, no dependencies, no CDN, and
 nothing identifying: units travel as row numbers and predicted uplift, never as feature values.
+It uses peterparker.ca's palette and typefaces so that a visitor arriving from there does not
+land on a different-looking site, and the two fonts are copied into `demo/fonts/` rather than
+linked to that host, because a font is an off-origin request like any other.
+
+`uv run itx demo serve` is how to look at it locally. It sends the content security policy the
+live site sends, which an ordinary static server does not, and the difference is not academic:
+the legend's colour swatches were blank on the deployed page for two weeks while every local
+check showed them correctly.
 
 Three things about it are limits rather than features, and the page says all three itself:
 

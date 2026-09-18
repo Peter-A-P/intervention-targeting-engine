@@ -17,6 +17,7 @@ import typer
 
 from itx import __version__
 from itx.demo.build import DEMO_RESAMPLES
+from itx.demo.serve import CONFIG_NAME
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -1135,6 +1136,41 @@ def demo_build(
 
     for written in write_payloads(payloads, out_dir):
         typer.echo(f"demo data: {written}")
+
+
+@demo_app.command("serve")
+def demo_serve(
+    directory: Annotated[
+        Path, typer.Option(help="The folder to serve. Defaults to the committed demo.")
+    ] = Path("demo"),
+    port: Annotated[int, typer.Option(help="Port on the loopback interface.")] = 8000,
+) -> None:
+    """Serve the demo locally under the headers the live site sends.
+
+    `python -m http.server` sends no Content-Security-Policy and the deployed page is served
+    with a strict one, so a page checked under the first is not the page a visitor gets. The
+    legend's colour swatches were blank on the live site for two weeks because of exactly that
+    gap: a style attribute in markup is blocked by the policy, and nothing local said so.
+    """
+    from itx.demo.serve import build_server, declared_headers
+
+    if not directory.is_dir():
+        typer.echo(f"no such directory: {directory}")
+        raise typer.Exit(code=1)
+
+    headers = declared_headers(directory)
+    server = build_server(directory, port)
+    typer.echo(f"serving {directory} on http://127.0.0.1:{port}")
+    for key in headers:
+        typer.echo(f"  sending {key}")
+    if not headers:
+        typer.echo(f"  no {CONFIG_NAME}: sending no extra headers, same as any static server")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:  # pragma: no cover - a person pressing ctrl-c
+        typer.echo("stopped")
+    finally:
+        server.server_close()
 
 
 if __name__ == "__main__":  # pragma: no cover

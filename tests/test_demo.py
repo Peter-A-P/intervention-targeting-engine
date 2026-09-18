@@ -246,9 +246,37 @@ class TestTheShippedPage:
 
     def test_the_page_references_only_local_assets(self):
         # No CDN, no analytics, no fonts from elsewhere: a static page whose argument is
-        # that you can read it should not be fetching anything you cannot.
+        # that you can read it should not be fetching anything you cannot. The stylesheet is
+        # checked too, because that is where a font or a background image would hide, and the
+        # page passed this test for a while with the check reading the HTML alone.
         from pathlib import Path
 
-        page = Path("demo/index.html").read_text(encoding="utf-8")
-        assert "http://" not in page
-        assert "https://" not in page
+        for name in ("index.html", "style.css", "app.js", "content.js", "power.js"):
+            text = Path("demo", name).read_text(encoding="utf-8")
+            assert "http://" not in text, name
+            assert "https://" not in text, name
+
+    def test_the_fonts_it_asks_for_are_in_the_folder(self):
+        # The two faces are copied from peterparker.ca rather than linked to it. A missing
+        # file here is not a crash, it is a silent fallback to a system serif, which is the
+        # kind of defect nobody notices until somebody else does.
+        import re
+        from pathlib import Path
+
+        css = Path("demo/style.css").read_text(encoding="utf-8")
+        referenced = set(re.findall(r"url\(([^)]+)\)", css))
+        assert referenced, "the stylesheet declares no font files"
+        for target in referenced:
+            assert Path("demo", target.strip("\"'")).is_file(), target
+
+    def test_the_hosting_policy_allows_the_fonts_it_serves(self):
+        # default-src is 'none', so anything not named is blocked. A font served from the
+        # same origin still needs font-src.
+        import json
+        from pathlib import Path
+
+        config = json.loads(Path("demo/staticwebapp.config.json").read_text(encoding="utf-8"))
+        policy = config["globalHeaders"]["Content-Security-Policy"]
+        assert "font-src 'self'" in policy
+        for directive in policy.split(";"):
+            assert "http" not in directive, directive

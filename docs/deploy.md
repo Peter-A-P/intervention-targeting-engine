@@ -1,7 +1,8 @@
 # Putting the demo on targeting.peterparker.ca
 
-The demo is `demo/`: four static files and a `data/` directory. There is no build step, no
-backend and no dependency to install, so hosting it is a file copy and a DNS record.
+The demo is `demo/`: five static files, a `fonts/` directory and a `data/` directory. There is
+no build step, no backend and no dependency to install, so hosting it is a file copy and a DNS
+record.
 
 PLAN.md section 7 specifies Azure Static Web Apps on the free tier, because this project is
 the portfolio's Azure hosting example. GitHub Pages is the fallback if the free tier changes,
@@ -12,10 +13,17 @@ and is at the bottom of this page.
 - The repository is private. Both routes below work with a private repository, but they
   differ in what they put in it: route A commits a GitHub Actions workflow, route B does not.
 - The free tier includes custom domains and enough bandwidth for this page, which is about
-  400 KB of JSON plus 20 KB of HTML, CSS and JavaScript.
+  400 KB of JSON, 180 KB of fonts and 25 KB of HTML, CSS and JavaScript.
 - `demo/staticwebapp.config.json` is already committed. It sets a content security policy
-  that allows the page's own script and stylesheet and nothing else, so the deployment
-  cannot quietly start loading anything off-origin.
+  that allows the page's own script, stylesheet and fonts and nothing else, so the deployment
+  cannot quietly start loading anything off-origin. The two typefaces are peterparker.ca's,
+  copied into `demo/fonts/` rather than linked to that host, which is why `font-src 'self'`
+  is in the policy and no other font source is.
+- **Check the page with `uv run itx demo serve`, not with `python -m http.server`.** The
+  second sends no headers, so it shows you a page the policy would partly refuse. That is not
+  hypothetical: the legend's colour swatches were blank on the live site for two weeks and
+  correct in every local check, because a style attribute in markup is what `style-src 'self'`
+  blocks. `itx demo serve` sends the config's own headers and the defect is visible at once.
 
 ## Route A: deploy from GitHub, which redeploys on every push
 

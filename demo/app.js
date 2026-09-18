@@ -31,9 +31,26 @@ const COLOURS = {
   "dr-learner": "#1d4ed8",
   "r-learner": "#93c5fd",
   dragonnet: "#7c3aed",
-  "outcome-ranking": "#0d9488",
+  "outcome-ranking": "#0f5c6e",
   random: "#dc2626",
 };
+
+// Only the ones that fail on a dark background. The page's teal is chosen to sit on paper and
+// vanishes on near-black, and it is risk ranking's line, which is the one a reader is here to
+// find. The deepest blue and the purple go up a step with it so the family still reads as a
+// family.
+const COLOURS_DARK = {
+  "dr-learner": "#4f7dff",
+  dragonnet: "#a78bfa",
+  "outcome-ranking": "#2dd4bf",
+  random: "#f2645a",
+};
+
+const darkMode = window.matchMedia?.("(prefers-color-scheme: dark)");
+
+function colourOf(name) {
+  return (darkMode?.matches ? COLOURS_DARK[name] : null) ?? COLOURS[name] ?? "#888";
+}
 
 // The page's whole state is three values, so it can live in the URL. Sharing a view then
 // costs nothing and the back button works.
@@ -91,6 +108,10 @@ async function boot() {
 
   renderGlossary();
   bootPower();
+  darkMode?.addEventListener?.("change", () => {
+    renderAll();
+    render();
+  });
 
   const known = state.index.datasets.map((d) => d.key);
   const first = known.includes(wanted.dataset)
@@ -182,6 +203,12 @@ function unitLabel() {
   return meta().units ?? "outcome per head";
 }
 
+// The same unit with the qualifying phrase dropped, for the three hero tiles where it appears
+// three times over and the full form takes two lines each. The dataset card states it in full.
+function shortUnitLabel() {
+  return meta().unitsShort ?? unitLabel();
+}
+
 function axisLabel() {
   const m = meta();
   if (m.currency) return "dollars saved per transaction";
@@ -254,22 +281,29 @@ function renderAll() {
   const series = names.map((name) => ({
     name,
     values: p.estimators[name].dr.value,
-    colour: COLOURS[name] ?? "#888",
+    colour: colourOf(name),
   }));
   const random = p.random.dr;
 
   drawMulti("chart-all", p.budgets, series, random);
 
+  // The colour travels as a data attribute and is applied below rather than written into a
+  // style attribute here. Under the page's own content security policy a style attribute in
+  // markup is blocked, which left every swatch blank on the live site while looking correct
+  // on a local server that sends no policy. Setting the property from script is allowed.
   el("legend-all").innerHTML =
     series
       .map(
         (s) =>
           `<button class="legend-item ${state.highlight === s.name ? "on" : ""}" data-name="${s.name}">
-             <span class="swatch" style="background:${s.colour}"></span>${ESTIMATORS[s.name]?.title ?? s.name}
+             <span class="swatch" data-colour="${s.colour}"></span>${ESTIMATORS[s.name]?.title ?? s.name}
            </button>`
       )
       .join("") +
-    `<span class="legend-item static"><span class="swatch dashed" style="background:${COLOURS.random}"></span>Random targeting</span>`;
+    `<span class="legend-item static"><span class="swatch dashed" data-colour="${colourOf("random")}"></span>Random targeting</span>`;
+  for (const swatch of el("legend-all").querySelectorAll(".swatch[data-colour]")) {
+    swatch.style.background = swatch.dataset.colour;
+  }
   for (const button of el("legend-all").querySelectorAll("button")) {
     button.addEventListener("click", () => {
       state.highlight = state.highlight === button.dataset.name ? "" : button.dataset.name;
@@ -351,7 +385,17 @@ function renderHero(series, random) {
   el("hero-best").textContent = scaled(best.values[i]);
   el("hero-risk").textContent = risk ? scaled(risk.values[i]) : "—";
   el("hero-random").textContent = scaled(random[i]);
-  el("hero-risk").className = `point-figure ${risk && risk.values[i] < random[i] ? "down" : ""}`;
+  el("hero-best").className = `point-figure ${best.values[i] > random[i] ? "up" : "down"}`;
+  el("hero-risk").className = `point-figure ${
+    risk && risk.values[i] < random[i] ? "down" : "up"
+  }`;
+
+  // A figure with no noun on it is not a measurement. All three are in the same unit, and the
+  // unit changes with the dataset, so it is written under each one rather than assumed.
+  for (const node of document.querySelectorAll(".point-unit")) node.textContent = shortUnitLabel();
+  el("hero-context").innerHTML =
+    `These three figures are for <strong>${meta().title ?? state.dataset}</strong>, the dataset ` +
+    `selected below.`;
 }
 
 // ---------------------------------------------------------------- the single-method chart
@@ -485,7 +529,7 @@ function drawMulti(target, budgets, series, random) {
   // which is the comparison, and whatever is highlighted. Labelling all eight stacks them on
   // top of each other wherever the curves converge, which is most of the right-hand side.
   const named = [
-    { name: "random", values: random, colour: COLOURS.random },
+    { name: "random", values: random, colour: colourOf("random") },
     ...series.filter((s) => s.name === "outcome-ranking" || s.name === state.highlight),
   ];
   let previous = -Infinity;
@@ -505,7 +549,7 @@ function drawMulti(target, budgets, series, random) {
       ${svg}
       ${lo < 0 && hi > 0 ? `<line class="zero" x1="${PAD.left}" y1="${y(0).toFixed(1)}" x2="${W - PAD.right}" y2="${y(0).toFixed(1)}"></line>` : ""}
       ${lines}
-      <path class="random-line" d="${path(random)}" stroke="${COLOURS.random}"></path>
+      <path class="random-line" d="${path(random)}" stroke="${colourOf("random")}"></path>
       ${labels}
     </svg>`;
 }
@@ -516,7 +560,7 @@ function drawOne(budgets, selected, random, cursor) {
   const hi = Math.max(...ys);
   const span = hi - lo || 1;
   const { x, y, svg } = axes(lo, span, budgets, axisLabel());
-  const colour = COLOURS[state.estimator] ?? "#2563eb";
+  const colour = colourOf(state.estimator);
   const path = (vals) =>
     vals.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join("");
   const band =
@@ -534,12 +578,12 @@ function drawOne(budgets, selected, random, cursor) {
       ${svg}
       ${lo < 0 && hi > 0 ? `<line class="zero" x1="${PAD.left}" y1="${y(0).toFixed(1)}" x2="${W - PAD.right}" y2="${y(0).toFixed(1)}"></line>` : ""}
       <path class="band" d="${band}" fill="${colour}"></path>
-      <path class="random-line" d="${path(random)}" stroke="${COLOURS.random}"></path>
+      <path class="random-line" d="${path(random)}" stroke="${colourOf("random")}"></path>
       <path class="series" d="${path(selected.value)}" stroke="${colour}" stroke-width="3"></path>
       <line class="cursor" x1="${x(cursor).toFixed(1)}" y1="${PAD.top}" x2="${x(cursor).toFixed(1)}" y2="${H - PAD.bottom}"></line>
       <circle class="dot" cx="${x(cursor).toFixed(1)}" cy="${y(selected.value[cursor]).toFixed(1)}" r="5" fill="${colour}"></circle>
       <text class="end-label" x="${W - PAD.right + 8}" y="${y(selected.value[selected.value.length - 1]).toFixed(1)}" fill="${colour}">${ESTIMATORS[state.estimator]?.title ?? state.estimator}</text>
-      <text class="end-label" x="${W - PAD.right + 8}" y="${(y(random[random.length - 1]) + 14).toFixed(1)}" fill="${COLOURS.random}">Random</text>
+      <text class="end-label" x="${W - PAD.right + 8}" y="${(y(random[random.length - 1]) + 14).toFixed(1)}" fill="${colourOf("random")}">Random</text>
     </svg>`;
 }
 
