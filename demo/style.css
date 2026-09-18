@@ -46,7 +46,7 @@
   /* One width for everything on the page. Prose used to stop short of the cards and charts
      beside it, which reads as a mistake rather than as a measure, so the column itself is
      the measure: 46rem, what peterparker.ca gives the body of a project page. */
-  --column: 46rem;
+  --column: 66rem;
   --measure: 100%;
 }
 
@@ -72,7 +72,7 @@
 
 * { box-sizing: border-box; }
 
-html { font-size: 17px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { font-size: 18px; scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
@@ -80,7 +80,7 @@ body {
   color: var(--ink);
   font-family: var(--sans);
   font-size: 1rem;
-  line-height: 1.6;
+  line-height: 1.72;
   border-top: 3px solid var(--accent);
   font-feature-settings: "cv11", "ss01";
 }
@@ -538,6 +538,7 @@ figcaption {
 
 .power-grid {
   display: grid;
+  grid-template-columns: minmax(15rem, 4fr) 6fr;
   gap: 1.25rem;
   margin: 1.25rem 0;
   align-items: start;
@@ -629,6 +630,7 @@ footer { padding: 2.25rem 0 0; }
 
 @media (max-width: 46rem) {
   .cards, .takeaways { grid-template-columns: 1fr; }
+  .power-grid { grid-template-columns: 1fr; }
   .top-inner { height: auto; padding: 0.8rem 1.1rem; }
   .facts > div { grid-template-columns: 1fr; gap: 0.1rem; }
   .hero { padding: 2.25rem 0 1.75rem; }

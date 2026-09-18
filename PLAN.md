@@ -1516,3 +1516,17 @@ page's state is in its URL, so any of the six can be the first thing somebody se
 "the opposite of Criteo", which means nothing to a reader who has not opened the Criteo card,
 and "the reason this project has a headline at all", which is the project talking about
 itself. Every card now stands on its own.
+
+**64. The demo takes the site's full width, which change 63 got wrong** (week 8). Change 63
+set one column and picked 46rem, the measure peterparker.ca gives the body of a project page.
+That is the right measure for a page of prose and the wrong one for this page, which is mostly
+charts: at 46rem the eight-line comparison chart was 730 pixels wide and its legend wrapped
+onto two rows. The column is now 66rem, the width peterparker.ca gives its index, so the
+charts are half as wide again and the sample-size calculator puts its sliders beside its
+answer instead of above it.
+
+The cost is real and worth stating: a paragraph at 66rem runs to about 120 characters, which
+is past the comfortable measure. The base size goes to 18px and the line height to 1.72,
+which is the standard compensation for a long measure, and the page is charts, cards and
+short paragraphs rather than long-form text. If it reads badly in use the answer is a
+narrower column, not a second measure inside a wide one: that was the defect change 63 fixed.
