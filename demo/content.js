@@ -27,8 +27,9 @@ const DATASETS = {
     scale: 1000,
     decimals: 1,
     why:
-      "The everyday case: a real campaign, properly randomised, with a modest effect. It is " +
-      "the dataset where the uplift models most clearly earn their keep.",
+      "The everyday case, and where this page starts: a real campaign, properly randomised, " +
+      "with the sort of modest effect most campaigns have. It is also where the uplift " +
+      "models most clearly earn their keep over ranking people by risk.",
     honest:
       "Randomised by the retailer, so the comparison is clean. The outcome is a site visit " +
       "rather than a purchase, which is the easier thing to move.",
@@ -45,8 +46,9 @@ const DATASETS = {
     scale: 1000,
     decimals: 2,
     why:
-      "The dataset that refuted this project's own premise. Ranking people by risk was " +
-      "supposed to be the wrong thing to do, and here it matches every uplift model.",
+      "The dataset that refuted this project's own premise. It was built to show that " +
+      "ranking people by risk is the wrong thing to do, and on 14 million randomised rows " +
+      "risk ranking matches every uplift model here.",
     honest:
       "Randomised, and very large, so the estimates are tight. Conversions are rare, which " +
       "is why the numbers look small until you scale them per thousand.",
@@ -63,11 +65,13 @@ const DATASETS = {
     scale: 1000,
     decimals: 2,
     why:
-      "The honest failure. Nothing here separates from random targeting, including every " +
-      "uplift model. The effect is real but far too small to rank people on at this size.",
+      "The case that cannot be won. Nothing separates from random targeting here, uplift " +
+      "models included: the effect is real, and far too small to rank 687,029 people on. " +
+      "Most data is in this position and finds out after paying for the models.",
     honest:
-      "This dataset cannot answer the targeting question and the page says so rather than " +
-      "hiding it. It is the reason the sample-size calculator further down exists.",
+      "This dataset cannot answer the targeting question, and saying so is the result. The " +
+      "sample-size calculator on this page exists because of it, and says in advance how " +
+      "many people a study would need.",
   },
   ihdp: {
     title: "IHDP infant health",
@@ -81,8 +85,9 @@ const DATASETS = {
     scale: 1,
     decimals: 3,
     why:
-      "Because the truth is written down, this is one of only two datasets here where you " +
-      "can check whether a method recovered the right answer rather than merely a plausible one.",
+      "The outcome is simulated, so the true effect on every child is written down. That " +
+      "makes it one of the two datasets here where a method can be checked against the right " +
+      "answer rather than against a plausible one.",
     honest:
       "The outcome is simulated, so the units are arbitrary and mean nothing in the world. " +
       "Only 747 people, which is far too few to rank on, and the page shows that too.",
@@ -91,19 +96,21 @@ const DATASETS = {
     title: "ACIC 2016 benchmark",
     kind: "Simulated outcomes on real covariates",
     what:
-      "4,802 people from a real survey, with treatment and outcome simulated. Unlike the " +
-      "others, who gets treated here depends on their characteristics, on purpose.",
+      "4,802 people from a real survey, with treatment and outcome simulated. Who gets " +
+      "treated is decided by their characteristics rather than by a coin flip, on purpose.",
     outcome: "A simulated continuous outcome.",
     units: "simulated outcome units per head",
     unitsShort: "simulated units per head",
     scale: 1,
     decimals: 3,
     why:
-      "The opposite of Criteo, and the reason this project has a headline at all. Here " +
-      "ranking by risk is worse than doing nothing: it destroys value, while looking fine.",
+      "The case where the choice of method changes the sign of the answer. Ranking people " +
+      "by risk here is worse than picking at random: it spends the budget on people it " +
+      "cannot help, while the report it produces still looks healthy.",
     honest:
-      "Simulated, and deliberately confounded, so it is a test of the methods rather than a " +
-      "finding about the world. That confounding is what makes it a hard case.",
+      "Simulated, and deliberately confounded: who gets treated depends on the same things " +
+      "that drive the outcome. That is a test of the methods rather than a finding about " +
+      "the world, and it is the situation most real data is in.",
   },
   "ieee-fraud": {
     title: "Card fraud review",
@@ -118,8 +125,10 @@ const DATASETS = {
     decimals: 2,
     currency: true,
     why:
-      "The case built to make risk ranking lose, where it won anyway. The dollars make it " +
-      "the easiest result here to read, and the one whose conclusion is least comfortable.",
+      "A case built to make risk ranking lose, where it won anyway: the review is worth " +
+      "least on exactly the transactions a risk model puts at the top, and the risk queue " +
+      "still beat every uplift model at every budget. The answer is in dollars a " +
+      "transaction, which is the plainest thing on this page to read.",
     honest:
       "The review effect is written by the simulation, not measured from the world, and this " +
       "page says so wherever the dataset appears. The transactions and the fraud labels are real.",

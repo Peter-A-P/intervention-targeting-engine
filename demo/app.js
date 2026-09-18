@@ -144,7 +144,7 @@ async function loadDataset(key, { keepSelection = false } = {}) {
   for (const name of names) {
     const option = document.createElement("option");
     option.value = name;
-    option.textContent = `${ESTIMATORS[name]?.title ?? name} — ${ESTIMATORS[name]?.short ?? ""}`;
+    option.textContent = `${ESTIMATORS[name]?.title ?? name}: ${ESTIMATORS[name]?.short ?? ""}`;
     method.append(option);
   }
   state.estimator = names.includes(state.estimator) ? state.estimator : names[0];

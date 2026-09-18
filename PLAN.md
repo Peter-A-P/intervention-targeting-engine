@@ -1488,3 +1488,28 @@ the thing itself found something no test could: the first three were the bare-po
 line, the colliding chart labels, and the units that were missing from the headline figures.
 The fifth needed the page to be looked at through the headers it is actually served with,
 which is a reminder that "I checked it" is only ever true of the thing that was checked.
+
+**63. One column, a way back, and copy that does not assume where the reader came in**
+(week 8). Three more things from reading the page rather than testing it.
+
+The page had two widths: prose at 44rem inside a 54rem column, so every paragraph stopped
+short of the cards, charts and tables beside it. There is one column now, 46rem, the measure
+peterparker.ca gives the body of a project page, and everything sits in it. The sample-size
+calculator stacks rather than splitting into two columns, which also gives its table the room
+it was short of.
+
+The page lives on a subdomain of a site it never linked back to, so a visitor who arrived on
+a shared link could not find out whose page they were on. There is a bar at the top with the
+same mark and proportions as the site's, and a line in the footer. That makes this the only
+off-origin link on the page, so the test that used to refuse every `https://` in the source
+now distinguishes a subresource the browser fetches from a link a person clicks, and requires
+the links to point at peterparker.ca and nowhere else.
+
+The method dropdown was half a row wide and cut off the half of each option that says what
+the method does. It is a full row now.
+
+And the dataset copy was written for a reader working along the dropdown from the left. The
+page's state is in its URL, so any of the six can be the first thing somebody sees: ACIC was
+"the opposite of Criteo", which means nothing to a reader who has not opened the Criteo card,
+and "the reason this project has a headline at all", which is the project talking about
+itself. Every card now stands on its own.

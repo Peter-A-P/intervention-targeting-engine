@@ -43,9 +43,11 @@
   --mono: ui-monospace, "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
   --radius: 10px;
   --shadow: 0 6px 24px -18px rgba(0, 0, 0, 0.35);
-  /* One measure for every run of prose on the page. Three paragraphs in the same column
-     stopping at three different widths is what this replaces. */
-  --measure: 44rem;
+  /* One width for everything on the page. Prose used to stop short of the cards and charts
+     beside it, which reads as a mistake rather than as a measure, so the column itself is
+     the measure: 46rem, what peterparker.ca gives the body of a project page. */
+  --column: 46rem;
+  --measure: 100%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -84,10 +86,62 @@ body {
 }
 
 main {
-  max-width: 54rem;
+  max-width: var(--column);
   margin: 0 auto;
   padding: 0 1.5rem 5rem;
 }
+
+/* ---------------------------------------------------------------- the way back */
+
+/* The page lives on a subdomain of peterparker.ca and is usually reached by a link from
+   somewhere else, so it says whose it is and how to get back. Same bar, same mark, same
+   proportions as the site's own. */
+.top {
+  border-bottom: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.top-inner {
+  max-width: var(--column);
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: var(--ink);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.brand:hover { text-decoration: none; color: var(--accent-ink); }
+
+.mono-mark {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fdfcf9;
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (prefers-color-scheme: dark) { .mono-mark { color: #0e1013; } }
+
+.top-nav { font-size: 0.92rem; color: var(--ink-soft); text-align: right; }
+.top-nav a { color: var(--ink-soft); }
+.top-nav a:hover { color: var(--accent-ink); }
 
 h1, h2, h3 {
   font-family: var(--serif);
@@ -484,11 +538,14 @@ figcaption {
 
 .power-grid {
   display: grid;
-  grid-template-columns: minmax(13rem, 4fr) 6fr;
   gap: 1.25rem;
   margin: 1.25rem 0;
   align-items: start;
 }
+
+/* Four sliders across, then the answer under them at full width. Side by side, the answer's
+   three-column table was the first thing to lose a column when the page narrowed. */
+.power-controls { grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); }
 
 .power-controls {
   display: grid;
@@ -566,16 +623,18 @@ pre code { font-size: inherit; white-space: pre; }
 
 footer { padding: 2.25rem 0 0; }
 .footer-lead { font-weight: 600; }
+.footer-back { margin-bottom: 1rem; }
 
 /* ---------------------------------------------------------------- narrow screens */
 
 @media (max-width: 46rem) {
   .cards, .takeaways { grid-template-columns: 1fr; }
-  .power-grid { grid-template-columns: 1fr; }
+  .top-inner { height: auto; padding: 0.8rem 1.1rem; }
   .facts > div { grid-template-columns: 1fr; gap: 0.1rem; }
   .hero { padding: 2.25rem 0 1.75rem; }
   .section { padding: 2rem 0; }
   main { padding: 0 1.1rem 3.5rem; }
+  .top-nav { display: none; }
   th, td { padding: 0.45rem 0.6rem; }
 }
 

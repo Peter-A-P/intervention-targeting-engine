@@ -244,17 +244,42 @@ class TestTheShippedPage:
         assert "data/index.json" in app
         assert "data/${key}.json" in app
 
-    def test_the_page_references_only_local_assets(self):
+    def test_the_page_fetches_nothing_off_origin(self):
         # No CDN, no analytics, no fonts from elsewhere: a static page whose argument is
         # that you can read it should not be fetching anything you cannot. The stylesheet is
         # checked too, because that is where a font or a background image would hide, and the
         # page passed this test for a while with the check reading the HTML alone.
+        #
+        # A link a person clicks is not a fetch and is checked separately below. Everything
+        # here is something the browser would load without being asked.
+        import re
         from pathlib import Path
 
+        loads = (
+            re.compile(r"""\ssrc\s*=\s*["']([^"']+)"""),
+            re.compile(r"""<link\b[^>]*\shref\s*=\s*["']([^"']+)""", re.IGNORECASE),
+            re.compile(r"""url\(\s*['"]?([^)'"]+)"""),
+            re.compile(r"""\bfetch\(\s*['"`]([^'"`]+)"""),
+        )
         for name in ("index.html", "style.css", "app.js", "content.js", "power.js"):
             text = Path("demo", name).read_text(encoding="utf-8")
-            assert "http://" not in text, name
-            assert "https://" not in text, name
+            for pattern in loads:
+                for target in pattern.findall(text):
+                    assert "//" not in target, f"{name}: {target}"
+
+    def test_the_only_links_out_are_to_the_site_it_belongs_to(self):
+        # The page is on a subdomain of peterparker.ca and links back to it, which is the
+        # one destination it has any business sending a reader to. A link anywhere else is
+        # either an accident or something that should have been thought about first.
+        import re
+        from pathlib import Path
+
+        page = Path("demo/index.html").read_text(encoding="utf-8")
+        for target in re.findall(r"""<a\b[^>]*\shref\s*=\s*["']([^"']+)""", page):
+            if "//" not in target:
+                continue
+            assert target.startswith("https://peterparker.ca"), target
+        assert "https://peterparker.ca" in page, "the page has no way back to the site"
 
     def test_the_fonts_it_asks_for_are_in_the_folder(self):
         # The two faces are copied from peterparker.ca rather than linked to it. A missing
