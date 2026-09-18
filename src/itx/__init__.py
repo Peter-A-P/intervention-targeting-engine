@@ -7,7 +7,7 @@ a bootstrap interval; a bare point estimate is treated here as a defect.
 
 from itx.types import BoolArray, FloatArray, IntArray, Split, UpliftDataset
 
-__version__ = "0.1.0.dev0"
+__version__ = "0.1.0"
 
 __all__ = [
     "BoolArray",

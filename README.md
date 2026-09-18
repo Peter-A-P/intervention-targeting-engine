@@ -6,13 +6,15 @@ offers, outreach, fraud review, clinical follow-up: a large share of every such 
 goes to people who would have behaved the same way regardless, and this finds them, and
 shows the intervention list changing as the budget moves.
 
-**Status: week 8 of 8.** Seven estimators benchmarked on all five datasets, each reported with
-what its ranking actually buys at a budget rather than only how well it ranks, plus a
-sensitivity section, a fraud worked case that declares itself semi-synthetic in its first
-sentence, and a budget-slider demo live at [targeting.peterparker.ca](https://targeting.peterparker.ca). The
-numbers below are real and reproducible: every table here has been regenerated from a fresh
-clone and a fresh virtual environment and compared at zero tolerance. Still to come: the flip
-to public. Build plan: [PLAN.md](PLAN.md).
+**Status: v0.1.0, the build finished.** Seven estimators benchmarked on all five
+datasets, each reported with what its ranking actually buys at a budget rather than only how
+well it ranks, plus a sensitivity section, a fraud worked case that declares itself
+semi-synthetic in its first sentence, and a budget-slider demo live at
+[targeting.peterparker.ca](https://targeting.peterparker.ca). The numbers below are real and
+reproducible: every table here has been regenerated from a fresh clone and a fresh virtual
+environment and compared at zero tolerance. What is unfinished is listed under
+[What this does not do](#what-this-does-not-do) rather than left out. Build plan:
+[PLAN.md](PLAN.md).
 
 **The same baseline, the same code, opposite conclusions.** Ranking people by risk is how this
 job is usually done. At a budget covering a tenth of the population it buys **-0.20 on ACIC**
@@ -389,7 +391,7 @@ Selected on the validation split from the committed grid:
 | `random-200` | 0.0004 (-0.0008, 0.0016) | 0.0006 (-0.0004, 0.0016) | 0.0009 (-0.0008, 0.0025) | 0.0012 (-0.0002, 0.0025) | -0.0003 (-0.0048, 0.0040) | 0.0013 (-0.0005, 0.0030) | 0.0018 (0.0002, 0.0033) |
 <!-- itx:end:lenta-policy -->
 **Changing the metric turned this dataset from a null into a faint signal, which is the
-result week 4 predicted and could not produce.** Not one Qini interval in the table above
+result an earlier pass predicted and could not produce.** Not one Qini interval in the table above
 excludes zero. In this table, at a budget covering a fifth of the customers, the mean
 intervals of all five LightGBM models do: 0.0024, 0.0021, 0.0020, 0.0025 and 0.0024, against
 random targeting's 0.0012 and an outcome ranking whose interval still contains zero. Per seed
@@ -415,7 +417,7 @@ dataset this underpowered that is the difference between seeing the effect and n
 What it does not do is make Lenta a win. The uplift models buy about twice what random
 targeting buys and their intervals overlap random's heavily, so "these rankings buy something"
 is established and "these rankings beat picking names out of a hat" is not. The honest
-summary of Lenta is still the week 4 one: a 0.75-point effect on a 10.3% base rate is too
+summary of Lenta is still the earlier one: a 0.75-point effect on a 10.3% base rate is too
 small to target at this sample size. The finding is about the instrument, not the dataset.
 
 The IPW column contains zero everywhere, at every budget, for every method including the ones
@@ -557,8 +559,8 @@ treated share of **0.8667**, not 0.85: about eight standard errors away from the
 Horvitz-Thompson divides the control arm by 1 - 0.85, so each control unit carries a weight of
 6.67, and a prefix that is short of control units by 1.7 points is an estimate short of the
 thing it subtracts. On the committed fit the observed gap is +0.0040. The exact closure of the
-arithmetic, predicted gap equal to observed gap to the last digit, was verified in week 5 on
-that week's fit and is asserted by `tests/test_policy_value.py`; the tables have been
+arithmetic, predicted gap equal to observed gap to the last digit, was verified on an earlier
+fit and is asserted by `tests/test_policy_value.py`; the tables have been
 remeasured since and the last digits moved while the mechanism did not.
 
 The reason a covariate-based ranking can shift the treated share at all is that Criteo's arms
@@ -1225,9 +1227,18 @@ because the decision is what the budget holder is actually buying.
   licence, treatment definition, quirks and split seeds.
 - [docs/deploy.md](docs/deploy.md): how the demo is hosted and how to redeploy it.
 
+## Licence
+
+The code is MIT: [LICENSE](LICENSE). The datasets are not mine to license and are not
+redistributed here. Each is downloaded from its own source under its own terms, which the
+data card records: Criteo is CC BY-NC-SA 4.0 and non-commercial, Lenta carries no licence
+from anybody, Hillstrom states none, and the IEEE-CIS file sits behind Kaggle competition
+rules and is the one input you fetch yourself. Committing checksums rather than data is
+what keeps that line clean, and it is why `uv run itx data pull` exists.
+
 ## Part of a portfolio
 
-One of fifteen projects built over twelve months to make production ML work inspectable.
+One of fifteen projects making production ML work inspectable.
 
 ## How this was built
 
