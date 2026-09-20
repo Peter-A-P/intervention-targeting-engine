@@ -1,4 +1,4 @@
-# Plan: Intervention Targeting Engine
+# Plan: Spend It Where It Changes the Outcome
 
 **Written:** 2026-09-06. **Status:** weeks 1 to 3 built (2026-09-11). Changes to this plan
 since it was written are listed in section 11, each with the reason and the week it

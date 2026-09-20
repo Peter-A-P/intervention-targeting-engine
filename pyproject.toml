@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "itx"
 version = "0.1.0"
-description = "Intervention Targeting Engine: uplift modelling and budget-constrained targeting with honest evaluation"
+description = "Spend It Where It Changes the Outcome: uplift modelling and budget-constrained targeting with honest evaluation"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 license = "MIT"

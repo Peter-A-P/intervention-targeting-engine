@@ -1,4 +1,4 @@
-# Intervention Targeting Engine
+# Spend It Where It Changes the Outcome
 
 Tells an organisation which customers, cases or patients to spend a limited intervention
 budget on: only the ones whose outcome the intervention actually changes. Retention

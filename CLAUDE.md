@@ -1,6 +1,7 @@
 # Working notes for Claude Code
 
-This repository is the Intervention Targeting Engine: an uplift-modelling and
+This repository is Spend It Where It Changes the Outcome (renamed 2026-09-20; was the
+Intervention Targeting Engine): an uplift-modelling and
 budget-constrained targeting toolkit with honest evaluation. The build plan is
 [PLAN.md](PLAN.md).
 
