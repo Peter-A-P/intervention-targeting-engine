@@ -14,11 +14,23 @@
     <p class="top-nav"><a href="https://peterparker.ca/projects/intervention-targeting/">Project 01: Spend It Where It Changes the Outcome</a></p>
   </div>
 </header>
+<nav class="tabs" aria-label="On this page">
+  <div class="tabs-inner">
+    <a href="#top" aria-current="true">Overview</a>
+    <a href="#explainer">The idea</a>
+    <a href="#compare">Every method</a>
+    <a href="#slider">Move the budget</a>
+    <a href="#power">Is your data enough?</a>
+    <a href="#howto">Your own data</a>
+    <a href="#takeaways">Findings</a>
+    <a href="#method">Reading the numbers</a>
+  </div>
+</nav>
 <main>
 
-  <header class="hero">
+  <header class="hero" id="top">
     <p class="eyebrow">Measured results, reproducible from one command</p>
-    <h1>Every budget picks some people and skips others. Who should it pick?</h1>
+    <h1>Every budget picks some people and skips others. <span class="hl">Who should it pick?</span></h1>
     <p class="lead">
       Retention offers, outreach calls, fraud reviews, follow-up appointments. The money covers a
       fraction of the population, so somebody chooses the fraction. The usual answer is to rank
@@ -219,9 +231,9 @@
   <section class="section" id="howto">
     <h2>Running this on your own data</h2>
 
-    <div class="cards">
+    <div class="cards steps">
       <div class="card">
-        <h3>1. Check you have the right kind of data</h3>
+        <h3>Check you have the right kind of data</h3>
         <p>
           You need an intervention that <strong>already happened to some people and not
           others</strong>, and a record of what happened to both. Not a customer list. Nothing
@@ -234,7 +246,7 @@
         </p>
       </div>
       <div class="card">
-        <h3>2. If you have no data yet, size the pilot</h3>
+        <h3>If you have no data yet, size the pilot</h3>
         <p>Use the calculator above, then run a holdout of that size. One command does the arithmetic:</p>
         <pre><code>uv run itx power \
   --base-rate 0.10 \
@@ -243,7 +255,7 @@
         <p>It reports the easy threshold and the hard one separately, because sizing for the easy one is the usual mistake.</p>
       </div>
       <div class="card">
-        <h3>3. Spend one model finding out if it is worth continuing</h3>
+        <h3>Spend one model finding out if it is worth continuing</h3>
         <p>
           Before fitting anything sophisticated, ask whether risk ranking already does the job on
           your population. It costs a single model:
@@ -262,7 +274,7 @@
         </p>
       </div>
       <div class="card">
-        <h3>4. Only then, run the full benchmark</h3>
+        <h3>Only then, run the full benchmark</h3>
         <p>
           If the diagnostic says there is room, fit everything and compare it against both
           baselines with intervals on every number, the way this page does.
@@ -272,6 +284,12 @@
         <p>And pass <code>--no-tune</code>. The tuning search was measured four times and bought nothing.</p>
       </div>
     </div>
+    <ul class="chips" aria-label="Built with">
+      <li>Python 3.13, typed, mypy and ruff clean</li><li>Polars</li>
+      <li>LightGBM S, T, X, DR and R learners</li><li>Dragonnet in PyTorch</li>
+      <li>Doubly robust policy value</li><li>Qini with bootstrap intervals</li>
+      <li>Rosenbaum bounds, E-values</li><li>Azure Static Web Apps</li>
+    </ul>
   </section>
 
   <section class="section" id="takeaways">

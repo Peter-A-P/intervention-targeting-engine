@@ -345,7 +345,9 @@ function renderVerdict(series, random) {
   const title = (n) => ESTIMATORS[n]?.title ?? n;
 
   let line;
+  let tone = "";
   if (clearlyWorse) {
+    tone = "bad";
     line =
       `<strong>On this dataset, ranking by risk is worse than picking at random.</strong> ` +
       `At a 10% budget it buys ${scaled(risk.values[i])} against random targeting's ` +
@@ -362,6 +364,7 @@ function renderVerdict(series, random) {
         ? `${title(best.name)} does clear it, at ${scaled(best.values[i])}.`
         : `Nor is any other method here measurably ahead of it at this budget.`);
   } else if (upliftWins) {
+    tone = "good";
     line =
       `<strong>On this dataset, uplift modelling is worth the work.</strong> ` +
       `${title(best.name)} buys ${scaled(best.values[i])} at a 10% budget, clear of ranking ` +
@@ -376,6 +379,7 @@ function renderVerdict(series, random) {
       `which is worth knowing before you build it.`;
   }
   el("verdict").innerHTML = line;
+  el("verdict").className = `verdict ${tone}`;
 }
 
 function renderHero(series, random) {
@@ -385,8 +389,9 @@ function renderHero(series, random) {
   el("hero-best").textContent = scaled(best.values[i]);
   el("hero-risk").textContent = risk ? scaled(risk.values[i]) : "—";
   el("hero-random").textContent = scaled(random[i]);
-  el("hero-best").className = `point-figure ${best.values[i] > random[i] ? "up" : "down"}`;
-  el("hero-risk").className = `point-figure ${
+  // The tone goes on the tile, which colours both its top rule and its figure.
+  el("hero-best").parentElement.className = `point ${best.values[i] > random[i] ? "up" : "down"}`;
+  el("hero-risk").parentElement.className = `point ${
     risk && risk.values[i] < random[i] ? "down" : "up"
   }`;
 
@@ -640,4 +645,27 @@ function renderPower() {
       from ${(base * 100).toFixed(1)}% to ${((base + averageEffect) * 100).toFixed(1)}%.</p>`;
 }
 
+// ---------------------------------------------------------------- the section tabs
+
+// The pill for the section being read is marked current. A section counts as being read once
+// its top has passed the upper third of the window.
+function watchTabs() {
+  const links = [...document.querySelectorAll(".tabs a[href^='#']")];
+  const sections = links.map((a) => document.getElementById(a.hash.slice(1)));
+  const mark = () => {
+    const line = window.innerHeight / 3;
+    let current = 0;
+    sections.forEach((s, k) => {
+      if (s && s.getBoundingClientRect().top <= line) current = k;
+    });
+    links.forEach((a, k) => {
+      if (k === current) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+  };
+  window.addEventListener("scroll", mark, { passive: true });
+  mark();
+}
+
+watchTabs();
 boot();
