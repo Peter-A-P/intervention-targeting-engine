@@ -1156,7 +1156,8 @@ list re-ranks, because "who do we treat" has a different answer at 10 percent of
 population than at 30.
 
 The design, the datasets, the evaluation protocol and the schedule are in
-[PLAN.md](PLAN.md).
+[PLAN.md](PLAN.md). Three architecture diagrams, the system, how a results table is produced and
+the budget decision, are in [docs/architecture.md](docs/architecture.md).
 
 ### In more detail
 
