@@ -880,7 +880,10 @@ axis against random targeting, so the comparison this project is about is the fi
 reader meets; a budget slider over one method at a time with its interval band and the list of
 units it treats; the sample-size calculator from change 60, with sliders; and the plain-language
 account of what each dataset and each method is, because a dropdown reading `acic` and a figure
-reading `+0.214` tell a reader nothing.
+reading `+0.214` tell a reader nothing. A second page, `demo/architecture.html`, linked from
+the menu and from the top of the first, shows the three diagrams from
+[docs/architecture.md](docs/architecture.md) in plain language; the copies in
+`demo/architecture/` are checked against `docs/architecture/` by a test.
 
 All six datasets are on it, the fraud worked case included and labelled semi-synthetic wherever
 it appears. Numbers are shown in units a reader can hold: extra site visits per 1,000 people on

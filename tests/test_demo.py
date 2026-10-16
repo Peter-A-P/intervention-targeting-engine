@@ -261,7 +261,14 @@ class TestTheShippedPage:
             re.compile(r"""url\(\s*['"]?([^)'"]+)"""),
             re.compile(r"""\bfetch\(\s*['"`]([^'"`]+)"""),
         )
-        for name in ("index.html", "style.css", "app.js", "content.js", "power.js"):
+        for name in (
+            "index.html",
+            "architecture.html",
+            "style.css",
+            "app.js",
+            "content.js",
+            "power.js",
+        ):
             text = Path("demo", name).read_text(encoding="utf-8")
             for pattern in loads:
                 for target in pattern.findall(text):
@@ -274,12 +281,38 @@ class TestTheShippedPage:
         import re
         from pathlib import Path
 
+        for name in ("index.html", "architecture.html"):
+            page = Path("demo", name).read_text(encoding="utf-8")
+            for target in re.findall(r"""<a\b[^>]*\shref\s*=\s*["']([^"']+)""", page):
+                if "//" not in target:
+                    continue
+                assert target.startswith("https://peterparker.ca"), (name, target)
+            assert "https://peterparker.ca" in page, f"{name} has no way back to the site"
+
+    def test_the_architecture_page_is_reachable_from_the_demo(self):
+        # From the menu and from a text link near the top, so a reader who never scrolls
+        # to the tabs still finds it.
+        from pathlib import Path
+
         page = Path("demo/index.html").read_text(encoding="utf-8")
-        for target in re.findall(r"""<a\b[^>]*\shref\s*=\s*["']([^"']+)""", page):
-            if "//" not in target:
-                continue
-            assert target.startswith("https://peterparker.ca"), target
-        assert "https://peterparker.ca" in page, "the page has no way back to the site"
+        menu, _, rest = page.partition("</nav>")
+        assert 'href="architecture.html"' in menu
+        assert 'href="architecture.html"' in rest.partition('id="explainer"')[0]
+
+    def test_the_diagrams_it_shows_are_the_ones_in_docs(self):
+        # demo/ is deployed on its own, so the diagrams are copied into it. A copy that
+        # drifted from docs/architecture/ would show a stale system to every visitor.
+        import re
+        from pathlib import Path
+
+        page = Path("demo/architecture.html").read_text(encoding="utf-8")
+        shown = set(re.findall(r"""<img\b[^>]*\ssrc\s*=\s*["']([^"']+)""", page))
+        documented = {f"architecture/{p.name}" for p in Path("docs/architecture").glob("*.svg")}
+        assert shown == documented
+        for target in shown:
+            assert Path("demo", target).read_bytes() == Path("docs", target).read_bytes(), (
+                target
+            )
 
     def test_the_fonts_it_asks_for_are_in_the_folder(self):
         # The two faces are copied from peterparker.ca rather than linked to it. A missing

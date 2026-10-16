@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it's built: Spend It Where It Changes the Outcome</title>
+<meta name="description" content="How the uplift-modelling benchmark behind this demo is put together, in three diagrams: the whole system, how a results table is produced, and how a ranking becomes a budget decision.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-inner">
+    <a class="brand" href="https://peterparker.ca"><span class="mono-mark" aria-hidden="true">P</span>Peter Parker</a>
+    <p class="top-nav"><a href="https://peterparker.ca/projects/intervention-targeting/">Project 01: Spend It Where It Changes the Outcome</a></p>
+  </div>
+</header>
+<nav class="tabs" aria-label="Pages and sections">
+  <div class="tabs-inner">
+    <a href="index.html#top">Overview</a>
+    <a href="index.html#explainer">The idea</a>
+    <a href="index.html#compare">Every method</a>
+    <a href="index.html#slider">Move the budget</a>
+    <a href="index.html#power">Is your data enough?</a>
+    <a href="index.html#howto">Your own data</a>
+    <a href="index.html#takeaways">Findings</a>
+    <a href="index.html#method">Reading the numbers</a>
+    <a href="architecture.html" aria-current="page">How it's built</a>
+  </div>
+</nav>
+<main>
+
+  <header class="hero" id="top">
+    <p class="eyebrow">Architecture</p>
+    <h1>How it's built</h1>
+    <p class="lead">
+      How the project is put together, in three pictures: the whole system, how one results
+      table gets made, and how the demo turns a ranking into a budget decision. Select a diagram
+      to open it full size.
+    </p>
+    <p class="hero-note"><a href="index.html">Back to the demo</a></p>
+  </header>
+
+  <section class="section" id="system">
+    <h2>The system</h2>
+    <figure class="arch-figure">
+      <a href="architecture/system.svg"><img src="architecture/system.svg" width="1142" height="758" alt="Six public datasets are loaded with checksums and split on committed seeds; five meta-learners, Dragonnet and two baselines rank people through one interface; the metrics score every ranking with bootstrap intervals, the policy layer turns a ranking into an allocation, the sensitivity analysis says how much hidden confounding would flip it, and the benchmark runner writes the results and the demo."></a>
+    </figure>
+    <div class="prose">
+      <p>
+        Everything starts with six public datasets. Each one is downloaded, checked against a
+        recorded checksum so you know you have exactly the file the results came from, and split
+        into training, validation and test sets on five fixed seeds, so anyone who reruns it gets
+        the same rows.
+      </p>
+      <p>
+        Eight ways of choosing who to treat then compete on equal terms. Five are uplift models,
+        the S, T, X, DR and R learners, all built on the same LightGBM base. One is Dragonnet, a
+        neural network. Two are baselines: picking at random, and ranking people by risk, which is
+        what most teams do today. All eight go through the same interface and the same tuning
+        grid, so none of them gets an unfair advantage.
+      </p>
+      <p>
+        Each ranking is scored on the held-out test set, with a 95% interval on every number. The
+        policy layer then answers the question a manager actually asks: if you can only afford to
+        treat a tenth of the people, who goes on the list, and what does that list buy? A
+        sensitivity check asks how strong a hidden factor would have to be before that answer
+        changes.
+      </p>
+      <p>
+        One command, <code>itx benchmark</code>, runs the whole thing and writes a results file
+        per dataset. The README tables, the figures and this demo are all generated from those
+        files. None of them is typed by hand.
+      </p>
+      <p class="note">
+        Where it lives: <code>itx.data</code>, <code>itx.estimators</code>,
+        <code>itx.metrics</code>, <code>itx.policy</code>, <code>itx.sensitivity</code>,
+        <code>itx.bench</code> and <code>itx.demo</code>.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="measurement">
+    <h2>How a results table is produced</h2>
+    <figure class="arch-figure">
+      <a href="architecture/measurement.svg"><img src="architecture/measurement.svg" width="1122" height="972" alt="For each dataset and each of five committed seeds the data is split, hyperparameters are chosen on the validation split from one grid, the estimator is fitted on train and scored once on test with bootstrap intervals, the seeds are averaged, and the table is written by one command; a clean-environment rerun reproduces every table at zero tolerance."></a>
+    </figure>
+    <div class="prose">
+      <p>
+        A results table is only worth something if you can rebuild it yourself and get the same
+        numbers. This is how each one is made.
+      </p>
+      <p>
+        The datasets come in two kinds. Some are randomised experiments, where a coin flip decided
+        who was treated, so group averages can be trusted. The other two, IHDP and ACIC, are
+        simulated with a known effect for every person, so you can check how close a model gets
+        for each individual and not just on average.
+      </p>
+      <p>
+        For each of the five seeds, the data is split, each method's settings are chosen on the
+        validation set, the model is trained, and then it ranks the test set. The test set is used
+        exactly once. The ranking is scored on Qini, on AUUC and on the value a budget would buy,
+        measured two independent ways, always beside the two baselines, and every number gets a
+        bootstrap interval.
+      </p>
+      <p>
+        The five seeds are then averaged and the table is written by one command. As a final
+        check, everything was rerun from a fresh copy of the repository in a clean environment,
+        and every table came back identical. That rerun earned its keep: it caught a loading bug
+        that had made five published rows impossible for anyone else to reproduce.
+      </p>
+      <p class="note">
+        Where it lives: <code>itx.bench.runner</code>, <code>itx.bench.table</code> and
+        <code>itx.metrics.bootstrap</code>.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="decision">
+    <h2>From a ranking to a budget decision</h2>
+    <figure class="arch-figure">
+      <a href="architecture/decision.svg"><img src="architecture/decision.svg" width="1162" height="748" alt="Each person gets a predicted effect and a predicted risk; at a chosen budget the top of each ranking is treated, by count or by cost, and the realised policy value says what each list buys, against random targeting; the risk-decile table says in advance when ranking by risk is the trap and when it is not."></a>
+    </figure>
+    <div class="prose">
+      <p>
+        This is what the <a href="index.html#slider">budget slider</a> does.
+      </p>
+      <p>
+        Every person in the test set gets two scores: how much acting is predicted to help them,
+        from an uplift model, and how likely they are to have the bad outcome anyway, from the
+        risk baseline. Choose a budget, say 10, 20 or 30 percent of people, and the top of each
+        list is treated. When every intervention costs the same, that is simply the top of the
+        list. When costs differ, it is the best set you can afford.
+      </p>
+      <p>
+        What each list buys is measured as the extra good outcomes per person in the whole
+        population, against 200 random lists. That is the number the slider moves.
+      </p>
+      <p>
+        One cheap check tells you in advance whether ranking by risk is a trap on your data: the
+        risk-decile table, which needs a single model. On ACIC, ranking by risk was ten times
+        worse than random. On Criteo it matched every uplift model. Same code, opposite answers,
+        which is why the check is worth running first.
+      </p>
+      <p class="note">
+        Where it lives: <code>itx.policy.cost_aware</code>, <code>itx.bench.allocate</code>,
+        <code>itx.metrics.ground_truth</code> and <code>itx.metrics.risk_deciles</code>.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <p class="footer-back">
+      <a href="index.html">Back to the demo</a>, or
+      <a href="https://peterparker.ca/projects/intervention-targeting/">to the project page</a>
+      on peterparker.ca, which carries the write-up, the repository and the rest of the
+      portfolio.
+    </p>
+    <p class="note">
+      The diagrams are generated from a specification rather than drawn by hand, and the same
+      three are in the repository's <code>docs/architecture.md</code>.
+    </p>
+  </footer>
+</main>
+</body>
+</html>

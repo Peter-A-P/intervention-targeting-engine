@@ -157,12 +157,13 @@ main {
   padding: 0.55rem 1.5rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.2rem;
 }
 
+/* Nine pills, the last one a second page, sized to fit one row at the column's width. */
 .tabs a {
-  font-size: 0.85rem;
-  padding: 0.2rem 0.75rem;
+  font-size: 0.83rem;
+  padding: 0.2rem 0.55rem;
   border-radius: 999px;
   border: 1px solid transparent;
   color: var(--ink-soft);
@@ -721,6 +722,22 @@ pre code { font-size: inherit; white-space: pre; }
   pre { white-space: pre-wrap; }
   pre code { white-space: pre-wrap; word-break: break-word; }
 }
+
+/* ---------------------------------------------------------------- architecture page */
+
+/* The diagrams are white-ground SVGs generated from a specification, so they sit on
+   their own card in both themes. Each links to the full-size file for narrow screens. */
+.arch-figure { margin: 1.1rem 0 1.4rem; }
+.arch-figure a { display: block; }
+.arch-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.prose { max-width: var(--measure); }
 
 /* ---------------------------------------------------------------- footer */
 

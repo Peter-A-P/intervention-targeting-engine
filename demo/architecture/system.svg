@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1142" height="758" viewBox="0 0 1142 758" role="img" aria-label="Six public datasets are loaded with checksums and split on committed seeds; five meta-learners, Dragonnet and two baselines rank people through one interface; the metrics score every ranking with bootstrap intervals, the policy layer turns a ranking into an allocation, the sensitivity analysis says how much hidden confounding would flip it, and the benchmark runner writes the results and the demo." font-family="'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 1 1 L 9 5 L 1 9 z" fill="#14201E"/></marker><marker id="arrow-accent" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 1 1 L 9 5 L 1 9 z" fill="#0E6E60"/></marker><marker id="arrow-signal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 1 1 L 9 5 L 1 9 z" fill="#A64C1C"/></marker><marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 1 1 L 9 5 L 1 9 z" fill="#5C6B67"/></marker></defs>
+<rect width="1142" height="758" fill="#FFFFFF"/>
+<text x="28" y="42" font-size="16" font-weight="700" fill="#14201E">The system: six datasets, eight ways of choosing who to treat, one table</text>
+<path d="M 159.0 138.0 L 159.0 175.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 571.0 130.0 L 571.0 172.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 290.0 205.8 L 440.0 205.8" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 290.0 224.3 L 359.0 224.3 Q 365.0 224.3 365.0 230.3 L 365.0 320.0 Q 365.0 326.0 371.0 326.0 L 440.0 326.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 571.0 252.0 L 571.0 294.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 571.0 358.0 L 571.0 408.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 290.0 440.0 L 440.0 440.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 571.0 472.0 L 571.0 522.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 702.0 554.0 L 852.0 554.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 983.0 522.0 L 983.0 472.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<path d="M 983.0 586.0 L 983.0 636.0" fill="none" stroke="#14201E" stroke-width="1.4" marker-end="url(#arrow)"/>
+<rect x="28.0" y="58.0" width="262.0" height="80.0" rx="4" fill="#F2F4F3" stroke="#5C6B67" stroke-width="1.1" stroke-dasharray="5 3"/>
+<text x="159.0" y="79.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Six public datasets</text>
+<text x="159.0" y="95.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Hillstrom, IHDP, ACIC, Lenta,</text>
+<text x="159.0" y="111.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Criteo, IEEE-CIS fraud</text>
+<text x="159.0" y="128.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.data, checksums.sha256</text>
+<path d="M 28.0 182.0 a 131.0 7 0 0 1 262.0 0 L 290.0 242.0 a 131.0 7 0 0 1 -262.0 0 Z" fill="#FFFFFF" stroke="#14201E" stroke-width="1.1"/><path d="M 28.0 182.0 a 131.0 7 0 0 0 262.0 0" fill="none" stroke="#14201E" stroke-width="1.1"/>
+<text x="159.0" y="205.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Splits on five committed seeds</text>
+<text x="159.0" y="221.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">train, validation, test</text>
+<text x="159.0" y="238.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.data.splits, itx.bench.seeds</text>
+<rect x="440.0" y="172.0" width="262.0" height="80.0" rx="4" fill="#FFFFFF" stroke="#0E6E60" stroke-width="1.6"/>
+<rect x="440.0" y="172.0" width="5" height="80.0" rx="2" fill="#0E6E60"/>
+<text x="571.0" y="193.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Eight estimators, one interface</text>
+<text x="571.0" y="209.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">S, T, X, DR, R on LightGBM; Dragonnet;</text>
+<text x="571.0" y="225.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">random and outcome-ranking baselines</text>
+<text x="571.0" y="242.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.estimators</text>
+<rect x="440.0" y="66.0" width="262.0" height="64.0" rx="4" fill="#FFFFFF" stroke="#14201E" stroke-width="1.1"/>
+<text x="571.0" y="87.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Grid search per seed</text>
+<text x="571.0" y="103.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">the same grid for every estimator</text>
+<text x="571.0" y="120.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.bench.grid</text>
+<rect x="440.0" y="294.0" width="262.0" height="64.0" rx="4" fill="#FFFFFF" stroke="#A64C1C" stroke-width="1.6"/>
+<rect x="440.0" y="294.0" width="5" height="64.0" rx="2" fill="#A64C1C"/>
+<text x="571.0" y="315.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Metrics with bootstrap intervals</text>
+<text x="571.0" y="331.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Qini, AUUC, calibration, risk deciles</text>
+<text x="571.0" y="348.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.metrics</text>
+<rect x="440.0" y="408.0" width="262.0" height="64.0" rx="4" fill="#FFFFFF" stroke="#0E6E60" stroke-width="1.6"/>
+<rect x="440.0" y="408.0" width="5" height="64.0" rx="2" fill="#0E6E60"/>
+<text x="571.0" y="429.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Policy value at a budget</text>
+<text x="571.0" y="445.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">IPW and DR; top-N or by cost</text>
+<text x="571.0" y="462.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.policy, itx.metrics.ground_truth</text>
+<rect x="28.0" y="408.0" width="262.0" height="64.0" rx="4" fill="#FFFFFF" stroke="#14201E" stroke-width="1.1"/>
+<text x="159.0" y="429.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Sensitivity analysis</text>
+<text x="159.0" y="445.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">Rosenbaum bounds, E-values</text>
+<text x="159.0" y="462.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.sensitivity</text>
+<rect x="440.0" y="522.0" width="262.0" height="64.0" rx="4" fill="#FFFFFF" stroke="#0E6E60" stroke-width="1.6"/>
+<rect x="440.0" y="522.0" width="5" height="64.0" rx="2" fill="#0E6E60"/>
+<text x="571.0" y="543.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">itx benchmark</text>
+<text x="571.0" y="559.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">runs, averages seeds, writes results</text>
+<text x="571.0" y="576.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.bench.runner, itx.bench.table</text>
+<path d="M 852.0 529.0 a 131.0 7 0 0 1 262.0 0 L 1114.0 579.0 a 131.0 7 0 0 1 -262.0 0 Z" fill="#FFFFFF" stroke="#14201E" stroke-width="1.1"/><path d="M 852.0 529.0 a 131.0 7 0 0 0 262.0 0" fill="none" stroke="#14201E" stroke-width="1.1"/>
+<text x="983.0" y="554.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">results/&lt;dataset&gt;.json</text>
+<text x="983.0" y="570.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">every seed, every interval</text>
+<rect x="852.0" y="408.0" width="262.0" height="64.0" rx="4" fill="#FFFFFF" stroke="#A64C1C" stroke-width="1.6"/>
+<rect x="852.0" y="408.0" width="5" height="64.0" rx="2" fill="#A64C1C"/>
+<text x="983.0" y="429.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">README tables and figures</text>
+<text x="983.0" y="445.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">never edited by hand</text>
+<text x="983.0" y="462.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">docs/figures</text>
+<rect x="852.0" y="636.0" width="262.0" height="64.0" rx="4" fill="#FFFFFF" stroke="#14201E" stroke-width="1.1"/>
+<text x="983.0" y="657.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">targeting.peterparker.ca</text>
+<text x="983.0" y="673.0" font-size="13" font-weight="500" text-anchor="middle" fill="#14201E">static, Azure Static Web Apps</text>
+<text x="983.0" y="690.0" font-size="11" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" text-anchor="middle" fill="#5C6B67">itx.demo, demo/</text>
+<rect x="100.1" y="146.5" width="117.8" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="159.0" y="158.5" font-size="12" text-anchor="middle" fill="#14201E">verified downloads</text>
+<rect x="506.2" y="141.0" width="129.6" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="571.0" y="153.0" font-size="12" text-anchor="middle" fill="#14201E">chosen on validation</text>
+<rect x="300.2" y="195.8" width="129.6" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="365.0" y="207.8" font-size="12" text-anchor="middle" fill="#14201E">train and validation</text>
+<rect x="306.1" y="265.2" width="117.8" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="365.0" y="277.2" font-size="12" text-anchor="middle" fill="#14201E">test, touched once</text>
+<rect x="538.5" y="263.0" width="64.9" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="571.0" y="275.0" font-size="12" text-anchor="middle" fill="#14201E">a ranking</text>
+<rect x="523.8" y="373.0" width="94.3" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="571.0" y="385.0" font-size="12" text-anchor="middle" fill="#14201E">scored ranking</text>
+<rect x="329.6" y="430.0" width="70.8" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="365.0" y="442.0" font-size="12" text-anchor="middle" fill="#14201E">flip point</text>
+<rect x="500.3" y="487.0" width="141.4" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="571.0" y="499.0" font-size="12" text-anchor="middle" fill="#14201E">what each ranking buys</text>
+<rect x="753.4" y="544.0" width="47.3" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="777.0" y="556.0" font-size="12" text-anchor="middle" fill="#14201E">writes</text>
+<rect x="924.1" y="487.0" width="117.8" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="983.0" y="499.0" font-size="12" text-anchor="middle" fill="#14201E">mean of five seeds</text>
+<rect x="935.8" y="601.0" width="94.3" height="20.0" rx="3" fill="#FFFFFF"/>
+<text x="983.0" y="613.0" font-size="12" text-anchor="middle" fill="#14201E">itx demo build</text>
+<rect x="28" y="722" width="26" height="16" rx="3" fill="#FFFFFF" stroke="#0E6E60" stroke-width="1.6"/>
+<text x="62" y="734" font-size="11" fill="#5C6B67">built here</text>
+<rect x="141.9" y="722" width="26" height="16" rx="3" fill="#FFFFFF" stroke="#A64C1C" stroke-width="1.6"/>
+<text x="175.9" y="734" font-size="11" fill="#5C6B67">the measurement</text>
+<rect x="282.75" y="722" width="26" height="16" rx="3" fill="#F2F4F3" stroke="#5C6B67" stroke-dasharray="4 3"/>
+<text x="316.75" y="734" font-size="11" fill="#5C6B67">public data</text>
+<path d="M 402.0 729.0 a 13.0 7 0 0 1 26.0 0 L 428.0 731.0 a 13.0 7 0 0 1 -26.0 0 Z" fill="#FFFFFF" stroke="#14201E" stroke-width="1.1"/><path d="M 402.0 729.0 a 13.0 7 0 0 0 26.0 0" fill="none" stroke="#14201E" stroke-width="1.1"/>
+<text x="436.03999999999996" y="734" font-size="11" fill="#5C6B67">data at rest</text>
+</svg>
