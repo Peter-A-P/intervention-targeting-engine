@@ -1251,7 +1251,13 @@ One of fifteen projects making production ML work inspectable.
 
 ## How this was built
 
-Design, methodology, evaluation choices and judgement are Peter Parker's. AI coding
-assistants (Claude Code) were used for implementation and drafting, the way a senior
+The design, the methods, the evaluation and the judgement calls are mine. The call that shaped
+this most was to measure ranking people by risk, the way this job is usually done, as a
+baseline beside every uplift model rather than assume it was the thing to beat. It turned out
+to be the best choice on one dataset and worse than spending nothing on another, which is why
+`itx diagnose` exists and why it is the first thing to run.
+
+I used AI coding assistants (Claude Code) for implementation and drafting, the way a senior
 engineer uses them in 2026. Every number in the results table is reproducible from this
-repository with one command, and that reproducibility is the evidence that matters.
+repository with one command, and I would rather you check that than take my word for any of
+it.
