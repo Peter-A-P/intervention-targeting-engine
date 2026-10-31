@@ -93,14 +93,17 @@ class TabFMConfig:
             prediction; see ``docs/estimators.md`` for the measured cost behind this default.
         threads: Torch CPU threads, for the same reason ``BaseLearnerConfig.n_jobs`` is
             explicit: so the machine stays usable and the timings are comparable.
-        float32: Run in float32 rather than the bfloat16 the model was designed for. Off by
-            default; kept for the quality check TabFM's own loader offers it for.
+        float32: Run in float32 rather than the bfloat16 the model was designed for. On by
+            default, because on the CPU this was built on bfloat16 is emulated rather than
+            native: one fit with 500 context rows predicting 500 more took 31 seconds in
+            float32 and 225 in bfloat16, with the same accuracy to the third decimal. On a
+            GPU with bfloat16 support the other setting is the right one.
     """
 
     context_rows: int = PRETRAINED_CONTEXT_ROWS
     ensemble: int = 4
     threads: int = 8
-    float32: bool = False
+    float32: bool = True
 
     def with_(self, **changes: Any) -> TabFMConfig:  # noqa: ANN401
         """Return a copy with some settings replaced.
