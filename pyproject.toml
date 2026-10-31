@@ -135,6 +135,12 @@ disallow_incomplete_defs = false
 module = ["lightgbm.*", "matplotlib.*", "sklearn.*", "econml.*", "causalml.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# The 'foundation' extra. Untyped, and absent from the CI install because its weights are
+# 13 GB and licensed for non-commercial use only, so mypy has to accept it being missing.
+module = ["tabfm.*", "huggingface_hub.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
