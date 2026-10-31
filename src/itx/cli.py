@@ -387,7 +387,7 @@ def bases_command(
     ] = DEFAULT_README,
     resume: Annotated[
         bool,
-        typer.Option(help="Reuse finished rows from an interrupted run's checkpoint."),
+        typer.Option(help="Reuse finished rows from the checkpoint and the results file."),
     ] = False,
     report_only: Annotated[
         bool,
@@ -421,10 +421,12 @@ def bases_command(
         names = [n.strip() for n in learners.split(",")] if learners else list(META_LEARNERS)
         seed_values = [int(x) for x in seeds.split(",")] if seeds else list(SEEDS)
         checkpoint = results_dir / f"{dataset}.checkpoint.json"
-        completed = read_json(checkpoint) if resume and checkpoint.is_file() else []
+        # Resuming reuses the results file as well as the checkpoint, so a dataset can be
+        # grown a seed at a time: on a CPU, one ACIC seed on TabFM is hours of work.
+        banked = read_json(checkpoint) if resume and checkpoint.is_file() else []
+        completed = merge(existing, banked) if resume else []
         if checkpoint.is_file() and not resume:
             say(f"note: {checkpoint} exists from an interrupted run and is being ignored.")
-        banked = list(completed)
 
         def bank(row: BaseComparisonRow) -> None:
             """Append a finished row to the checkpoint, so an interruption costs one row."""
