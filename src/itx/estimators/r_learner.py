@@ -36,9 +36,9 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from itx.estimators.base import BaseUpliftEstimator
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG, LearnerConfig, estimator_name
 from itx.estimators.propensity import DEFAULT_CLIP, PropensityFit, PropensityModel
-from itx.estimators.sklearn_bridge import LightGBMRegressor
+from itx.estimators.sklearn_bridge import regressor_for
 
 if TYPE_CHECKING:
     import polars as pl
@@ -67,7 +67,7 @@ class RLearner(BaseUpliftEstimator):
 
     def __init__(
         self,
-        config: BaseLearnerConfig = DEFAULT_CONFIG,
+        config: LearnerConfig = DEFAULT_CONFIG,
         *,
         seed: int = 0,
         folds: int = DEFAULT_FOLDS,
@@ -77,7 +77,8 @@ class RLearner(BaseUpliftEstimator):
         """Build an unfitted R-learner.
 
         Args:
-            config: Shared LightGBM settings.
+            config: Shared base-learner settings. A ``TabFMConfig`` builds every internal
+                model on TabFM, and the row name says so.
             seed: Base seed; the internal models get distinct seeds derived from it.
             folds: Cross-fitting folds.
             clip: Propensity clipping bound for the propensity this wrapper supplies.
@@ -86,6 +87,7 @@ class RLearner(BaseUpliftEstimator):
                 only add variance to the treatment residual.
         """
         super().__init__()
+        self.name = estimator_name(type(self).name, config)
         self.config = config
         self.seed = seed
         self.folds = folds
@@ -108,7 +110,7 @@ class RLearner(BaseUpliftEstimator):
         self.propensity_fit = self._propensity.fit(data)
 
         self._model = BaseRRegressor(
-            learner=LightGBMRegressor(self.config, self.seed, categorical),
+            learner=regressor_for(self.config, self.seed, categorical),
             n_fold=self._usable_folds(data),
             random_state=self.seed,
             control_name=CONTROL_NAME,

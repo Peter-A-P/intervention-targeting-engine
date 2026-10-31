@@ -52,7 +52,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from sklearn.model_selection import StratifiedKFold
 
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, OutcomeLearner
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG, LearnerConfig, OutcomeLearner
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -122,14 +122,14 @@ class PropensityFit:
 
 
 class PropensityModel:
-    """A LightGBM classifier for the treatment indicator.
+    """A classifier for the treatment indicator, on the same base as the outcome models.
 
     Short-circuited when the dataset already knows its propensities by design.
     """
 
     def __init__(
         self,
-        config: BaseLearnerConfig = DEFAULT_CONFIG,
+        config: LearnerConfig = DEFAULT_CONFIG,
         *,
         seed: int = 0,
         clip: float = DEFAULT_CLIP,
@@ -140,7 +140,7 @@ class PropensityModel:
         """Build an unfitted propensity model.
 
         Args:
-            config: Shared LightGBM settings, the same ones the outcome models use.
+            config: Shared base-learner settings, the same ones the outcome models use.
             seed: Seed for the classifier.
             clip: Probabilities are held inside ``[clip, 1 - clip]``.
             use_known: Use ``UpliftDataset.propensity`` when the dataset has it. Turning
