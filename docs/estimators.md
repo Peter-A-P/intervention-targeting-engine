@@ -1046,7 +1046,7 @@ zero with an interval of exactly zero.
   TabFM takes no weights. A weighted fit becomes a resampled one: context rows are drawn with
   replacement in proportion to weight, the standard importance-resampling equivalence. It is
   an approximation, the only one in the comparison, and the R-learner row should be read
-  with it in mind.
+  with it in mind. On ACIC it fails outright, and "What ACIC says" below shows why and what the alternative draw does instead.
 - **Pinned, verified weights.** The checkpoints come from `google/tabfm-1.0.0-pytorch` at one
   pinned revision and are checked against their SHA-256 before loading, the same promise the
   dataset loaders make. They are 6.5 GB each, one for classification and one for regression.
@@ -1086,6 +1086,20 @@ LightGBM's cost and is still cheap: on IHDP, a pretrained model that needs no se
 slower than a tree ensemble that searches eight configurations. The DR-learner is TabFM's
 most expensive case because EconML cross-fits three nuisance models over five folds, and
 every one of those fits is a forward pass over its context.
+
+### What ACIC says, one seed in
+
+Seed 11 of five, all 2,881 training rows as context, an ensemble of one; the other four seeds are still to run. One seed gives a paired interval for every difference but says nothing yet about how often a difference repeats, so this section reads it as a first look.
+
+**The effect estimates get better again, for four learners of five.** PEHE falls on TabFM for the S-learner (1.10 to 0.58), the T-learner (1.17 to 0.50), the X-learner (0.86 to 0.47) and the DR-learner (1.68 to 0.50), every interval clear of zero. That is the IHDP result repeating on six times the rows and a different simulation.
+
+**The R-learner breaks, and the sample-weight rule above is why.** On TabFM its PEHE rises from 1.20 to 3.48 and its Qini falls from 0.228 to 0.130, both intervals clear of zero. ACIC's treatment is close to predictable from the covariates: the propensity model puts the median unit's squared treatment residual, the R-learner's weight, at 0.0009. Drawing 2,881 context rows with replacement in proportion to those weights gives 810 distinct rows, one of them twelve times over, so TabFM conditions on a few hundred units seen repeatedly.
+
+A one-seed probe tested that by swapping the draw for one without replacement, sized to the effective sample size (947 rows), so no unit appears twice. The ranking recovers: Qini 0.249, against 0.228 on LightGBM, the difference straddling zero. The effect size does not: PEHE rises to 10.9. Without repeats, the context includes low-weight units whose pseudo-outcome divides by a treatment residual near 0.01, and TabFM, which cannot down-weight them, fits their hundredfold values. Neither draw stands in for a weighted regression on data like this, so the committed rule stays, and the R-learner row on TabFM is read as a measure of what the weighting approximation costs rather than of TabFM. A fix would need an engine that takes weights in the final stage, which is LightGBM, and mixing the two bases in one run is what this comparison rules out.
+
+**Rankings move in both directions.** Leaving the R-learner aside, two of the twelve ranking comparisons improve with intervals clear of zero (the T-learner's Qini, +0.023; the DR-learner's value at a 10% budget, +0.53), one improves on AUUC (the X-learner, +0.014) and one worsens on AUUC (the DR-learner, -0.086). The rest straddle zero.
+
+**The bill grows with the rows.** TabFM's fit and predict ran from 9 minutes (T-learner) to 67 (DR-learner), 23 to 258 times LightGBM's whole bill, and 2 hours 24 minutes for the seed on an eight-thread CPU. The cost per seed is the number the decision about Hillstrom and the larger sets rests on.
 
 ### Licence
 
