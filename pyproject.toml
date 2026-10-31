@@ -41,6 +41,14 @@ learners = [
 neural = [
   "torch>=2.5,<3.0",        # Dragonnet, CPU only
 ]
+# TabFM, the second base learner (docs/estimators.md). Optional because its weights are
+# under a non-commercial, non-production licence, so nothing on the default install path
+# may depend on it. 1.0.1 is the first release on PyPI with the PyTorch loader; the 1.x
+# ceiling is because the weights are versioned with the package and a 2.x is a new model.
+foundation = [
+  "tabfm[pytorch]>=1.0.1,<2.0",
+  "safetensors>=0.4,<1.0",  # the weights are safetensors files and tabfm does not declare it
+]
 
 [project.scripts]
 itx = "itx.cli:app"
