@@ -8,7 +8,7 @@ would be comparing engines and the estimator column would mean nothing.
 A second base exists, TabFM (:mod:`itx.estimators.tabfm_base`), and it is a whole second
 column rather than a mix: an estimator handed a :class:`TabFMConfig` builds every one of its
 internal models on TabFM, and :class:`OutcomeLearner` is where that choice is made. Nothing
-outside the base-learner comparison uses it (PLAN.md change 60).
+outside the base-learner comparison uses it (PLAN.md change 65).
 
 The settings are deliberately conservative rather than tuned. ``deterministic`` and
 ``force_row_wise`` are on because the project's claim is that a stranger can rerun the

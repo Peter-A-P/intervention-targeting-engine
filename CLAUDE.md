@@ -27,7 +27,8 @@ budget-constrained targeting toolkit with honest evaluation. The build plan is
 - **Every ranking is shown next to the random and outcome-ranking baselines.** The
   outcome-ranking trap is the point, not an afterthought.
 - **Base learner is LightGBM everywhere** so estimator differences are estimator
-  differences.
+  differences. The one exception is `itx bases` (PLAN.md change 65), which runs all five
+  meta-learners on TabFM as a separate, whole second column; no run mixes the two bases.
 - **Polars for data**, pandas only at library boundaries.
 - **The fraud worked case is semi-synthetic and declared so** in its first sentence.
 - **Plain punctuation** in everything written here: no em-dashes or other typographic

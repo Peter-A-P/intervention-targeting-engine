@@ -5,7 +5,7 @@ of the results table is a difference between estimators rather than between engi
 rule survives here in the form that matters: within one run every meta-learner is built on
 the same base. What this module adds is a second, whole column of the comparison, so the
 question "does the engine change which estimator wins?" can be asked at all (PLAN.md
-change 60, ``docs/estimators.md``).
+change 65, ``docs/estimators.md``).
 
 TabFM is Google's zero-shot tabular foundation model. It is not trained on the data in
 front of it: the training rows are handed to a pretrained transformer as context and every
