@@ -649,6 +649,69 @@ form: it records whether an ad was actually shown, and it is zero for every one 
 It is a consequence of the treatment. Criteo published it deliberately, for a
 noncompliance question this project does not ask.
 
+### Does the engine under the meta-learners matter?
+
+Every table above holds the base learner fixed at LightGBM, so that the estimator column
+means something. `itx bases` asks the question that leaves open: it runs all five
+meta-learners again on TabFM, a pretrained tabular foundation model that learns nothing from
+the data and has nothing to tune, and compares the two on the same test rows, so each
+difference gets its own paired interval. How it is done and the three rules it needed are in
+[docs/estimators.md](docs/estimators.md).
+
+#### IHDP
+
+<!-- itx:table:bases-ihdp -->
+5 seeds (11, 23, 37, 53, 71), 448 training rows (below TabFM's 16,384-row context cap, so it sees them all), 150 test rows, TabFM ensemble of 1. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
+
+| Qini (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0176 (-0.0699, 0.1079) | 0.0404 (-0.0529, 0.1378) | 0.0228 (-0.0287, 0.0776) | 4 of 5 |
+| `t-learner` | 0.0305 (-0.0578, 0.1222) | 0.0224 (-0.0677, 0.1145) | -0.0081 (-0.0762, 0.0626) | 3 of 5 |
+| `x-learner` | 0.0468 (-0.0462, 0.1433) | 0.0409 (-0.0504, 0.1338) | -0.0059 (-0.0799, 0.0653) | 3 of 5 |
+| `dr-learner` | -0.0004 (-0.0790, 0.0787) | 0.0371 (-0.0553, 0.1303) | 0.0375 (-0.0831, 0.1532) | 4 of 5 |
+| `r-learner` | 0.0021 (-0.0804, 0.0807) | 0.0402 (-0.0413, 0.1237) | 0.0381 (-0.0558, 0.1324) | 4 of 5 |
+
+| AUUC (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.9064 (0.8315, 0.9670) | 0.9235 (0.8565, 0.9806) | 0.0171 (-0.0228, 0.0629) | 5 of 5 |
+| `t-learner` | 0.9022 (0.8334, 0.9585) | 0.9127 (0.8446, 0.9699) | 0.0105 (-0.0430, 0.0595) | 4 of 5 |
+| `x-learner` | 0.8962 (0.8303, 0.9548) | 0.9132 (0.8460, 0.9716) | 0.0171 (-0.0304, 0.0660) | 4 of 5 |
+| `dr-learner` | 0.8104 (0.7258, 0.8873) | 0.9142 (0.8472, 0.9707) | **0.1038 (0.0014, 0.2044)** | 5 of 5 |
+| `r-learner` | 0.8878 (0.8067, 0.9464) | 0.8943 (0.8282, 0.9507) | 0.0065 (-0.0601, 0.0847) | 3 of 5 |
+
+| Value at a 10% budget (DR) (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.2030 (-0.3699, 0.7049) | 0.1724 (-0.3035, 1.4034) | -0.0305 (-0.4075, 1.2137) | 2 of 5 |
+| `t-learner` | 0.2627 (-0.2684, 0.6710) | 0.3179 (-0.0819, 0.6791) | 0.0552 (-0.5272, 0.6003) | 4 of 5 |
+| `x-learner` | 0.2087 (-0.3856, 0.5935) | 0.4971 (0.1948, 0.8214) | 0.2884 (-0.1884, 1.0443) | 3 of 5 |
+| `dr-learner` | 0.2673 (-0.0358, 0.6035) | 0.4010 (-0.0645, 0.8534) | 0.1337 (-0.4588, 0.7237) | 4 of 5 |
+| `r-learner` | 0.4317 (-0.0340, 0.7649) | 0.4090 (-0.0521, 0.7802) | -0.0227 (-0.6395, 0.7007) | 2 of 5 |
+
+| PEHE (lower is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.5661 (0.4344, 0.7022) | 0.3068 (0.2379, 0.3834) | **-0.2593 (-0.3506, -0.1610)** | 5 of 5 |
+| `t-learner` | 0.8569 (0.7500, 0.9646) | 0.4299 (0.3651, 0.4962) | **-0.4270 (-0.5435, -0.3065)** | 5 of 5 |
+| `x-learner` | 0.7870 (0.6081, 0.9695) | 0.5418 (0.4158, 0.6761) | **-0.2452 (-0.3547, -0.1289)** | 5 of 5 |
+| `dr-learner` | 8.5415 (7.1699, 9.9460) | 0.6239 (0.5151, 0.7307) | **-7.9176 (-9.3214, -6.5449)** | 5 of 5 |
+| `r-learner` | 1.3381 (1.1803, 1.5026) | 0.9002 (0.7037, 1.0982) | **-0.4379 (-0.6498, -0.2249)** | 5 of 5 |
+
+| Rank by Qini | LightGBM | TabFM |
+|---|---|---|
+| 1 | `x-learner` (0.0468) | `x-learner` (0.0409) |
+| 2 | `t-learner` (0.0305) | `s-learner` (0.0404) |
+| 3 | `s-learner` (0.0176) | `r-learner` (0.0402) |
+| 4 | `r-learner` (0.0021) | `dr-learner` (0.0371) |
+| 5 | `dr-learner` (-0.0004) | `t-learner` (0.0224) |
+
+| Meta-learner | LightGBM grid search (s) | LightGBM final fit and predict (s) | TabFM fit and predict (s) | TabFM's bill over LightGBM's |
+|---|---|---|---|---|
+| `s-learner` | 1.4 | 0.2 | 107.0 | 67x |
+| `t-learner` | 2.7 | 0.4 | 77.7 | 25x |
+| `x-learner` | 9.3 | 1.2 | 246.6 | 24x |
+| `dr-learner` | 26.2 | 2.8 | 552.8 | 19x |
+| `r-learner` | 56.6 | 2.1 | 208.5 | 4x |
+<!-- itx:end:bases-ihdp -->
+
 ### How much unmeasured confounding would overturn any of this
 
 Every number above rests on an assumption nothing here can test: that the covariates carry
