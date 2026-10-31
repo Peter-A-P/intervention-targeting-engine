@@ -30,13 +30,22 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=False,
         help="run the tests that load Criteo or Lenta (435 MB of downloads)",
     )
+    # Its own switch again: the TabFM tests need the optional 'foundation' extra, 13 GB of
+    # weights under a non-commercial licence, and minutes of CPU per fit.
+    parser.addoption(
+        "--run-tabfm",
+        action="store_true",
+        default=False,
+        help="run the tests that load the TabFM weights (optional extra, 13 GB, slow on CPU)",
+    )
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    """Skip anything marked slow or large unless that marker was asked for."""
+    """Skip anything marked slow, large or tabfm unless that marker was asked for."""
     skips = {
         "slow": ("--run-slow", "downloads data or fits at full size"),
         "large": ("--run-large", "435 MB of downloads: Criteo and Lenta"),
+        "tabfm": ("--run-tabfm", "the TabFM extra and its 13 GB of weights"),
     }
     for marker, (option, why) in skips.items():
         if config.getoption(option):

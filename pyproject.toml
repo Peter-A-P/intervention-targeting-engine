@@ -147,4 +147,5 @@ addopts = "-q --strict-markers"
 markers = [
   "slow: needs a real dataset download or a full-size fit; skipped unless --run-slow",
   "large: loads Criteo or Lenta, 435 MB and fourteen million rows; skipped unless --run-large",
+  "tabfm: loads the TabFM weights, optional extra and 13 GB; skipped unless --run-tabfm",
 ]
