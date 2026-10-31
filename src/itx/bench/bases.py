@@ -303,7 +303,7 @@ def run_bases(
         # Loading and verifying the two 6.5 GB checkpoints takes a minute, and charging it
         # to whichever fit happened to come first would put it in that row's timing.
         for model_type in ("classification", "regression"):
-            pretrained(model_type, float32=tabfm.float32)
+            pretrained(model_type, float32=tabfm.float32, device=tabfm.device)
     started = time.perf_counter()
     rows: list[BaseComparisonRow] = []
     total = len(seeds) * len(learners)

@@ -57,3 +57,29 @@ class TestContextRows:
 
     def test_the_default_cap_is_the_pretraining_context(self):
         assert TabFMConfig().context_rows == PRETRAINED_CONTEXT_ROWS == 16_384
+
+
+class TestDevice:
+    def test_the_cpu_is_the_default(self):
+        assert TabFMConfig().device == "cpu"
+
+    def test_the_device_reaches_tabfms_loader(self, monkeypatch, tmp_path):
+        # TabFM's loader defaults to the CPU, so a GPU run that forgot to pass the device on
+        # would be a CPU run with a GPU's bill. A stand-in package records what it was asked.
+        import sys
+        import types
+
+        from itx.estimators import tabfm_base
+
+        asked: dict[str, object] = {}
+        loader = types.SimpleNamespace(load=lambda model_type, **kwargs: asked.update(kwargs))
+        monkeypatch.setitem(
+            sys.modules, "tabfm", types.SimpleNamespace(tabfm_v1_0_0_pytorch=loader)
+        )
+        monkeypatch.setattr(tabfm_base, "weights_dir", lambda model_type: tmp_path)
+        tabfm_base.pretrained.cache_clear()
+        try:
+            tabfm_base.pretrained("regression", float32=True, device="cuda")
+        finally:
+            tabfm_base.pretrained.cache_clear()
+        assert asked["device"] == "cuda"

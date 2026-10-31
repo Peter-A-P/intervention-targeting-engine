@@ -379,6 +379,17 @@ def bases_command(
             help="Bootstrap resamples per row; the dataset's protocol value if omitted."
         ),
     ] = None,
+    device: Annotated[
+        str, typer.Option(help="Torch device for TabFM: 'cpu', or 'cuda' on a GPU machine.")
+    ] = "cpu",
+    bfloat16: Annotated[
+        bool,
+        typer.Option(
+            "--bfloat16",
+            help="Run TabFM in the bfloat16 it was designed for; float32 by default, "
+            "which is faster on a CPU.",
+        ),
+    ] = False,
     results_dir: Annotated[
         Path, typer.Option(help="Where the per-seed JSON goes.")
     ] = DEFAULT_BASES_DIR,
@@ -415,7 +426,9 @@ def bases_command(
         if not is_available():
             typer.echo("TabFM is not installed: run 'uv sync --extra foundation' first.")
             raise typer.Exit(code=2)
-        config = DEFAULT_TABFM.with_(context_rows=context_rows)
+        config = DEFAULT_TABFM.with_(
+            context_rows=context_rows, device=device, float32=not bfloat16
+        )
         if ensemble is not None:
             config = config.with_(ensemble=ensemble)
         names = [n.strip() for n in learners.split(",")] if learners else list(META_LEARNERS)
@@ -435,7 +448,8 @@ def bases_command(
 
         say(
             f"{dataset}: {len(names)} learners x {len(seed_values)} seeds on two bases, "
-            f"TabFM context {config.context_rows:,}, ensemble {config.ensemble}"
+            f"TabFM context {config.context_rows:,}, ensemble {config.ensemble}, "
+            f"{config.device}, {'float32' if config.float32 else 'bfloat16'}"
         )
         rows = run_bases(
             dataset,

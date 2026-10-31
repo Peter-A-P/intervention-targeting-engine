@@ -101,12 +101,17 @@ class TabFMConfig:
             native: one fit with 500 context rows predicting 500 more took 31 seconds in
             float32 and 225 in bfloat16, with the same accuracy to the third decimal. On a
             GPU with bfloat16 support the other setting is the right one.
+        device: Where torch runs the model, ``"cpu"`` or ``"cuda"``. TabFM's own loader
+            defaults to the CPU, so a GPU is used only when asked for. The device changes
+            how long a fit takes, not what it predicts beyond floating-point rounding, so
+            it is not part of a result row's key.
     """
 
     context_rows: int = PRETRAINED_CONTEXT_ROWS
     ensemble: int = 1
     threads: int = 8
     float32: bool = True
+    device: str = "cpu"
 
     def with_(self, **changes: Any) -> TabFMConfig:  # noqa: ANN401
         """Return a copy with some settings replaced.
@@ -283,7 +288,11 @@ def _estimator(config: TabFMConfig, *, binary: bool, seed: int) -> Any:  # noqa:
     except ImportError as error:  # pragma: no cover - exercised only without the extra
         raise ImportError(INSTALL_HINT) from error
     _set_threads(config.threads)
-    model = pretrained("classification" if binary else "regression", float32=config.float32)
+    model = pretrained(
+        "classification" if binary else "regression",
+        float32=config.float32,
+        device=config.device,
+    )
     # Ensemble randomness is seeded from the fit's seed and kept within 32 bits, which is
     # what TabFM's numpy and random generators accept.
     common = {"n_estimators": config.ensemble, "random_state": seed % (2**31)}
@@ -317,12 +326,13 @@ def _frame(matrix: FloatArray, categorical: Sequence[int]) -> Any:  # noqa: ANN4
 
 
 @cache
-def pretrained(model_type: str, *, float32: bool = False) -> Any:  # noqa: ANN401
+def pretrained(model_type: str, *, float32: bool = False, device: str = "cpu") -> Any:  # noqa: ANN401
     """The pretrained TabFM model for a task, downloaded once, verified, loaded once.
 
     Args:
         model_type: ``"classification"`` or ``"regression"``.
         float32: Keep the float32 checkpoint rather than casting to bfloat16.
+        device: Torch device to load onto.
 
     Returns:
         TabFM's eval-mode model, shared by every estimator in the process.
@@ -338,6 +348,7 @@ def pretrained(model_type: str, *, float32: bool = False) -> Any:  # noqa: ANN40
         model_type,
         checkpoint_path=str(directory),
         dtype=None if float32 else torch.bfloat16,
+        device=device,
     )
 
 
