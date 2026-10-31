@@ -48,7 +48,7 @@ from itx.bench.seeds import SEEDS, TIE_SEED, bootstrap_seed_for
 from itx.data.splits import stratified_split
 from itx.estimators.base import BaseUpliftEstimator, DegenerateFitError
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG, LearnerConfig, config_label
-from itx.estimators.tabfm_base import DEFAULT_TABFM, LICENCE, TabFMConfig
+from itx.estimators.tabfm_base import DEFAULT_TABFM, TabFMConfig, pretrained
 from itx.metrics.bootstrap import DEFAULT_LEVEL, DEFAULT_RESAMPLES, Estimate, bootstrap_vector
 
 if TYPE_CHECKING:
@@ -270,6 +270,7 @@ def run_bases(
     progress: Callable[[str], None] | None = None,
     completed: Sequence[BaseComparisonRow] = (),
     on_row: Callable[[BaseComparisonRow], None] | None = None,
+    warm: bool = True,
 ) -> list[BaseComparisonRow]:
     """Run the comparison on one dataset, across learners and seeds.
 
@@ -285,6 +286,7 @@ def run_bases(
         on_row: Called with each finished row, so the caller can checkpoint it. TabFM on a
             CPU is slow enough that losing a night's work to the scheduled reboot is the
             expected failure, not an edge case.
+        warm: Load both TabFM checkpoints before the first timed fit.
 
     Returns:
         Every row, seed then learner.
@@ -297,6 +299,11 @@ def run_bases(
         raise KeyError(msg)
     data = DATASETS[dataset]()
     already = {row.key: row for row in completed}
+    if warm:
+        # Loading and verifying the two 6.5 GB checkpoints takes a minute, and charging it
+        # to whichever fit happened to come first would put it in that row's timing.
+        for model_type in ("classification", "regression"):
+            pretrained(model_type, float32=tabfm.float32)
     started = time.perf_counter()
     rows: list[BaseComparisonRow] = []
     total = len(seeds) * len(learners)
@@ -450,93 +457,80 @@ def _pooled(estimates: Sequence[Estimate]) -> Estimate | None:
 def _label(metric: str) -> str:
     """Column label for a metric."""
     return {"qini": "Qini", "auuc": "AUUC", "pehe": "PEHE"}.get(
-        metric, f"Value at {BUDGET:.0%} budget (DR)"
+        metric, f"Value at a {BUDGET:.0%} budget (DR)"
     )
 
 
-def _group(
-    rows: Sequence[BaseComparisonRow], context_rows: int | None = None
-) -> dict[str, list[BaseComparisonRow]]:
-    """Rows by learner, in learner order, optionally at one context size."""
+def _group(rows: Sequence[BaseComparisonRow]) -> dict[str, list[BaseComparisonRow]]:
+    """Rows by learner, in learner order."""
     grouped: dict[str, list[BaseComparisonRow]] = {}
     for name in META_LEARNERS:
-        chosen = [
-            row
-            for row in rows
-            if row.learner == name
-            and (context_rows is None or row.context_rows == context_rows)
-        ]
+        chosen = [row for row in rows if row.learner == name]
         if chosen:
             grouped[name] = chosen
     return grouped
 
 
-def headline_context(rows: Sequence[BaseComparisonRow]) -> int:
-    """The context size the headline tables report: the largest one run.
+def headline(rows: Sequence[BaseComparisonRow]) -> list[BaseComparisonRow]:
+    """The rows the headline tables report: the smallest ensemble, then the largest context.
+
+    A results file can hold several TabFM settings, because the context and ensemble sweeps
+    add to it. The headline is the committed setting: the ensemble the package defaults to,
+    which is the smallest one run, at the full pretrained context.
 
     Args:
         rows: Rows for one dataset.
 
     Returns:
-        The largest context cap present.
+        The rows at that one setting.
     """
-    return max(row.context_rows for row in rows)
+    if not rows:
+        return []
+    ensemble = min(row.ensemble for row in rows)
+    at_ensemble = [row for row in rows if row.ensemble == ensemble]
+    context = max(row.context_rows for row in at_ensemble)
+    return [row for row in at_ensemble if row.context_rows == context]
 
 
 def comparison_table(
-    rows: Sequence[BaseComparisonRow], *, metrics: Sequence[str] | None = None, digits: int = 4
+    rows: Sequence[BaseComparisonRow], metric: str = "qini", *, digits: int = 4
 ) -> str:
-    """Result 1: each metric on each base, and the paired difference.
+    """Result 1 for one metric: each base, and the paired difference.
 
-    One row per meta-learner. For each metric the table shows LightGBM, TabFM, and TabFM
-    minus LightGBM with its paired interval, then how many seeds TabFM was better on. The
-    difference cell is in bold when its interval excludes zero.
+    One row per meta-learner: the metric on LightGBM, on TabFM, and TabFM minus LightGBM with
+    its paired interval, then on how many seeds TabFM was the better of the two. The
+    difference is in bold when its interval excludes zero.
 
     Args:
-        rows: Rows for one dataset, at one or more context sizes; the headline size is used.
-        metrics: Metrics to show; every compared metric present by default.
+        rows: Rows at one TabFM setting.
+        metric: The metric.
         digits: Decimal places.
 
     Returns:
-        A markdown table.
+        A markdown table, or an empty string when no row carries the metric.
     """
-    if not rows:
-        return "| _no rows_ |\n|---|\n"
-    context = headline_context(rows)
-    grouped = _group(rows, context)
-    present = [
-        m
-        for m in (metrics if metrics is not None else COMPARED)
-        if any(f"delta:{m}" in row.metrics for group in grouped.values() for row in group)
+    grouped = _group(rows)
+    if not any(f"delta:{metric}" in row.metrics for group in grouped.values() for row in group):
+        return ""
+    better = "lower" if not HIGHER_IS_BETTER[metric] else "higher"
+    lines = [
+        f"| {_label(metric)} ({better} is better) | LightGBM | TabFM "
+        "| TabFM minus LightGBM | Seeds TabFM is better |",
+        "|---|---|---|---|---|",
     ]
-    header = ["Meta-learner"]
-    for metric in present:
-        label = _label(metric)
-        header += [
-            f"{label}, LightGBM",
-            f"{label}, TabFM",
-            f"{label}, TabFM minus LightGBM",
-            "TabFM better",
-        ]
-    lines = ["| " + " | ".join(header) + " |", "|---" * len(header) + "|"]
     for learner, group in grouped.items():
         cells = [f"`{learner}`"]
-        for metric in present:
-            for base in BASES:
-                pooled = _pooled([row.metrics[f"{base}:{metric}"] for row in group])
-                cells.append("-" if pooled is None else pooled.format(digits))
-            delta = _pooled([row.metrics[f"delta:{metric}"] for row in group])
-            text = "-" if delta is None else delta.format(digits)
-            if delta is not None and delta.excludes_zero:
-                text = f"**{text}**"
-            cells.append(text)
-            wins = sum(
-                1
-                for row in group
-                if (row.metrics[f"delta:{metric}"].value > 0) == HIGHER_IS_BETTER[metric]
-                and row.metrics[f"delta:{metric}"].value != 0
-            )
-            cells.append(f"{wins} of {len(group)}")
+        for base in BASES:
+            pooled = _pooled([row.metrics[f"{base}:{metric}"] for row in group])
+            cells.append("-" if pooled is None else pooled.format(digits))
+        delta = _pooled([row.metrics[f"delta:{metric}"] for row in group])
+        text = "-" if delta is None else delta.format(digits)
+        if delta is not None and delta.excludes_zero:
+            text = f"**{text}**"
+        cells.append(text)
+        values = [row.metrics[f"delta:{metric}"].value for row in group]
+        wins = sum(1 for v in values if v != 0 and (v > 0) == HIGHER_IS_BETTER[metric])
+        cells.append(f"{wins} of {len(group)}")
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines) + "\n"
 
@@ -545,15 +539,15 @@ def ranking_table(rows: Sequence[BaseComparisonRow], *, metric: str = "qini") ->
     """Result 1, read the other way: the order of the five learners on each base.
 
     Args:
-        rows: Rows for one dataset; the headline context size is used.
+        rows: Rows at one TabFM setting.
         metric: The metric to order by.
 
     Returns:
         A markdown table with one row per rank, or an empty string without rows.
     """
-    if not rows:
+    grouped = _group(rows)
+    if not grouped:
         return ""
-    grouped = _group(rows, headline_context(rows))
     better = HIGHER_IS_BETTER[metric]
     order: dict[str, list[tuple[str, float]]] = {}
     for base in BASES:
@@ -564,11 +558,7 @@ def ranking_table(rows: Sequence[BaseComparisonRow], *, metric: str = "qini") ->
                 means.append((learner, pooled.value))
         order[base] = sorted(means, key=lambda pair: pair[1], reverse=better)
     depth = max(len(ranked) for ranked in order.values())
-    label = _label(metric)
-    lines = [
-        f"| Rank by {label} | LightGBM | TabFM |",
-        "|---|---|---|",
-    ]
+    lines = [f"| Rank by {_label(metric)} | LightGBM | TabFM |", "|---|---|---|"]
     for rank in range(depth):
         cells = [str(rank + 1)]
         for base in BASES:
@@ -584,17 +574,17 @@ def timing_table(rows: Sequence[BaseComparisonRow]) -> str:
     """Result 2: what each base spends, per fit, mean across seeds.
 
     Args:
-        rows: Rows for one dataset; the headline context size is used.
+        rows: Rows at one TabFM setting.
 
     Returns:
-        A markdown table.
+        A markdown table, or an empty string without rows.
     """
-    if not rows:
+    grouped = _group(rows)
+    if not grouped:
         return ""
-    grouped = _group(rows, headline_context(rows))
     lines = [
         "| Meta-learner | LightGBM grid search (s) | LightGBM final fit and predict (s) "
-        "| TabFM fit and predict (s) | TabFM over LightGBM, whole bill |",
+        "| TabFM fit and predict (s) | TabFM's bill over LightGBM's |",
         "|---|---|---|---|---|",
     ]
     for learner, group in grouped.items():
@@ -609,42 +599,51 @@ def timing_table(rows: Sequence[BaseComparisonRow]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def context_table(
-    rows: Sequence[BaseComparisonRow], *, metric: str = "qini", digits: int = 4
+def sweep_table(
+    rows: Sequence[BaseComparisonRow],
+    *,
+    over: str,
+    metric: str = "qini",
+    digits: int = 4,
 ) -> str:
-    """How TabFM's result moves with the context cap, one column per cap.
+    """How TabFM's result moves with one setting, holding the other at the headline.
 
     Args:
-        rows: Rows for one dataset at several context sizes.
+        rows: Rows for one dataset, at several settings.
+        over: ``"context_rows"`` or ``"ensemble"``.
         metric: The metric to show.
         digits: Decimal places.
 
     Returns:
-        A markdown table, or an empty string when only one context size was run.
+        A markdown table, or an empty string when the setting was not varied.
+
+    Raises:
+        ValueError: If ``over`` is not one of the two settings.
     """
-    sizes = sorted({row.context_rows for row in rows})
-    if len(sizes) < 2:
+    if over not in ("context_rows", "ensemble"):
+        msg = f"can only sweep context_rows or ensemble, not {over!r}"
+        raise ValueError(msg)
+    top = headline(rows)
+    if not top:
         return ""
-    label = _label(metric)
-    header = ["Meta-learner", "LightGBM"] + [f"TabFM, {size:,} context rows" for size in sizes]
+    held = "ensemble" if over == "context_rows" else "context_rows"
+    held_value = getattr(top[0], held)
+    varied = [row for row in rows if getattr(row, held) == held_value]
+    values = sorted({getattr(row, over) for row in varied})
+    if len(values) < 2:
+        return ""
+    noun = "context rows" if over == "context_rows" else "ensemble members"
+    header = ["Meta-learner", "LightGBM"] + [f"TabFM, {v:,} {noun}" for v in values]
     lines = [
-        f"{label}, mean across seeds with the averaged interval:",
-        "",
         "| " + " | ".join(header) + " |",
         "|---" * len(header) + "|",
     ]
-    for learner, group in _group(rows).items():
-        lightgbm = _pooled(
-            [
-                row.metrics[f"lightgbm:{metric}"]
-                for row in group
-                if row.context_rows == sizes[-1]
-            ]
-        )
+    for learner, group in _group(varied).items():
+        lightgbm = _pooled([row.metrics[f"lightgbm:{metric}"] for row in group if row in top])
         cells = [f"`{learner}`", "-" if lightgbm is None else lightgbm.format(digits)]
-        for size in sizes:
+        for value in values:
             pooled = _pooled(
-                [row.metrics[f"tabfm:{metric}"] for row in group if row.context_rows == size]
+                [row.metrics[f"tabfm:{metric}"] for row in group if getattr(row, over) == value]
             )
             cells.append("-" if pooled is None else pooled.format(digits))
         lines.append("| " + " | ".join(cells) + " |")
@@ -658,26 +657,36 @@ def report(rows: Sequence[BaseComparisonRow]) -> str:
         rows: Rows for one dataset.
 
     Returns:
-        Markdown.
+        Markdown, or an empty string without rows.
     """
-    if not rows:
+    top = headline(rows)
+    if not top:
         return ""
-    context = headline_context(rows)
-    group = [row for row in rows if row.context_rows == context]
-    seeds = sorted({row.seed for row in group})
-    ensemble = sorted({row.ensemble for row in group})
+    seeds = sorted({row.seed for row in top})
+    first = top[0]
+    capped = first.n_train > first.context_rows
+    context = (
+        f"each TabFM model sees at most {first.context_rows:,} context rows"
+        if capped
+        else f"below TabFM's {first.context_rows:,}-row context cap, so it sees them all"
+    )
     parts = [
         f"{len(seeds)} seed{'s' if len(seeds) != 1 else ''} "
-        f"({', '.join(str(s) for s in seeds)}), {group[0].n_train:,} training rows, "
-        f"{group[0].n_test:,} test rows. TabFM context cap {context:,} rows, ensemble of "
-        f"{', '.join(str(e) for e in ensemble)}. Paired 95% bootstrap intervals; a bold "
-        f"difference excludes zero. TabFM weights: {LICENCE}.",
-        "",
-        comparison_table(group),
-        ranking_table(group),
-        timing_table(group),
+        f"({', '.join(str(s) for s in seeds)}), {first.n_train:,} training rows ({context}), "
+        f"{first.n_test:,} test rows, TabFM ensemble of {first.ensemble}. Each cell is the "
+        f"mean across seeds with the averaged paired 95% bootstrap interval; a bold "
+        f"difference excludes zero.",
     ]
-    sweep = context_table(rows)
-    if sweep:
-        parts.append(sweep)
-    return "\n".join(part for part in parts if part is not None)
+    for metric in COMPARED:
+        table = comparison_table(top, metric)
+        if table:
+            parts += ["", table.rstrip("\n")]
+    parts += ["", ranking_table(top).rstrip("\n"), "", timing_table(top).rstrip("\n")]
+    for over, title in (
+        ("context_rows", "How TabFM's Qini moves with its context cap:"),
+        ("ensemble", "How TabFM's Qini moves with its ensemble size:"),
+    ):
+        sweep = sweep_table(rows, over=over)
+        if sweep:
+            parts += ["", title, "", sweep.rstrip("\n")]
+    return "\n".join(parts) + "\n"

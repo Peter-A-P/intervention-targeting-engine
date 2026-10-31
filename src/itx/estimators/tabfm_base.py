@@ -89,8 +89,11 @@ class TabFMConfig:
             docstring for the rule that draws them.
         ensemble: Ensemble members per prediction, TabFM's own ``n_estimators``. Each
             member is a full forward pass over the context, so this is the cost knob.
-            The package default is 32, which on a CPU costs 32 forward passes per
-            prediction; see ``docs/estimators.md`` for the measured cost behind this default.
+            The package default is 32. On a CPU each member is a full pass over the
+            context: one seed of IHDP, all five meta-learners, took 21 minutes at one
+            member, so the 32 the package defaults to would be eleven hours for one seed of
+            the smallest dataset here. One is the committed default and is what the headline
+            tables report; ``itx bases --ensemble`` measures what more members buy.
         threads: Torch CPU threads, for the same reason ``BaseLearnerConfig.n_jobs`` is
             explicit: so the machine stays usable and the timings are comparable.
         float32: Run in float32 rather than the bfloat16 the model was designed for. On by
@@ -101,7 +104,7 @@ class TabFMConfig:
     """
 
     context_rows: int = PRETRAINED_CONTEXT_ROWS
-    ensemble: int = 4
+    ensemble: int = 1
     threads: int = 8
     float32: bool = True
 

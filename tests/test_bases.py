@@ -110,7 +110,7 @@ class TestPairing:
 
 
 def _row(
-    learner: str, seed: int, *, delta: float, context: int = 16_384
+    learner: str, seed: int, *, delta: float, context: int = 16_384, ensemble: int = 4
 ) -> bases.BaseComparisonRow:
     metrics: dict[str, Estimate] = {}
     for metric in ("qini", "auuc", "gain_dr@10%"):
@@ -122,7 +122,7 @@ def _row(
         learner=learner,
         seed=seed,
         context_rows=context,
-        ensemble=4,
+        ensemble=ensemble,
         n_train=448,
         n_test=150,
         metrics=metrics,
@@ -156,13 +156,16 @@ class TestTables:
     def test_a_difference_that_excludes_zero_is_bold_and_seeds_are_counted(self):
         rows = [_row("s-learner", seed, delta=0.02) for seed in (11, 23, 37)]
         rows += [_row("t-learner", seed, delta=0.0) for seed in (11, 23, 37)]
-        table = bases.comparison_table(rows, metrics=["qini"])
+        table = bases.comparison_table(rows, "qini")
         s_line = next(line for line in table.splitlines() if "`s-learner`" in line)
         t_line = next(line for line in table.splitlines() if "`t-learner`" in line)
         assert "**0.0200 (0.0100, 0.0300)**" in s_line
         assert s_line.endswith("3 of 3 |")
         assert "**" not in t_line
         assert t_line.endswith("0 of 3 |")
+
+    def test_a_metric_no_row_carries_gives_no_table(self):
+        assert bases.comparison_table([_row("s-learner", 11, delta=0.0)], "pehe") == ""
 
     def test_the_ranking_table_orders_each_base_separately(self):
         rows = [_row("s-learner", 11, delta=-0.05), _row("t-learner", 11, delta=0.05)]
@@ -175,11 +178,22 @@ class TestTables:
         table = bases.timing_table([_row("s-learner", 11, delta=0.0)])
         assert "| `s-learner` | 8.0 | 1.5 | 270.0 | 28x |" in table
 
-    def test_the_context_table_appears_only_for_a_sweep(self):
+    def test_the_headline_is_the_smallest_ensemble_at_the_largest_context(self):
+        rows = [
+            _row("s-learner", 11, delta=0.0),
+            _row("s-learner", 11, delta=0.0, context=1_024),
+            _row("s-learner", 11, delta=0.0, ensemble=8),
+        ]
+        top = bases.headline(rows)
+        assert [(r.context_rows, r.ensemble) for r in top] == [(16_384, 4)]
+
+    def test_a_sweep_table_appears_only_when_the_setting_was_varied(self):
         one = [_row("s-learner", 11, delta=0.0)]
-        assert bases.context_table(one) == ""
+        assert bases.sweep_table(one, over="context_rows") == ""
         two = [*one, _row("s-learner", 11, delta=0.01, context=1_024)]
-        assert "1,024 context rows" in bases.context_table(two)
+        assert "1,024 context rows" in bases.sweep_table(two, over="context_rows")
+        assert bases.sweep_table(two, over="ensemble") == ""
+        assert "context cap" in bases.report(two)
 
 
 @pytest.mark.tabfm
