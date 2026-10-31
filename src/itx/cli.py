@@ -953,7 +953,12 @@ def selection(
 
 def _config_label(chosen: Selection) -> str:
     """The winning settings of a selection, as ``min_child_samples/num_leaves``."""
-    return f"{chosen.config.min_child_samples}/{chosen.config.num_leaves}"
+    from itx.estimators.lightgbm_base import BaseLearnerConfig, config_label
+
+    config = chosen.config
+    if not isinstance(config, BaseLearnerConfig):
+        return config_label(config)
+    return f"{config.min_child_samples}/{config.num_leaves}"
 
 
 @app.command("allocate")

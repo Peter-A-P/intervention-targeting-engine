@@ -120,6 +120,21 @@ def base_name(config: LearnerConfig) -> str:
     return "tabfm" if isinstance(config, TabFMConfig) else "lightgbm"
 
 
+def config_label(config: LearnerConfig) -> str:
+    """A short description of a configuration, for tables and logs.
+
+    Args:
+        config: A base-learner configuration.
+
+    Returns:
+        ``"min_child_samples=20, num_leaves=31"`` for LightGBM, or the TabFM context cap and
+        ensemble size.
+    """
+    if isinstance(config, TabFMConfig):
+        return f"tabfm, context_rows={config.context_rows}, ensemble={config.ensemble}"
+    return f"min_child_samples={config.min_child_samples}, num_leaves={config.num_leaves}"
+
+
 def estimator_name(name: str, config: LearnerConfig) -> str:
     """An estimator's row name: unchanged on LightGBM, suffixed on any other base.
 

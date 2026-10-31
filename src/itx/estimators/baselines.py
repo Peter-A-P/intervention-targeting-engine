@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Literal
 import numpy as np
 
 from itx.estimators.base import BaseUpliftEstimator
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, OutcomeLearner
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG, LearnerConfig, OutcomeLearner
 
 if TYPE_CHECKING:
     import polars as pl
@@ -88,7 +88,7 @@ class OutcomeRanking(BaseUpliftEstimator):
 
     def __init__(
         self,
-        config: BaseLearnerConfig = DEFAULT_CONFIG,
+        config: LearnerConfig = DEFAULT_CONFIG,
         *,
         seed: int = 0,
         fit_on: FitOn = "all",
