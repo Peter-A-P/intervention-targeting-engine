@@ -1112,6 +1112,7 @@ uv run itx benchmark --dataset ieee-fraud # the worked case; needs the one file 
 `uv run itx bases --dataset ihdp` reruns the five meta-learners on TabFM as well as LightGBM
 and compares them pairwise. It needs `uv sync --extra foundation`, downloads 13 GB of weights
 on first use, and is slow on a CPU: see [docs/estimators.md](docs/estimators.md).
+On a GPU machine, add `--device cuda` (and `--bfloat16`, the precision TabFM was designed for). [scripts/gpu-pilot.sh](scripts/gpu-pilot.sh) times it on a fresh rented GPU against the CPU numbers above.
 
 `itx data pull hillstrom ihdp-train ihdp-test acic-x acic-zymu-1` fetches only the small
 sets, about 20 MB, which is enough for the first three benchmarks. Criteo is 297 MB and
