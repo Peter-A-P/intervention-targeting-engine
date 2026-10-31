@@ -1001,6 +1001,63 @@ entirely ordinary once a ranking metric has finished with it. It has to be a che
 output is a number. `_warn_if_degenerate` was written for the constant-zero case and
 `np.allclose(nan, 0.0)` is False, so it watched this happen in silence. PLAN.md change 51.
 
+## A second base learner: TabFM
+
+Every estimator above is built on LightGBM, and that is deliberate (PLAN.md section 5). It
+also means nothing above can say whether the engine matters: whether the S-learner's win on
+IHDP, or the DR-learner's trouble on small data, is a property of the meta-learner or of the
+trees underneath it. `uv run itx bases --dataset <name>` asks, by running all five
+meta-learners a second time on Google's TabFM and comparing the two pairwise (PLAN.md change
+65). Dragonnet and the baselines are not in it: Dragonnet has no base learner to swap, and a
+baseline on another engine would no longer be the baseline the main table shows.
+
+TabFM is a zero-shot tabular foundation model. Nothing is trained on the data in front of
+it: the training rows are handed to a pretrained transformer as context, and each prediction
+is one forward pass. So it has nothing for the validation grid to tune, its validation step is
+a no-op, and the question "what was the grid buying?" becomes measurable: LightGBM's search,
+fit and prediction against TabFM's fit and prediction, in seconds, per fit.
+
+### How the comparison is made
+
+Both bases are fitted on the same split, with the same seed, and scored on the same test
+rows. Each bootstrap resample draws one set of test rows and scores both rankings on it, and
+the difference, TabFM minus LightGBM, is taken inside the resample, so it has its own 95%
+interval. Two separate intervals that overlap say nothing about whether the paired difference
+is zero, and on these test splits they nearly always overlap. Compared: Qini, AUUC, the
+doubly robust value a 10% budget buys, and PEHE where the dataset knows the true effect.
+
+The LightGBM side is refitted rather than read back, because a paired interval needs the
+per-unit scores and the results files keep only metrics. It is the same grid, selection rule,
+seed and bootstrap seed as the main table, and `tests/test_bases.py` asserts that it
+reproduces the main table's number exactly. The same file checks the pairing itself: with
+TabFM swapped for LightGBM in disguise, every difference for every meta-learner is exactly
+zero with an interval of exactly zero.
+
+### Three rules TabFM needed, stated before any result
+
+- **Context cap.** TabFM was pretrained on up to 16,384 context rows, and its cost grows with
+  the context. A training set larger than the cap is subsampled once per internal model, with
+  the model's own seed, so every draw is committed; a binary target is subsampled within each
+  class, so the context keeps the training base rate. IHDP (448 training rows) and ACIC
+  (2,881) never reach the cap and are fitted whole. How the result moves with the cap is
+  itself a table, built by running `itx bases` at several `--context-rows` values; each run
+  adds to the same results file.
+- **Sample weights.** CausalML's R-learner fits its final stage as a weighted regression, and
+  TabFM takes no weights. A weighted fit becomes a resampled one: context rows are drawn with
+  replacement in proportion to weight, the standard importance-resampling equivalence. It is
+  an approximation, the only one in the comparison, and the R-learner row should be read
+  with it in mind.
+- **Pinned, verified weights.** The checkpoints come from `google/tabfm-1.0.0-pytorch` at one
+  pinned revision and are checked against their SHA-256 before loading, the same promise the
+  dataset loaders make. They are 6.5 GB each, one for classification and one for regression.
+
+### Licence
+
+TabFM's weights are under Google's non-commercial, non-production licence
+(`tabfm-non-commercial-v1.0`); the `tabfm` code is Apache-2.0. That is why it is an optional
+extra (`uv sync --extra foundation`) and why nothing on the default install path imports it.
+The demo is unaffected: it reads precomputed results and never loads a model.
+
 ## Sensitivity: what it would take to overturn any of this
 
 Every number above rests on an assumption nothing in this repository can test, that the
