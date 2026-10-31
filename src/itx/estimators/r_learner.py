@@ -39,6 +39,7 @@ from itx.estimators.base import BaseUpliftEstimator
 from itx.estimators.lightgbm_base import DEFAULT_CONFIG, LearnerConfig, estimator_name
 from itx.estimators.propensity import DEFAULT_CLIP, PropensityFit, PropensityModel
 from itx.estimators.sklearn_bridge import regressor_for
+from itx.estimators.tabfm_base import TabFMConfig
 
 if TYPE_CHECKING:
     import polars as pl
@@ -115,6 +116,13 @@ class RLearner(BaseUpliftEstimator):
             random_state=self.seed,
             control_name=CONTROL_NAME,
         )
+        if isinstance(self.config, TabFMConfig):
+            # CausalML cross-fits the outcome model in worker processes, one per core, and
+            # each worker would load its own 6.5 GB copy of TabFM. On the 12-core machine
+            # this was built on that exhausted the Windows page file and killed the run, so
+            # on TabFM the folds run in this process, sharing the one loaded model. The
+            # setting is not a constructor argument in CausalML 0.17, hence the attribute.
+            self._model.cv_n_jobs = 1
         self._model.fit(
             X=self._matrix(data.features),
             treatment=self._arm_labels(data),
