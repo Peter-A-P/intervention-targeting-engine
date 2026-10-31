@@ -992,6 +992,10 @@ uv run itx benchmark --dataset criteo     # the committed 10% subsample
 uv run itx benchmark --dataset ieee-fraud # the worked case; needs the one file you fetch yourself
 ```
 
+`uv run itx bases --dataset ihdp` reruns the five meta-learners on TabFM as well as LightGBM
+and compares them pairwise. It needs `uv sync --extra foundation`, downloads 13 GB of weights
+on first use, and is slow on a CPU: see [docs/estimators.md](docs/estimators.md).
+
 `itx data pull hillstrom ihdp-train ihdp-test acic-x acic-zymu-1` fetches only the small
 sets, about 20 MB, which is enough for the first three benchmarks. Criteo is 297 MB and
 Lenta is 138 MB.
@@ -1234,7 +1238,11 @@ because the decision is what the budget holder is actually buying.
 
 ## Licence
 
-The code is MIT: [LICENSE](LICENSE). The datasets are not mine to license and are not
+The code is MIT: [LICENSE](LICENSE). The optional TabFM base learner (`uv sync --extra
+foundation`) is not: its weights are under Google's non-commercial, non-production licence
+(`tabfm-non-commercial-v1.0`; the `tabfm` code is Apache-2.0), so it stays off the default
+install path, and only `itx bases` uses it. The demo reads precomputed results and never loads
+a model, so it is unaffected. The datasets are not mine to license and are not
 redistributed here. Each is downloaded from its own source under its own terms, which the
 data card records: Criteo is CC BY-NC-SA 4.0 and non-commercial, Lenta carries no licence
 from anybody, Hillstrom states none, and the IEEE-CIS file sits behind Kaggle competition
