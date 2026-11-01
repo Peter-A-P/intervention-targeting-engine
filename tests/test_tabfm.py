@@ -59,6 +59,26 @@ class TestContextRows:
         assert TabFMConfig().context_rows == PRETRAINED_CONTEXT_ROWS == 16_384
 
 
+class TestPredictionBatches:
+    def test_a_long_prediction_is_split_and_put_back_in_order(self):
+        # A test split too large for the GPU is predicted in batches; the rows must come
+        # back once each, in their own order, as if predicted in one pass.
+        from itx.estimators.tabfm_base import TabFMLearner
+
+        sizes: list[int] = []
+
+        class Echo:
+            def predict(self, frame):
+                sizes.append(len(frame))
+                return np.asarray(frame.iloc[:, 0], dtype=np.float64)
+
+        learner = TabFMLearner(TabFMConfig(predict_rows=4), binary=False)
+        learner._model = Echo()
+        matrix = np.arange(10, dtype=np.float64).reshape(-1, 1)
+        assert learner.predict(matrix).tolist() == list(range(10))
+        assert sizes == [4, 4, 2]
+
+
 class TestDevice:
     def test_the_cpu_is_the_default(self):
         assert TabFMConfig().device == "cpu"

@@ -105,6 +105,10 @@ class TabFMConfig:
             defaults to the CPU, so a GPU is used only when asked for. The device changes
             how long a fit takes, not what it predicts beyond floating-point rounding, so
             it is not part of a result row's key.
+        predict_rows: Most rows predicted in one forward pass. Each row predicted attends
+            to the context and not to the other rows, so splitting a prediction into
+            batches changes memory, not answers. Lenta's test split in one pass asked an
+            80 GB GPU for 39 GB more than it had left. Not part of a row's key either.
     """
 
     context_rows: int = PRETRAINED_CONTEXT_ROWS
@@ -112,6 +116,7 @@ class TabFMConfig:
     threads: int = 8
     float32: bool = True
     device: str = "cpu"
+    predict_rows: int = 16_384
 
     def with_(self, **changes: Any) -> TabFMConfig:  # noqa: ANN401
         """Return a copy with some settings replaced.
@@ -269,8 +274,20 @@ class TabFMLearner:
         if self._model is None:
             msg = "tabfm: fit before predicting"
             raise RuntimeError(msg)
-        frame = _frame(matrix, self.categorical)
         _set_threads(self.config.threads)
+        step = max(1, self.config.predict_rows)
+        parts = [
+            self._predict_batch(matrix[start : start + step])
+            for start in range(0, matrix.shape[0], step)
+        ]
+        if not parts:
+            return np.empty(0, dtype=np.float64)
+        predictions: FloatArray = np.concatenate(parts)
+        return predictions
+
+    def _predict_batch(self, matrix: FloatArray) -> FloatArray:
+        """Predict one batch of rows; see ``TabFMConfig.predict_rows``."""
+        frame = _frame(matrix, self.categorical)
         if self.binary:
             probabilities = np.asarray(self._model.predict_proba(frame), dtype=np.float64)
             classes = list(np.asarray(self._model.classes_))
