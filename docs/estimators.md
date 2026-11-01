@@ -1076,6 +1076,8 @@ real heterogeneity and a larger test split, which is what ACIC and Hillstrom are
 
 ### What ACIC says, one seed in
 
+**Superseded, rewrite pending (2026-10-31).** The README's ACIC table now holds all five seeds on the GPU in bfloat16. Its headline: TabFM cuts PEHE for the S, T, X and DR learners on every seed, while the R-learner on TabFM is unstable on the GPU too (PEHE 13.8 on average against LightGBM's 1.23, better on one seed of five), so the claim below that its failure was specific to the CPU is withdrawn. The text below describes the first, one-seed CPU run.
+
 Seed 11 of five, all 2,881 training rows as context, an ensemble of one; the other four seeds are still to run. One seed gives a paired interval for every difference but says nothing yet about how often a difference repeats, so this section reads it as a first look.
 
 **The effect estimates get better again, for four learners of five.** PEHE falls on TabFM for the S-learner (1.10 to 0.58), the T-learner (1.17 to 0.50), the X-learner (0.86 to 0.47) and the DR-learner (1.68 to 0.50), every interval clear of zero. That is the IHDP result repeating on six times the rows and a different simulation.
