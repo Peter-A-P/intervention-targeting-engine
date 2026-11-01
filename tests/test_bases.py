@@ -221,6 +221,17 @@ class TestTables:
         assert bases.sweep_table(two, over="ensemble") == ""
         assert "context cap" in bases.report(two)
 
+    def test_a_pehe_sweep_appears_only_where_pehe_was_measured(self):
+        two = [_row("s-learner", 11, delta=0.0), _row("s-learner", 11, delta=0.0, context=512)]
+        assert bases.sweep_table(two, over="context_rows", metric="pehe") == ""
+        assert "PEHE moves" not in bases.report(two)
+        for row in two:
+            row.metrics["lightgbm:pehe"] = Estimate(1.0, 0.9, 1.1)
+            row.metrics["tabfm:pehe"] = Estimate(2.0, 1.9, 2.1)
+        sweep = bases.sweep_table(two, over="context_rows", metric="pehe")
+        assert "512 context rows" in sweep
+        assert "PEHE moves with its context cap" in bases.report(two)
+
 
 @pytest.mark.tabfm
 @pytest.mark.skipif(not is_available(), reason="needs the 'foundation' extra")

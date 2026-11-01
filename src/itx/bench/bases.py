@@ -638,7 +638,8 @@ def sweep_table(
         digits: Decimal places.
 
     Returns:
-        A markdown table, or an empty string when the setting was not varied.
+        A markdown table, or an empty string when the setting was not varied or the metric
+        was not measured (PEHE on a real experiment).
 
     Raises:
         ValueError: If ``over`` is not one of the two settings.
@@ -647,7 +648,7 @@ def sweep_table(
         msg = f"can only sweep context_rows or ensemble, not {over!r}"
         raise ValueError(msg)
     top = headline(rows)
-    if not top:
+    if not top or f"tabfm:{metric}" not in top[0].metrics:
         return ""
     held = "ensemble" if over == "context_rows" else "context_rows"
     held_value = getattr(top[0], held)
@@ -706,11 +707,12 @@ def report(rows: Sequence[BaseComparisonRow]) -> str:
         if table:
             parts += ["", table.rstrip("\n")]
     parts += ["", ranking_table(top).rstrip("\n"), "", timing_table(top).rstrip("\n")]
-    for over, title in (
-        ("context_rows", "How TabFM's Qini moves with its context cap:"),
-        ("ensemble", "How TabFM's Qini moves with its ensemble size:"),
+    for over, metric, title in (
+        ("context_rows", "qini", "How TabFM's Qini moves with its context cap:"),
+        ("context_rows", "pehe", "How TabFM's PEHE moves with its context cap, lower better:"),
+        ("ensemble", "qini", "How TabFM's Qini moves with its ensemble size:"),
     ):
-        sweep = sweep_table(rows, over=over)
+        sweep = sweep_table(rows, over=over, metric=metric)
         if sweep:
             parts += ["", title, "", sweep.rstrip("\n")]
     return "\n".join(parts) + "\n"
