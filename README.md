@@ -661,7 +661,7 @@ difference gets its own paired interval. How it is done and the three rules it n
 #### IHDP
 
 <!-- itx:table:bases-ihdp -->
-5 seeds (11, 23, 37, 53, 71), 448 training rows (below TabFM's 16,384-row context cap, so it sees them all), 150 test rows, TabFM ensemble of 1. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
+5 seeds (11, 23, 37, 53, 71), 448 training rows (below TabFM's 16,384-row context cap, so it sees them all), 150 test rows, TabFM ensemble of 1 on CPU, 8 threads, float32. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
 
 | Qini (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
 |---|---|---|---|---|
@@ -715,7 +715,7 @@ difference gets its own paired interval. How it is done and the three rules it n
 #### ACIC 2016
 
 <!-- itx:table:bases-acic -->
-1 seed (11), 2,881 training rows (below TabFM's 16,384-row context cap, so it sees them all), 961 test rows, TabFM ensemble of 1. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
+1 seed (11), 2,881 training rows (below TabFM's 16,384-row context cap, so it sees them all), 961 test rows, TabFM ensemble of 1 on CPU, 8 threads, float32. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
 
 | Qini (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
 |---|---|---|---|---|

@@ -108,6 +108,10 @@ class BaseComparisonRow:
             predicting training rows, because their later stages are fitted on earlier
             stages' predictions.
         tabfm_predict_seconds: Wall-clock of predicting the test rows.
+        hardware: Where TabFM ran and in what precision, such as ``"NVIDIA H100 NVL,
+            bfloat16"``. LightGBM always runs on the same machine's CPU. Empty on rows
+            written before it was recorded, which all ran on the 8-thread laptop CPU in
+            float32.
     """
 
     dataset: str
@@ -124,6 +128,7 @@ class BaseComparisonRow:
     lightgbm_predict_seconds: float
     tabfm_fit_seconds: float
     tabfm_predict_seconds: float
+    hardware: str = ""
 
     @property
     def key(self) -> tuple[str, int, int, int]:
@@ -241,7 +246,18 @@ def compare(
         lightgbm_predict_seconds=lightgbm_predict,
         tabfm_fit_seconds=tabfm_fit,
         tabfm_predict_seconds=tabfm_predict,
+        hardware=hardware_label(tabfm),
     )
+
+
+def hardware_label(tabfm: TabFMConfig) -> str:
+    """What TabFM ran on, for the row: the GPU or the CPU thread count, and the precision."""
+    precision = "float32" if tabfm.float32 else "bfloat16"
+    if tabfm.device.startswith("cuda"):
+        import torch
+
+        return f"{torch.cuda.get_device_name(tabfm.device)}, {precision}"
+    return f"CPU, {tabfm.threads} threads, {precision}"
 
 
 def _fit_and_score(
@@ -361,6 +377,7 @@ def write_json(rows: Sequence[BaseComparisonRow], path: Path) -> None:
             "n_train": row.n_train,
             "n_test": row.n_test,
             "lightgbm_config": row.lightgbm_config,
+            "hardware": row.hardware,
             "seconds": {
                 "lightgbm_select": round(row.lightgbm_select_seconds, 3),
                 "lightgbm_fit": round(row.lightgbm_fit_seconds, 3),
@@ -411,6 +428,7 @@ def read_json(path: Path) -> list[BaseComparisonRow]:
             lightgbm_predict_seconds=record["seconds"]["lightgbm_predict"],
             tabfm_fit_seconds=record["seconds"]["tabfm_fit"],
             tabfm_predict_seconds=record["seconds"]["tabfm_predict"],
+            hardware=record.get("hardware", ""),
         )
         for record in payload
     ]
@@ -673,7 +691,8 @@ def report(rows: Sequence[BaseComparisonRow]) -> str:
     parts = [
         f"{len(seeds)} seed{'s' if len(seeds) != 1 else ''} "
         f"({', '.join(str(s) for s in seeds)}), {first.n_train:,} training rows ({context}), "
-        f"{first.n_test:,} test rows, TabFM ensemble of {first.ensemble}. Each cell is the "
+        f"{first.n_test:,} test rows, TabFM ensemble of {first.ensemble} on "
+        f"{first.hardware or 'CPU, 8 threads, float32'}. Each cell is the "
         f"mean across seeds with the averaged paired 95% bootstrap interval; a bold "
         f"difference excludes zero.",
     ]

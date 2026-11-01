@@ -142,6 +142,24 @@ class TestBookkeeping:
         bases.write_json(rows, path)
         assert bases.read_json(path) == rows
 
+    def test_the_hardware_survives_the_file_and_older_files_read_as_the_laptop(
+        self, tmp_path: Path
+    ):
+        import dataclasses
+        import json
+
+        gpu = dataclasses.replace(_row("s-learner", 11, delta=0.0), hardware="H100, bfloat16")
+        path = tmp_path / "toy.json"
+        bases.write_json([gpu], path)
+        assert bases.read_json(path)[0].hardware == "H100, bfloat16"
+        assert "on H100, bfloat16." in bases.report([gpu])
+        record = json.loads(path.read_text(encoding="utf-8"))
+        del record[0]["hardware"]
+        path.write_text(json.dumps(record), encoding="utf-8")
+        older = bases.read_json(path)
+        assert older[0].hardware == ""
+        assert "on CPU, 8 threads, float32." in bases.report(older)
+
     def test_a_context_sweep_adds_to_the_file_rather_than_replacing_it(self):
         first = [_row("s-learner", 11, delta=0.01, context=16_384)]
         second = [_row("s-learner", 11, delta=0.02, context=1_024)]
