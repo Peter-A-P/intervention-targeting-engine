@@ -766,6 +766,52 @@ difference gets its own paired interval. How it is done and the three rules it n
 | `r-learner` | 24.1 | 3.2 | 3.6 | 0.13x |
 <!-- itx:end:bases-acic -->
 
+#### Hillstrom
+
+<!-- itx:table:bases-hillstrom -->
+5 seeds (11, 23, 37, 53, 71), 25,615 training rows (each TabFM model sees at most 16,384 context rows), 8,539 test rows, TabFM ensemble of 1 on NVIDIA H100 NVL, bfloat16. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
+
+| Qini (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0041 (0.0019, 0.0062) | 0.0042 (0.0022, 0.0062) | 0.0001 (-0.0012, 0.0014) | 2 of 5 |
+| `t-learner` | 0.0031 (0.0009, 0.0053) | 0.0042 (0.0021, 0.0064) | 0.0011 (-0.0009, 0.0032) | 5 of 5 |
+| `x-learner` | 0.0031 (0.0010, 0.0053) | 0.0041 (0.0020, 0.0063) | 0.0010 (-0.0008, 0.0028) | 5 of 5 |
+| `dr-learner` | 0.0028 (0.0007, 0.0051) | 0.0041 (0.0021, 0.0062) | 0.0013 (-0.0009, 0.0035) | 5 of 5 |
+| `r-learner` | 0.0029 (0.0007, 0.0051) | 0.0013 (-0.0009, 0.0035) | -0.0016 (-0.0042, 0.0011) | 0 of 5 |
+
+| AUUC (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.2609 (0.1984, 0.3210) | 0.2632 (0.1982, 0.3240) | 0.0023 (-0.0197, 0.0244) | 2 of 5 |
+| `t-learner` | 0.2442 (0.1803, 0.3047) | 0.2637 (0.2001, 0.3253) | 0.0195 (-0.0142, 0.0537) | 5 of 5 |
+| `x-learner` | 0.2452 (0.1827, 0.3065) | 0.2621 (0.1988, 0.3224) | 0.0169 (-0.0134, 0.0480) | 5 of 5 |
+| `dr-learner` | 0.2402 (0.1757, 0.3031) | 0.2625 (0.1982, 0.3249) | 0.0223 (-0.0149, 0.0600) | 5 of 5 |
+| `r-learner` | 0.2413 (0.1795, 0.3017) | 0.2154 (0.1509, 0.2782) | -0.0259 (-0.0705, 0.0194) | 0 of 5 |
+
+| Value at a 10% budget (DR) (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0088 (0.0039, 0.0135) | 0.0080 (0.0032, 0.0128) | -0.0008 (-0.0061, 0.0045) | 2 of 5 |
+| `t-learner` | 0.0096 (0.0045, 0.0147) | 0.0093 (0.0042, 0.0144) | -0.0003 (-0.0060, 0.0053) | 3 of 5 |
+| `x-learner` | 0.0080 (0.0032, 0.0128) | 0.0086 (0.0036, 0.0136) | 0.0007 (-0.0050, 0.0061) | 4 of 5 |
+| `dr-learner` | 0.0085 (0.0036, 0.0136) | 0.0092 (0.0038, 0.0143) | 0.0007 (-0.0053, 0.0068) | 4 of 5 |
+| `r-learner` | 0.0092 (0.0041, 0.0144) | 0.0073 (0.0021, 0.0124) | -0.0019 (-0.0082, 0.0045) | 0 of 5 |
+
+| Rank by Qini | LightGBM | TabFM |
+|---|---|---|
+| 1 | `s-learner` (0.0041) | `t-learner` (0.0042) |
+| 2 | `x-learner` (0.0031) | `s-learner` (0.0042) |
+| 3 | `t-learner` (0.0031) | `dr-learner` (0.0041) |
+| 4 | `r-learner` (0.0029) | `x-learner` (0.0041) |
+| 5 | `dr-learner` (0.0028) | `r-learner` (0.0013) |
+
+| Meta-learner | LightGBM grid search (s) | LightGBM final fit and predict (s) | TabFM fit and predict (s) | TabFM's bill over LightGBM's |
+|---|---|---|---|---|
+| `s-learner` | 4.9 | 0.5 | 17.0 | 3.14x |
+| `t-learner` | 7.4 | 0.7 | 13.6 | 1.66x |
+| `x-learner` | 13.4 | 1.2 | 18.4 | 1.25x |
+| `dr-learner` | 62.1 | 6.2 | 68.2 | 1.00x |
+| `r-learner` | 16.2 | 1.7 | 17.2 | 0.96x |
+<!-- itx:end:bases-hillstrom -->
+
 ### How much unmeasured confounding would overturn any of this
 
 Every number above rests on an assumption nothing here can test: that the covariates carry

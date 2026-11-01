@@ -1088,6 +1088,14 @@ The sample-weight rule is not the whole explanation either, and a probe tested i
 
 **What the grid was buying, in seconds.** LightGBM's whole bill ran from 2.9 seconds (S-learner) to 41 (DR-learner) on the GPU machine's CPU; TabFM's ran from 1.2 to 9.4, an eighth to two thirds of LightGBM's. On the laptop CPU the same TabFM work took 9 to 67 minutes per learner, 23 to 258 times LightGBM's bill, and 2 hours 24 minutes per seed. `scripts/gpu-pilot.sh` measured the difference before the full run, and `scripts/gpu-run.sh` is the run.
 
+### What Hillstrom says
+
+Five seeds, the same GPU setup. Hillstrom is a real randomised campaign, so there is no PEHE: only the rankings can be compared. It is also the first dataset larger than TabFM's context cap: 25,615 training rows, of which each TabFM model sees a committed draw of 16,384. The LightGBM side matches the main Hillstrom table to the last digit on all 75 ranking numbers.
+
+**Nothing separates.** All fifteen ranking comparisons have intervals that straddle zero. The pattern underneath is consistent but small: on TabFM the T, X and DR learners' Qini and AUUC are higher on five seeds of five, by about a third of LightGBM's Qini, and the R-learner's are lower on five of five. Hillstrom's whole effect is small (a Qini near 0.004 on a scale where the intervals are 0.004 wide), so a difference of 0.001 would need a far larger test split to show. The R-learner repeats its ACIC behaviour in direction if not in size: it is the one learner TabFM makes worse.
+
+**The bill.** At 25,615 rows LightGBM's whole bill ran from 5.4 seconds (S-learner) to 68 (DR-learner); TabFM's from 14 to 68, about the same to three times as much. On a GPU, TabFM's advantage on cost holds for small data and is gone by twenty thousand rows, where its context reaches the cap.
+
 ### Licence
 
 TabFM's weights are under Google's non-commercial, non-production licence
