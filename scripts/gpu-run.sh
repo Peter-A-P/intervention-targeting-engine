@@ -4,7 +4,9 @@
 # TabFM in bfloat16 on CUDA; LightGBM on the same machine's CPU, as everywhere else. Run
 # from an empty directory on a fresh Linux GPU machine. IEEE-CIS cannot be downloaded
 # without a Kaggle login, so ieee_train_transaction.csv is copied in beforehand to
-# $IEEE_FILE; the other datasets come from their loaders, checksums verified.
+# $IEEE_FILE; Criteo's published URL returned 404 on 2026-11-01, so its file is copied in
+# to $CRITEO_FILE the same way. The loaders verify both checksums before use; the other
+# datasets download through their loaders.
 #
 # Datasets run in order, cheapest first, each with its own time limit, and every finished
 # row is checkpointed, so an interrupted run loses at most one row: rerunning this script
@@ -18,6 +20,7 @@ set -euo pipefail
 BRANCH="${BRANCH:-tabfm-base-learner}"
 LIMIT="${LIMIT:-4h}"
 IEEE_FILE="${IEEE_FILE:-$PWD/ieee_train_transaction.csv}"
+CRITEO_FILE="${CRITEO_FILE:-$PWD/criteo-research-uplift-v2.1.csv.gz}"
 # Phase 1 at the committed five seeds; the three large sets at one seed (PLAN.md change 65).
 DATASETS="${DATASETS:-ihdp acic hillstrom ieee-fraud lenta criteo}"
 
@@ -35,11 +38,18 @@ if [ ! -d itx ]; then
   rm -f itx/results/bases/*.json
 fi
 cd itx
-uv sync --extra learners --extra foundation
 # The locked torch wheel is built for CUDA 13, which needs a recent driver. On a machine
 # with an older one, swap in the same torch built for CUDA 12.6 and stop uv re-syncing it.
-if ! uv run python -c "import torch, sys; sys.exit(not torch.cuda.is_available())"; then
-  version=$(uv run python -c "import torch; print(torch.__version__.split('+')[0])")
+# A rerun finds an environment that already sees the GPU and leaves it alone: syncing it
+# again would put the CUDA 13 wheel back over the swap.
+cuda_ok() { UV_NO_SYNC=1 uv run python -c "import torch, sys; sys.exit(not torch.cuda.is_available())" 2>/dev/null; }
+if [ -d .venv ] && cuda_ok; then
+  export UV_NO_SYNC=1
+else
+  uv sync --extra learners --extra foundation
+fi
+if ! cuda_ok; then
+  version=$(grep -A1 '^name = "torch"$' uv.lock | sed -n 's/^version = "\(.*\)"$/\1/p')
   uv pip install --reinstall "torch==$version" --index-url https://download.pytorch.org/whl/cu126
   export UV_NO_SYNC=1
 fi
@@ -52,7 +62,10 @@ for dataset in $DATASETS; do
     acic) uv run itx data pull acic-x acic-zymu-1 ;;
     hillstrom) uv run itx data pull hillstrom ;;
     lenta) uv run itx data pull lenta; seeds="--seeds 11" ;;
-    criteo) uv run itx data pull criteo; seeds="--seeds 11" ;;
+    criteo)
+      mkdir -p data/raw
+      [ -f data/raw/criteo-research-uplift-v2.1.csv.gz ] || cp "$CRITEO_FILE" data/raw/
+      uv run itx data pull criteo; seeds="--seeds 11" ;;
     ieee-fraud)
       mkdir -p data/raw
       [ -f data/raw/ieee_train_transaction.csv ] || cp "$IEEE_FILE" data/raw/
