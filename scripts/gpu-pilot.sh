@@ -28,6 +28,13 @@ git clone --branch "$BRANCH" --depth 1 \
   https://github.com/Peter-A-P/intervention-targeting-engine.git itx
 cd itx
 uv sync --extra learners --extra foundation
+# The locked torch wheel is built for CUDA 13, which needs a recent driver. On a machine
+# with an older one, swap in the same torch built for CUDA 12.6 and stop uv re-syncing it.
+if ! uv run python -c "import torch, sys; sys.exit(not torch.cuda.is_available())"; then
+  version=$(uv run python -c "import torch; print(torch.__version__.split('+')[0])")
+  uv pip install --reinstall "torch==$version" --index-url https://download.pytorch.org/whl/cu126
+  export UV_NO_SYNC=1
+fi
 uv run python -c "import torch; assert torch.cuda.is_available(), 'torch cannot see the GPU'"
 uv run itx data pull hillstrom acic-x acic-zymu-1
 
