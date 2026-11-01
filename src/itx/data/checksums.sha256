@@ -9,7 +9,8 @@
 #   MineThatData. Recorded 2026-09-10.
 #
 # criteo-research-uplift-v2.1.csv.gz
-#   http://go.criteo.net/criteo-research-uplift-v2.1.csv.gz
+#   http://go.criteo.net/criteo-research-uplift-v2.1.csv.gz (404 since 2026-11-01)
+#   https://github.com/jszymon/uplift_sklearn_data/releases/download/Criteo/criteo-research-uplift-v2.1.csv.gz (same file)
 #   311,422,618 bytes. CC BY-NC-SA 4.0; terms accepted by Peter Parker 2026-09-10.
 #
 # ihdp_npci_1-100.train.npz / ihdp_npci_1-100.test.npz

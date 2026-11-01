@@ -4,9 +4,7 @@
 # TabFM in bfloat16 on CUDA; LightGBM on the same machine's CPU, as everywhere else. Run
 # from an empty directory on a fresh Linux GPU machine. IEEE-CIS cannot be downloaded
 # without a Kaggle login, so ieee_train_transaction.csv is copied in beforehand to
-# $IEEE_FILE; Criteo's published URL returned 404 on 2026-11-01, so its file is copied in
-# to $CRITEO_FILE the same way. The loaders verify both checksums before use; the other
-# datasets download through their loaders.
+# $IEEE_FILE; the other datasets come from their loaders, checksums verified.
 #
 # Datasets run in order, cheapest first, each with its own time limit, and every finished
 # row is checkpointed, so an interrupted run loses at most one row: rerunning this script
@@ -20,7 +18,6 @@ set -euo pipefail
 BRANCH="${BRANCH:-tabfm-base-learner}"
 LIMIT="${LIMIT:-4h}"
 IEEE_FILE="${IEEE_FILE:-$PWD/ieee_train_transaction.csv}"
-CRITEO_FILE="${CRITEO_FILE:-$PWD/criteo-research-uplift-v2.1.csv.gz}"
 # Phase 1 at the committed five seeds; the three large sets at one seed (PLAN.md change 65).
 DATASETS="${DATASETS:-ihdp acic hillstrom ieee-fraud lenta criteo}"
 
@@ -62,10 +59,7 @@ for dataset in $DATASETS; do
     acic) uv run itx data pull acic-x acic-zymu-1 ;;
     hillstrom) uv run itx data pull hillstrom ;;
     lenta) uv run itx data pull lenta; seeds="--seeds 11" ;;
-    criteo)
-      mkdir -p data/raw
-      [ -f data/raw/criteo-research-uplift-v2.1.csv.gz ] || cp "$CRITEO_FILE" data/raw/
-      uv run itx data pull criteo; seeds="--seeds 11" ;;
+    criteo) uv run itx data pull criteo; seeds="--seeds 11" ;;
     ieee-fraud)
       mkdir -p data/raw
       [ -f data/raw/ieee_train_transaction.csv ] || cp "$IEEE_FILE" data/raw/

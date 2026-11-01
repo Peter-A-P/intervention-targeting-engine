@@ -6,9 +6,9 @@ any of this survives contact with a realistic volume of data and a realistic eve
 
 | | |
 |---|---|
-| **Source** | <http://go.criteo.net/criteo-research-uplift-v2.1.csv.gz> |
+| **Source** | <http://go.criteo.net/criteo-research-uplift-v2.1.csv.gz>, which has returned 404 since at least 2026-11-01 though Criteo's [dataset page](https://ailab.criteo.com/criteo-uplift-prediction-dataset/) still links to it. The loader downloads the same file from a [GitHub mirror](https://github.com/jszymon/uplift_sklearn_data/releases/download/Criteo/criteo-research-uplift-v2.1.csv.gz): same size, same SHA-256, checked on every download. |
 | **Published** | 2018, revised 2019 (v2.1), by Criteo AI Lab. Diemert, Betlei, Renaudin and Amini, *A Large Scale Benchmark for Uplift Modeling*, AdKDD 2018 |
-| **Licence** | CC BY-NC-SA 4.0. Non-commercial, attribution, share-alike. Not redistributed here: the loader downloads it from Criteo. |
+| **Licence** | CC BY-NC-SA 4.0. Non-commercial, attribution, share-alike. Not redistributed here: the loader downloads it from the mirror above. |
 | **Size** | 13,979,592 rows, 16 columns, 297 MB compressed and about 1.7 GB in memory |
 | **SHA-256** | `2716e1bf0fd157a93b5bf86924d9088419dfbac2022c6cd90030220634f616dc` |
 | **Loader** | `itx.data.criteo.load_criteo` |

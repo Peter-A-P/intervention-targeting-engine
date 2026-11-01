@@ -64,6 +64,13 @@ ACIC_BASE = (
     "causallib/datasets/data/acic_challenge_2016"
 )
 ACIC_REPLICATES = 10
+
+#: Criteo-UPLIFT v2.1 as mirrored on GitHub by the uplift_sklearn_data project, used since
+#: Criteo's own link stopped resolving to the file. See the "criteo" source below.
+CRITEO_MIRROR = (
+    "https://github.com/jszymon/uplift_sklearn_data/releases/download/Criteo/"
+    "criteo-research-uplift-v2.1.csv.gz"
+)
 ACIC_LICENCE = "Community Data License Agreement - Sharing, Version 1.0"
 
 
@@ -122,7 +129,11 @@ SOURCES: dict[str, Source] = {
     "criteo": Source(
         key="criteo",
         filename="criteo-research-uplift-v2.1.csv.gz",
-        url="http://go.criteo.net/criteo-research-uplift-v2.1.csv.gz",
+        # Criteo's own link, http://go.criteo.net/criteo-research-uplift-v2.1.csv.gz, has
+        # returned 404 since at least 2026-11-01, though its dataset page still points at
+        # it. This mirror serves the same file: same size, same SHA-256, which the loader
+        # checks on every download.
+        url=CRITEO_MIRROR,
         licence="CC BY-NC-SA 4.0 (Criteo research licence)",
         note="297 MB compressed, 13.9M rows. See docs/data/criteo.md.",
     ),
