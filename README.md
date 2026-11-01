@@ -812,6 +812,106 @@ difference gets its own paired interval. How it is done and the three rules it n
 | `r-learner` | 16.2 | 1.7 | 17.2 | 0.96x |
 <!-- itx:end:bases-hillstrom -->
 
+#### Lenta
+
+<!-- itx:table:bases-lenta -->
+1 seed (11), 412,217 training rows (each TabFM model sees at most 16,384 context rows), 137,406 test rows, TabFM ensemble of 1 on NVIDIA H100 NVL, bfloat16. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
+
+| Qini (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0005 (-0.0005, 0.0015) | -0.0008 (-0.0018, 0.0000) | **-0.0014 (-0.0027, -0.0001)** | 0 of 1 |
+| `t-learner` | 0.0002 (-0.0007, 0.0013) | 0.0002 (-0.0007, 0.0011) | 0.0000 (-0.0013, 0.0012) | 1 of 1 |
+| `x-learner` | -0.0003 (-0.0013, 0.0008) | 0.0003 (-0.0006, 0.0012) | 0.0006 (-0.0007, 0.0018) | 1 of 1 |
+| `dr-learner` | 0.0005 (-0.0005, 0.0015) | 0.0005 (-0.0004, 0.0015) | 0.0000 (-0.0013, 0.0013) | 1 of 1 |
+| `r-learner` | 0.0001 (-0.0009, 0.0011) | 0.0002 (-0.0007, 0.0011) | 0.0001 (-0.0012, 0.0015) | 1 of 1 |
+
+| AUUC (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0481 (0.0220, 0.0736) | 0.0288 (0.0041, 0.0510) | **-0.0193 (-0.0383, -0.0012)** | 0 of 1 |
+| `t-learner` | 0.0433 (0.0183, 0.0684) | 0.0433 (0.0192, 0.0673) | 0.0000 (-0.0180, 0.0173) | 1 of 1 |
+| `x-learner` | 0.0368 (0.0120, 0.0618) | 0.0448 (0.0170, 0.0718) | 0.0080 (-0.0099, 0.0259) | 1 of 1 |
+| `dr-learner` | 0.0483 (0.0231, 0.0723) | 0.0483 (0.0226, 0.0744) | 0.0001 (-0.0190, 0.0179) | 1 of 1 |
+| `r-learner` | 0.0422 (0.0186, 0.0667) | 0.0438 (0.0171, 0.0709) | 0.0015 (-0.0176, 0.0209) | 1 of 1 |
+
+| Value at a 10% budget (DR) (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0005 (-0.0013, 0.0021) | 0.0002 (-0.0011, 0.0015) | -0.0003 (-0.0020, 0.0017) | 0 of 1 |
+| `t-learner` | 0.0011 (-0.0004, 0.0027) | 0.0011 (-0.0003, 0.0027) | 0.0000 (-0.0017, 0.0017) | 1 of 1 |
+| `x-learner` | 0.0016 (0.0000, 0.0031) | 0.0021 (0.0005, 0.0038) | 0.0005 (-0.0013, 0.0023) | 1 of 1 |
+| `dr-learner` | 0.0018 (0.0002, 0.0035) | 0.0007 (-0.0008, 0.0022) | -0.0012 (-0.0029, 0.0007) | 0 of 1 |
+| `r-learner` | 0.0008 (-0.0009, 0.0024) | 0.0000 (-0.0016, 0.0017) | -0.0008 (-0.0026, 0.0012) | 0 of 1 |
+
+| Rank by Qini | LightGBM | TabFM |
+|---|---|---|
+| 1 | `dr-learner` (0.0005) | `dr-learner` (0.0005) |
+| 2 | `s-learner` (0.0005) | `x-learner` (0.0003) |
+| 3 | `t-learner` (0.0002) | `r-learner` (0.0002) |
+| 4 | `r-learner` (0.0001) | `t-learner` (0.0002) |
+| 5 | `x-learner` (-0.0003) | `s-learner` (-0.0008) |
+
+| Meta-learner | LightGBM grid search (s) | LightGBM final fit and predict (s) | TabFM fit and predict (s) | TabFM's bill over LightGBM's |
+|---|---|---|---|---|
+| `s-learner` | 39.3 | 14.1 | 660.0 | 12x |
+| `t-learner` | 62.1 | 18.4 | 662.2 | 8.22x |
+| `x-learner` | 275.9 | 69.1 | 1,591.0 | 4.61x |
+| `dr-learner` | 459.8 | 117.5 | 2,210.8 | 3.83x |
+| `r-learner` | 265.1 | 63.9 | 869.8 | 2.64x |
+<!-- itx:end:bases-lenta -->
+
+#### IEEE-CIS fraud (semi-synthetic)
+
+<!-- itx:table:bases-ieee-fraud -->
+1 seed (11), 354,324 training rows (each TabFM model sees at most 16,384 context rows), 118,108 test rows, TabFM ensemble of 1 on NVIDIA H100 NVL, bfloat16. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
+
+| Qini (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.4355 (0.3048, 0.5591) | 0.3795 (0.2482, 0.5063) | -0.0560 (-0.1526, 0.0416) | 0 of 1 |
+| `t-learner` | 0.4052 (0.2789, 0.5356) | 0.3122 (0.1792, 0.4455) | -0.0930 (-0.2253, 0.0222) | 0 of 1 |
+| `x-learner` | 0.4639 (0.3472, 0.5936) | 0.3252 (0.1962, 0.4458) | **-0.1386 (-0.2854, -0.0078)** | 0 of 1 |
+| `dr-learner` | 0.3743 (0.2417, 0.4952) | 0.3929 (0.2788, 0.5083) | 0.0185 (-0.0748, 0.1243) | 1 of 1 |
+| `r-learner` | 0.4169 (0.2914, 0.5445) | 0.4207 (0.3003, 0.5482) | 0.0038 (-0.0933, 0.1071) | 1 of 1 |
+
+| AUUC (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0759 (0.0597, 0.0907) | 0.0715 (0.0562, 0.0856) | -0.0043 (-0.0115, 0.0029) | 0 of 1 |
+| `t-learner` | 0.0737 (0.0589, 0.0881) | 0.0665 (0.0514, 0.0803) | -0.0072 (-0.0168, 0.0016) | 0 of 1 |
+| `x-learner` | 0.0780 (0.0632, 0.0928) | 0.0676 (0.0531, 0.0815) | **-0.0104 (-0.0207, -0.0006)** | 0 of 1 |
+| `dr-learner` | 0.0714 (0.0553, 0.0858) | 0.0726 (0.0580, 0.0867) | 0.0012 (-0.0058, 0.0089) | 1 of 1 |
+| `r-learner` | 0.0745 (0.0594, 0.0886) | 0.0745 (0.0583, 0.0902) | 0.0000 (-0.0074, 0.0075) | 1 of 1 |
+
+| Value at a 10% budget (DR) (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 1.5709 (1.1574, 1.9759) | 1.5572 (1.1799, 1.9184) | -0.0137 (-0.2560, 0.2080) | 0 of 1 |
+| `t-learner` | 1.5212 (1.1315, 1.9240) | 1.3922 (1.0413, 1.7662) | -0.1290 (-0.4008, 0.1127) | 0 of 1 |
+| `x-learner` | 1.6070 (1.2280, 2.0064) | 1.4617 (1.1130, 1.7993) | -0.1453 (-0.4309, 0.1200) | 0 of 1 |
+| `dr-learner` | 1.3949 (1.0213, 1.7861) | 1.5420 (1.1567, 1.9235) | 0.1471 (-0.0974, 0.3590) | 1 of 1 |
+| `r-learner` | 1.4898 (1.1296, 1.8741) | 1.4240 (1.0517, 1.8176) | -0.0658 (-0.3059, 0.1548) | 0 of 1 |
+
+| PEHE (lower is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 22.4047 (19.9365, 24.9775) | 22.9861 (20.2938, 25.8985) | **0.5814 (0.1440, 1.0530)** | 0 of 1 |
+| `t-learner` | 23.5609 (21.7514, 25.3275) | 27.5169 (25.3425, 29.9051) | **3.9559 (2.6629, 5.3606)** | 0 of 1 |
+| `x-learner` | 22.5754 (20.6428, 24.5781) | 23.1598 (20.3596, 26.4027) | 0.5843 (-0.6784, 2.1469) | 0 of 1 |
+| `dr-learner` | 23.5261 (21.5742, 25.4677) | 23.2432 (20.5989, 26.0607) | -0.2829 (-1.4659, 1.0607) | 1 of 1 |
+| `r-learner` | 24.1268 (22.3971, 25.8346) | 24.3516 (21.7479, 27.1135) | 0.2248 (-1.7186, 2.7109) | 0 of 1 |
+
+| Rank by Qini | LightGBM | TabFM |
+|---|---|---|
+| 1 | `x-learner` (0.4639) | `r-learner` (0.4207) |
+| 2 | `s-learner` (0.4355) | `dr-learner` (0.3929) |
+| 3 | `r-learner` (0.4169) | `s-learner` (0.3795) |
+| 4 | `t-learner` (0.4052) | `x-learner` (0.3252) |
+| 5 | `dr-learner` (0.3743) | `t-learner` (0.3122) |
+
+| Meta-learner | LightGBM grid search (s) | LightGBM final fit and predict (s) | TabFM fit and predict (s) | TabFM's bill over LightGBM's |
+|---|---|---|---|---|
+| `s-learner` | 13.5 | 4.3 | 283.1 | 16x |
+| `t-learner` | 20.3 | 4.0 | 281.1 | 12x |
+| `x-learner` | 34.8 | 7.3 | 386.3 | 9.18x |
+| `dr-learner` | 153.9 | 45.9 | 905.6 | 4.53x |
+| `r-learner` | 40.7 | 8.6 | 250.5 | 5.08x |
+<!-- itx:end:bases-ieee-fraud -->
+
 ### How much unmeasured confounding would overturn any of this
 
 Every number above rests on an assumption nothing here can test: that the covariates carry

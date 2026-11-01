@@ -1096,6 +1096,18 @@ Five seeds, the same GPU setup. Hillstrom is a real randomised campaign, so ther
 
 **The bill.** At 25,615 rows LightGBM's whole bill ran from 5.4 seconds (S-learner) to 68 (DR-learner); TabFM's from 14 to 68, about the same to three times as much. On a GPU, TabFM's advantage on cost holds for small data and is gone by twenty thousand rows, where its context reaches the cap.
 
+### What Lenta and IEEE-CIS say, one seed each
+
+The two large sets ran at seed 11 only, on the same GPU setup, which is what the budget for this comparison allowed (PLAN.md change 65); one seed gives every difference a paired interval but says nothing about how often it repeats. Both are far past the context cap: TabFM sees 16,384 of Lenta's 412,217 training rows (4%) and of IEEE-CIS's 354,324 (5%), where LightGBM learns from all of them. The LightGBM side matches the main tables on all 30 ranking numbers, one of them differing in the sixteenth significant digit, which is the order of a floating-point sum on Linux against Windows.
+
+**Lenta: nothing gained, one learner worse.** Lenta's effect is close to nothing, and on LightGBM every learner's Qini interval already contains zero. Thirteen of fifteen differences straddle zero; the two that do not are both the S-learner on TabFM doing worse (Qini -0.0014, AUUC -0.019).
+
+**IEEE-CIS: the effect estimates stop improving.** This is the semi-synthetic fraud set, so it knows the true effect, and it is the clearest test of whether the IHDP and ACIC PEHE gains carry over to large data. They do not. No learner's PEHE improves with an interval clear of zero; the S-learner's worsens by 0.58 and the T-learner's by 4.0, both clear of zero, and the other three straddle it. Of the rankings, the X-learner's Qini (-0.14) and AUUC (-0.010) are worse with intervals clear of zero and the other thirteen straddle it.
+
+**The bill reverses.** On these two sets TabFM's fit and predict cost 2.6 to 16 times LightGBM's whole bill, grid search included: 4 to 37 minutes per learner on Lenta. LightGBM's cost grows with the rows it learns from; TabFM's grows with the rows it predicts, because every batch of predictions is a forward pass over the context as well. Profiling one batch on the GPU showed the time going to TabFM's own forward pass, tens of thousands of small operations, and batches of 4,096, 16,384 and 65,536 rows cost about the same per row, so there was no cheap speed-up to take.
+
+**Read together with IHDP and ACIC,** the pattern is that TabFM sharpens the effect estimates when it sees the whole training set and stops doing so when it sees a twentieth of it. That is consistent with the context cap being what limits it, but these runs do not test that: a context sweep on one of the large sets (`itx bases --context-rows`) would, and is not in this run's budget.
+
 ### Licence
 
 TabFM's weights are under Google's non-commercial, non-production licence
