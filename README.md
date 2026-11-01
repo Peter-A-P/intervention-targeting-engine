@@ -705,11 +705,11 @@ difference gets its own paired interval. How it is done and the three rules it n
 
 | Meta-learner | LightGBM grid search (s) | LightGBM final fit and predict (s) | TabFM fit and predict (s) | TabFM's bill over LightGBM's |
 |---|---|---|---|---|
-| `s-learner` | 0.7 | 0.1 | 0.3 | 0x |
-| `t-learner` | 0.9 | 0.2 | 0.3 | 0x |
-| `x-learner` | 5.6 | 0.9 | 0.8 | 0x |
-| `dr-learner` | 11.5 | 1.9 | 2.0 | 0x |
-| `r-learner` | 8.2 | 0.7 | 0.8 | 0x |
+| `s-learner` | 0.7 | 0.1 | 0.3 | 0.39x |
+| `t-learner` | 0.9 | 0.2 | 0.3 | 0.27x |
+| `x-learner` | 5.6 | 0.9 | 0.8 | 0.13x |
+| `dr-learner` | 11.5 | 1.9 | 2.0 | 0.15x |
+| `r-learner` | 8.2 | 0.7 | 0.8 | 0.08x |
 <!-- itx:end:bases-ihdp -->
 
 #### ACIC 2016

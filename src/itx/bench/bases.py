@@ -612,7 +612,12 @@ def timing_table(rows: Sequence[BaseComparisonRow]) -> str:
         )
         tabfm = float(np.mean([row.tabfm_seconds for row in group]))
         whole = search + final
-        ratio = f"{tabfm / whole:,.0f}x" if whole > 0 else "-"
+        # On a GPU TabFM can cost less than LightGBM, and a whole-number ratio would print
+        # every such row as "0x".
+        share = tabfm / whole if whole > 0 else math.nan
+        ratio = (
+            "-" if math.isnan(share) else f"{share:,.0f}x" if share >= 10 else f"{share:.2f}x"
+        )
         lines.append(f"| `{learner}` | {search:,.1f} | {final:,.1f} | {tabfm:,.1f} | {ratio} |")
     return "\n".join(lines) + "\n"
 

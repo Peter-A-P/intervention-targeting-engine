@@ -196,6 +196,14 @@ class TestTables:
         table = bases.timing_table([_row("s-learner", 11, delta=0.0)])
         assert "| `s-learner` | 8.0 | 1.5 | 270.0 | 28x |" in table
 
+    def test_a_tabfm_bill_below_lightgbms_is_not_printed_as_zero(self):
+        import dataclasses
+
+        fast = dataclasses.replace(
+            _row("s-learner", 11, delta=0.0), tabfm_fit_seconds=2.0, tabfm_predict_seconds=1.0
+        )
+        assert "| 3.0 | 0.32x |" in bases.timing_table([fast])
+
     def test_the_headline_is_the_smallest_ensemble_at_the_largest_context(self):
         rows = [
             _row("s-learner", 11, delta=0.0),
