@@ -858,6 +858,52 @@ difference gets its own paired interval. How it is done and the three rules it n
 | `r-learner` | 265.1 | 63.9 | 869.8 | 2.64x |
 <!-- itx:end:bases-lenta -->
 
+#### Criteo-UPLIFT
+
+<!-- itx:table:bases-criteo -->
+1 seed (11), 838,775 training rows (each TabFM model sees at most 16,384 context rows), 279,592 test rows, TabFM ensemble of 1 on NVIDIA H100 NVL, bfloat16. Each cell is the mean across seeds with the averaged paired 95% bootstrap interval; a bold difference excludes zero.
+
+| Qini (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0031 (0.0024, 0.0037) | 0.0030 (0.0023, 0.0037) | -0.0001 (-0.0003, 0.0001) | 0 of 1 |
+| `t-learner` | 0.0023 (0.0016, 0.0030) | 0.0024 (0.0016, 0.0032) | 0.0001 (-0.0008, 0.0012) | 1 of 1 |
+| `x-learner` | 0.0028 (0.0021, 0.0035) | 0.0032 (0.0026, 0.0039) | 0.0004 (-0.0004, 0.0012) | 1 of 1 |
+| `dr-learner` | 0.0025 (0.0019, 0.0033) | 0.0001 (-0.0007, 0.0008) | **-0.0025 (-0.0035, -0.0014)** | 0 of 1 |
+| `r-learner` | 0.0028 (0.0021, 0.0035) | 0.0029 (0.0022, 0.0037) | 0.0001 (-0.0006, 0.0009) | 1 of 1 |
+
+| AUUC (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.1940 (0.1526, 0.2297) | 0.1919 (0.1506, 0.2292) | -0.0021 (-0.0082, 0.0036) | 0 of 1 |
+| `t-learner` | 0.1725 (0.1378, 0.2062) | 0.1755 (0.1404, 0.2040) | 0.0030 (-0.0197, 0.0305) | 1 of 1 |
+| `x-learner` | 0.1864 (0.1501, 0.2162) | 0.1970 (0.1619, 0.2340) | 0.0106 (-0.0096, 0.0310) | 1 of 1 |
+| `dr-learner` | 0.1791 (0.1382, 0.2141) | 0.1154 (0.0873, 0.1419) | **-0.0637 (-0.0892, -0.0359)** | 0 of 1 |
+| `r-learner` | 0.1859 (0.1495, 0.2229) | 0.1893 (0.1537, 0.2252) | 0.0034 (-0.0155, 0.0227) | 1 of 1 |
+
+| Value at a 10% budget (DR) (higher is better) | LightGBM | TabFM | TabFM minus LightGBM | Seeds TabFM is better |
+|---|---|---|---|---|
+| `s-learner` | 0.0052 (0.0039, 0.0064) | 0.0056 (0.0043, 0.0070) | 0.0004 (-0.0002, 0.0011) | 1 of 1 |
+| `t-learner` | 0.0052 (0.0040, 0.0062) | 0.0047 (0.0034, 0.0060) | -0.0005 (-0.0015, 0.0005) | 0 of 1 |
+| `x-learner` | 0.0056 (0.0044, 0.0068) | 0.0059 (0.0047, 0.0072) | 0.0003 (-0.0006, 0.0012) | 1 of 1 |
+| `dr-learner` | 0.0052 (0.0040, 0.0064) | 0.0018 (0.0010, 0.0026) | **-0.0033 (-0.0046, -0.0021)** | 0 of 1 |
+| `r-learner` | 0.0058 (0.0046, 0.0071) | 0.0058 (0.0044, 0.0072) | -0.0000 (-0.0009, 0.0010) | 0 of 1 |
+
+| Rank by Qini | LightGBM | TabFM |
+|---|---|---|
+| 1 | `s-learner` (0.0031) | `x-learner` (0.0032) |
+| 2 | `x-learner` (0.0028) | `s-learner` (0.0030) |
+| 3 | `r-learner` (0.0028) | `r-learner` (0.0029) |
+| 4 | `dr-learner` (0.0025) | `t-learner` (0.0024) |
+| 5 | `t-learner` (0.0023) | `dr-learner` (0.0001) |
+
+| Meta-learner | LightGBM grid search (s) | LightGBM final fit and predict (s) | TabFM fit and predict (s) | TabFM's bill over LightGBM's |
+|---|---|---|---|---|
+| `s-learner` | 15.4 | 7.2 | 537.6 | 24x |
+| `t-learner` | 19.8 | 8.8 | 536.0 | 19x |
+| `x-learner` | 27.0 | 15.9 | 729.2 | 17x |
+| `dr-learner` | 94.4 | 70.9 | 1,679.3 | 10x |
+| `r-learner` | 30.3 | 12.7 | 467.0 | 11x |
+<!-- itx:end:bases-criteo -->
+
 #### IEEE-CIS fraud (semi-synthetic)
 
 <!-- itx:table:bases-ieee-fraud -->
