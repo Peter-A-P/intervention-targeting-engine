@@ -9,7 +9,7 @@
 #      TabFM time on an 8-thread laptop CPU, so the ratio is the speedup.
 #   2. The same in bfloat16, the precision TabFM was designed for, to see what it buys
 #      on hardware that supports it natively.
-#   3. Hillstrom seed 11, T-learner only, at the full 16,384-row context: the first job
+#   3. Hillstrom seed 11, T-learner only, in bfloat16 at the full 16,384-row context: the first job
 #      that reaches the context cap, and the one the cost of the larger sets scales from.
 #
 # Each job has a time limit, so a slower GPU than expected costs a known amount.
@@ -18,6 +18,7 @@ set -euo pipefail
 
 BRANCH="${BRANCH:-tabfm-base-learner}"
 LIMIT="${LIMIT:-45m}"
+# A subset, in order, when time is short: JOBS="acic-bfloat16 hillstrom-t".
 
 nvidia-smi --query-gpu=name,memory.total --format=csv | tee pilot.log
 
@@ -47,6 +48,11 @@ run() {
   echo "== $name: $((SECONDS - start)) s wall-clock" | tee -a ../pilot.log
 }
 
-run acic-float32 --dataset acic --seeds 11
-run acic-bfloat16 --dataset acic --seeds 11 --bfloat16
-run hillstrom-t --dataset hillstrom --seeds 11 --learners t-learner
+for job in ${JOBS:-acic-float32 acic-bfloat16 hillstrom-t}; do
+  case "$job" in
+    acic-float32) run "$job" --dataset acic --seeds 11 ;;
+    acic-bfloat16) run "$job" --dataset acic --seeds 11 --bfloat16 ;;
+    hillstrom-t) run "$job" --dataset hillstrom --seeds 11 --learners t-learner --bfloat16 ;;
+    *) echo "unknown job $job" >&2; exit 2 ;;
+  esac
+done
