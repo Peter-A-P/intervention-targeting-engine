@@ -490,11 +490,13 @@ def _group(rows: Sequence[BaseComparisonRow]) -> dict[str, list[BaseComparisonRo
 
 
 def headline(rows: Sequence[BaseComparisonRow]) -> list[BaseComparisonRow]:
-    """The rows the headline tables report: the smallest ensemble, then the largest context.
+    """The rows the headline tables report: the smallest ensemble at the pretrained context.
 
     A results file can hold several TabFM settings, because the context and ensemble sweeps
     add to it. The headline is the committed setting: the ensemble the package defaults to,
-    which is the smallest one run, at the full pretrained context.
+    which is the smallest one run, at the 16,384 context rows TabFM was pretrained on. A
+    sweep past that size is reported in its own table and does not replace the headline;
+    a file without the pretrained context falls back to its largest.
 
     Args:
         rows: Rows for one dataset.
@@ -506,7 +508,9 @@ def headline(rows: Sequence[BaseComparisonRow]) -> list[BaseComparisonRow]:
         return []
     ensemble = min(row.ensemble for row in rows)
     at_ensemble = [row for row in rows if row.ensemble == ensemble]
-    context = max(row.context_rows for row in at_ensemble)
+    contexts = {row.context_rows for row in at_ensemble}
+    pretrained_context = DEFAULT_TABFM.context_rows
+    context = pretrained_context if pretrained_context in contexts else max(contexts)
     return [row for row in at_ensemble if row.context_rows == context]
 
 

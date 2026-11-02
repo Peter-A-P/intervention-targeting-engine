@@ -213,6 +213,12 @@ class TestTables:
         top = bases.headline(rows)
         assert [(r.context_rows, r.ensemble) for r in top] == [(16_384, 4)]
 
+    def test_a_context_past_the_pretrained_one_does_not_become_the_headline(self):
+        wide = _row("s-learner", 11, delta=0.0, context=65_536)
+        rows = [_row("s-learner", 11, delta=0.0), wide]
+        assert [r.context_rows for r in bases.headline(rows)] == [16_384]
+        assert [r.context_rows for r in bases.headline(rows[1:])] == [65_536]
+
     def test_a_sweep_table_appears_only_when_the_setting_was_varied(self):
         one = [_row("s-learner", 11, delta=0.0)]
         assert bases.sweep_table(one, over="context_rows") == ""
