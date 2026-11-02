@@ -1108,7 +1108,15 @@ The three large sets ran at seed 11 only, on the same GPU setup, which is what t
 
 **The bill reverses.** On these three sets TabFM's fit and predict cost 2.6 to 24 times LightGBM's whole bill, grid search included: 4 to 37 minutes per learner on Lenta, 8 to 28 on Criteo. LightGBM's cost grows with the rows it learns from; TabFM's grows with the rows it predicts, because every batch of predictions is a forward pass over the context as well. Profiling one batch on the GPU showed the time going to TabFM's own forward pass, tens of thousands of small operations, and batches of 4,096, 16,384 and 65,536 rows cost about the same per row, so there was no cheap speed-up to take.
 
-**Read together with IHDP and ACIC,** the pattern is that TabFM sharpens the effect estimates when it sees the whole training set and stops doing so when it sees a twentieth of it or less. That is consistent with the context cap being what limits it, but these runs do not test that: a context sweep on one of the large sets (`itx bases --context-rows`) would, and is not in this run's budget.
+**Read together with IHDP and ACIC,** the pattern is that TabFM sharpens the effect estimates when it sees the whole training set and stops doing so when it sees a twentieth of it or less. That is consistent with the context cap being what limits it, and the sweep below tests it from one side.
+
+### What the context sweep says, IEEE-CIS, smaller contexts
+
+IEEE-CIS is the large set that knows the true effect, so the sweep ran there: the S- and T-learner, seed 11, at 2,048, 4,096 and 8,192 context rows, beside the committed 16,384, on the same GPU setup. The tables are at the end of the IEEE-CIS block in the README. The LightGBM side does not depend on the context and is identical in every run. The GPU time cost US$1.35.
+
+**More context helps, steadily, and has not yet caught up.** The T-learner's PEHE gap to LightGBM shrinks with every doubling: +13.2 at 2,048 rows, +11.0 at 4,096, +7.7 at 8,192 and +4.0 at 16,384, each paired interval clear of zero. The S-learner's runs +1.9, +1.4, +1.3 and +0.6, the same direction on a smaller scale. Qini moves the same way for the S-learner (0.27 to 0.38 against LightGBM's 0.44) and less tidily for the T-learner, whose 4,096-row run is its worst. So on this set the context cap is at least part of what holds TabFM back: a fortieth of the training rows is clearly worse than a twentieth, and nothing here says the improvement stops at 16,384.
+
+**What it does not show** is whether going past 16,384 rows closes the gap. TabFM was pretrained on contexts up to that size, so a larger one runs outside what it was built for, and a result there tests the model's extrapolation as much as the value of more data. The cost grows more slowly than the context: a T-learner fit and predict took 111 seconds at 2,048 rows and 281 at 16,384, about 2.5 times the cost for 8 times the context. One seed, two learners.
 
 ### Licence
 

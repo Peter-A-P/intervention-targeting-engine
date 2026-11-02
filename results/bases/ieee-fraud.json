@@ -3,6 +3,630 @@
     "dataset": "ieee-fraud",
     "learner": "s-learner",
     "seed": 11,
+    "context_rows": 2048,
+    "ensemble": 1,
+    "n_train": 354324,
+    "n_test": 118108,
+    "lightgbm_config": "min_child_samples=60, num_leaves=31",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 13.511,
+      "lightgbm_fit": 3.928,
+      "lightgbm_predict": 0.302,
+      "tabfm_fit": 84.105,
+      "tabfm_predict": 28.189
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.4355172076373939,
+        "low": 0.3048496613911816,
+        "high": 0.55914150517811,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.26499820290994025,
+        "low": 0.14418502269727745,
+        "high": 0.3918668718337446,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.17051900472745363,
+        "low": -0.31958326467487264,
+        "high": -0.020097238370647457,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.07587382102261918,
+        "low": 0.059657727853468866,
+        "high": 0.09070305027001208,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.06286504182317758,
+        "low": 0.04944268062486712,
+        "high": 0.07610580722534109,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.0130087791994416,
+        "low": -0.023109329201581767,
+        "high": -0.0019847309697135747,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 1.5709030248535019,
+        "low": 1.157380347500726,
+        "high": 1.9759483808051683,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 1.2293831418318162,
+        "low": 0.9408990511603643,
+        "high": 1.5197290050197898,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.3415198830216857,
+        "low": -0.6500676230631548,
+        "high": -0.03576642705614371,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:pehe": {
+        "value": 22.404697749189864,
+        "low": 19.936496771337286,
+        "high": 24.977454570406632,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:pehe": {
+        "value": 24.34092675070485,
+        "low": 21.615228652382925,
+        "high": 27.320866413226813,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:pehe": {
+        "value": 1.9362290015149846,
+        "low": 1.454718660427387,
+        "high": 2.452877051275197,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "ieee-fraud",
+    "learner": "t-learner",
+    "seed": 11,
+    "context_rows": 2048,
+    "ensemble": 1,
+    "n_train": 354324,
+    "n_test": 118108,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 20.264,
+      "lightgbm_fit": 3.774,
+      "lightgbm_predict": 0.24,
+      "tabfm_fit": 83.369,
+      "tabfm_predict": 27.976
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.40522162453461563,
+        "low": 0.2788641210356695,
+        "high": 0.5356174093550492,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.22946993534698956,
+        "low": 0.10478142246560838,
+        "high": 0.35768467916457775,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.17575168918762607,
+        "low": -0.3308931761041188,
+        "high": -0.02394258503101299,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.07367951440161978,
+        "low": 0.05892163918825994,
+        "high": 0.08811199996201691,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.06043104318942349,
+        "low": 0.04671296745263364,
+        "high": 0.07465214221230182,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.013248471212196293,
+        "low": -0.02448976705933412,
+        "high": -0.001990063427230111,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 1.5212068619694044,
+        "low": 1.1315439763533388,
+        "high": 1.9240441752378155,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 1.2083973056409412,
+        "low": 0.875471085026508,
+        "high": 1.5489851737066447,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.3128095563284632,
+        "low": -0.6007191562624148,
+        "high": -0.03659759217448044,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:pehe": {
+        "value": 23.56091980915371,
+        "low": 21.75141107060583,
+        "high": 25.32751934812606,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:pehe": {
+        "value": 36.801456470311464,
+        "low": 34.12469566779309,
+        "high": 40.14602219199467,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:pehe": {
+        "value": 13.240536661157755,
+        "low": 11.117107895649866,
+        "high": 15.80489938926128,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "ieee-fraud",
+    "learner": "s-learner",
+    "seed": 11,
+    "context_rows": 4096,
+    "ensemble": 1,
+    "n_train": 354324,
+    "n_test": 118108,
+    "lightgbm_config": "min_child_samples=60, num_leaves=31",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 13.54,
+      "lightgbm_fit": 3.963,
+      "lightgbm_predict": 0.308,
+      "tabfm_fit": 97.95,
+      "tabfm_predict": 32.981
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.4355172076373939,
+        "low": 0.3048496613911816,
+        "high": 0.55914150517811,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.3267452541997229,
+        "low": 0.20342205424761087,
+        "high": 0.4506273927069051,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.10877195343767099,
+        "low": -0.23628117536970003,
+        "high": 0.022396017650578616,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.07587382102261918,
+        "low": 0.059657727853468866,
+        "high": 0.09070305027001208,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.06741471778743174,
+        "low": 0.054931887025320016,
+        "high": 0.08007545998474463,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.008459103235187435,
+        "low": -0.01765449140182551,
+        "high": 0.0013924360210131733,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 1.5709030248535019,
+        "low": 1.157380347500726,
+        "high": 1.9759483808051683,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 1.4017228578612653,
+        "low": 1.0963604251694794,
+        "high": 1.705214556465382,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.1691801669922366,
+        "low": -0.4390047611695957,
+        "high": 0.11031277854412942,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:pehe": {
+        "value": 22.404697749189864,
+        "low": 19.936496771337286,
+        "high": 24.977454570406632,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:pehe": {
+        "value": 23.783020753286692,
+        "low": 21.203048135262886,
+        "high": 26.441898281345406,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:pehe": {
+        "value": 1.3783230040968277,
+        "low": 0.99618570351082,
+        "high": 1.7689744084783288,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "ieee-fraud",
+    "learner": "t-learner",
+    "seed": 11,
+    "context_rows": 4096,
+    "ensemble": 1,
+    "n_train": 354324,
+    "n_test": 118108,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 20.265,
+      "lightgbm_fit": 3.744,
+      "lightgbm_predict": 0.228,
+      "tabfm_fit": 97.071,
+      "tabfm_predict": 32.723
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.40522162453461563,
+        "low": 0.2788641210356695,
+        "high": 0.5356174093550492,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.1305725577459802,
+        "low": 0.002325106115070604,
+        "high": 0.2597867097468464,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.27464906678863543,
+        "low": -0.47076447618674294,
+        "high": -0.10010024334471315,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.07367951440161978,
+        "low": 0.05892163918825994,
+        "high": 0.08811199996201691,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.05271827351400909,
+        "low": 0.04039568671320705,
+        "high": 0.06471413929028502,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.020961240887610692,
+        "low": -0.0339254622925536,
+        "high": -0.008418965879409723,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 1.5212068619694044,
+        "low": 1.1315439763533388,
+        "high": 1.9240441752378155,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 1.1107173403544814,
+        "low": 0.8463154042391442,
+        "high": 1.3879753390197744,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.4104895216149229,
+        "low": -0.7601086318881246,
+        "high": -0.10093195781392665,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:pehe": {
+        "value": 23.56091980915371,
+        "low": 21.75141107060583,
+        "high": 25.32751934812606,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:pehe": {
+        "value": 34.54561737560998,
+        "low": 29.142625085050405,
+        "high": 41.66170017926101,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:pehe": {
+        "value": 10.98469756645627,
+        "low": 6.121246939047503,
+        "high": 16.95388914587191,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "ieee-fraud",
+    "learner": "s-learner",
+    "seed": 11,
+    "context_rows": 8192,
+    "ensemble": 1,
+    "n_train": 354324,
+    "n_test": 118108,
+    "lightgbm_config": "min_child_samples=60, num_leaves=31",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 13.517,
+      "lightgbm_fit": 3.916,
+      "lightgbm_predict": 0.309,
+      "tabfm_fit": 129.01,
+      "tabfm_predict": 43.925
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.4355172076373939,
+        "low": 0.3048496613911816,
+        "high": 0.55914150517811,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.3679527443787475,
+        "low": 0.2537878430251665,
+        "high": 0.49216598202813555,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.0675644632586464,
+        "low": -0.1772970902468361,
+        "high": 0.05175251430028175,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.07587382102261918,
+        "low": 0.059657727853468866,
+        "high": 0.09070305027001208,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.07076135423539343,
+        "low": 0.05697808246809613,
+        "high": 0.08427748213875723,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.005112466787225753,
+        "low": -0.013469049178053395,
+        "high": 0.0036346899214676457,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 1.5709030248535019,
+        "low": 1.157380347500726,
+        "high": 1.9759483808051683,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 1.567498545777784,
+        "low": 1.2144755056573941,
+        "high": 1.9276287403300596,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.0034044790757179477,
+        "low": -0.2582840557667781,
+        "high": 0.23255088746323774,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:pehe": {
+        "value": 22.404697749189864,
+        "low": 19.936496771337286,
+        "high": 24.977454570406632,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:pehe": {
+        "value": 23.67124115329493,
+        "low": 21.032034879527213,
+        "high": 26.48242083779266,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:pehe": {
+        "value": 1.2665434041050645,
+        "low": 0.7903689154168656,
+        "high": 1.7617352590884119,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "ieee-fraud",
+    "learner": "t-learner",
+    "seed": 11,
+    "context_rows": 8192,
+    "ensemble": 1,
+    "n_train": 354324,
+    "n_test": 118108,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 20.335,
+      "lightgbm_fit": 3.758,
+      "lightgbm_predict": 0.243,
+      "tabfm_fit": 127.918,
+      "tabfm_predict": 43.478
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.40522162453461563,
+        "low": 0.2788641210356695,
+        "high": 0.5356174093550492,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.2085363814647475,
+        "low": 0.07972945550794344,
+        "high": 0.33664497659356585,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.19668524306986812,
+        "low": -0.3604000961640807,
+        "high": -0.053734626691138376,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.07367951440161978,
+        "low": 0.05892163918825994,
+        "high": 0.08811199996201691,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.058762738579183314,
+        "low": 0.045480107586081994,
+        "high": 0.07248905613082673,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.014916775822436466,
+        "low": -0.026152375978311004,
+        "high": -0.004370406996651399,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 1.5212068619694044,
+        "low": 1.1315439763533388,
+        "high": 1.9240441752378155,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 1.2257420132550272,
+        "low": 0.9117788430860281,
+        "high": 1.5290568208709345,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.29546484871437717,
+        "low": -0.6200499324259411,
+        "high": -0.02027243368708712,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:pehe": {
+        "value": 23.56091980915371,
+        "low": 21.75141107060583,
+        "high": 25.32751934812606,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:pehe": {
+        "value": 31.309960171913403,
+        "low": 27.075791772744488,
+        "high": 36.48265692123475,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:pehe": {
+        "value": 7.749040362759693,
+        "low": 4.283107218625307,
+        "high": 11.945113772843849,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "ieee-fraud",
+    "learner": "s-learner",
+    "seed": 11,
     "context_rows": 16384,
     "ensemble": 1,
     "n_train": 354324,
