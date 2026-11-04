@@ -24,6 +24,9 @@ Three things here are decisions rather than plumbing, and each is a stated rule:
   no weight argument. A weighted fit is therefore turned into a resampled one: context rows
   are drawn with replacement, with probability proportional to weight, which is the
   standard importance-resampling equivalence. It is an approximation and is labelled one.
+  One draw is a noisy one: on ACIC the R-learner's effect error moved from 0.8 to 42 with
+  nothing changed but the draw's seed. :attr:`TabFMConfig.weighted_draws` averages several
+  independent draws instead, which is the same approximation with less variance.
 - **Categorical columns** are handed over as pandas categoricals, which TabFM detects and
   encodes itself, so Hillstrom's ``zip_code`` is a category to TabFM exactly as it is to
   LightGBM.
@@ -63,6 +66,10 @@ WEIGHT_DIGESTS: dict[str, str] = {
 }
 
 WEIGHTS_FILE = "model.safetensors"
+
+#: Seed offset between the context draws of one weighted fit, a prime so the draws cannot
+#: land on the seeds the meta-learners derive for their other models (seed + 1, + 2, ...).
+DRAW_SEED_STRIDE = 104_729
 
 #: Rows TabFM was pretrained with as context; the default cap.
 PRETRAINED_CONTEXT_ROWS = 16_384
@@ -109,6 +116,10 @@ class TabFMConfig:
             to the context and not to the other rows, so splitting a prediction into
             batches changes memory, not answers. Lenta's test split in one pass asked an
             80 GB GPU for 39 GB more than it had left. Not part of a row's key either.
+        weighted_draws: Independent weighted context draws averaged in a weighted fit, which
+            only the R-learner's final stage makes. One is the committed default and what
+            the headline tables report; each extra draw is one more fit and prediction.
+            An unweighted fit ignores it, because its context is fixed.
     """
 
     context_rows: int = PRETRAINED_CONTEXT_ROWS
@@ -117,6 +128,7 @@ class TabFMConfig:
     float32: bool = True
     device: str = "cpu"
     predict_rows: int = 16_384
+    weighted_draws: int = 1
 
     def with_(self, **changes: Any) -> TabFMConfig:  # noqa: ANN401
         """Return a copy with some settings replaced.
@@ -223,6 +235,7 @@ class TabFMLearner:
         self.categorical = tuple(categorical)
         self._model: Any = None
         self._single_class: float | None = None
+        self._members: list[TabFMLearner] = []
         self.n_rows = 0
         self.n_context = 0
 
@@ -241,6 +254,22 @@ class TabFMLearner:
             sample_weight: Optional per-row weights, honoured by resampling.
         """
         self.n_rows = int(matrix.shape[0])
+        draws = self.config.weighted_draws
+        if sample_weight is not None and draws > 1:
+            single = self.config.with_(weighted_draws=1)
+            self._members = []
+            for draw in range(draws):
+                member = TabFMLearner(
+                    single,
+                    binary=self.binary,
+                    seed=self.seed + draw * DRAW_SEED_STRIDE,
+                    categorical=self.categorical,
+                )
+                member.fit(matrix, target, sample_weight=sample_weight)
+                self._members.append(member)
+            self.n_context = self._members[0].n_context
+            return
+        self._members = []
         rows = context_rows(
             np.asarray(target, dtype=np.float64),
             cap=self.config.context_rows,
@@ -269,6 +298,9 @@ class TabFMLearner:
         Returns:
             One prediction per row.
         """
+        if self._members:
+            averaged: FloatArray = np.mean([m.predict(matrix) for m in self._members], axis=0)
+            return averaged
         if self._single_class is not None:
             return np.full(matrix.shape[0], self._single_class, dtype=np.float64)
         if self._model is None:

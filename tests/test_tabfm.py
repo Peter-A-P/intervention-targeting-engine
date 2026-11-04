@@ -79,6 +79,51 @@ class TestPredictionBatches:
         assert sizes == [4, 4, 2]
 
 
+class _ContextMean:
+    """Stands in for TabFM: predicts the mean of the context it was shown."""
+
+    def fit(self, frame, target):
+        self.mean = float(np.mean(target))
+        return self
+
+    def predict(self, frame):
+        return np.full(len(frame), self.mean)
+
+
+class TestWeightedDraws:
+    @pytest.fixture(autouse=True)
+    def _no_weights_needed(self, monkeypatch):
+        from itx.estimators import tabfm_base
+
+        monkeypatch.setattr(tabfm_base, "_estimator", lambda *a, **k: _ContextMean())
+
+    def _fit(self, config: TabFMConfig, seed: int, *, weighted: bool) -> np.ndarray:
+        from itx.estimators.tabfm_base import TabFMLearner
+
+        rng = np.random.default_rng(0)
+        matrix = rng.normal(size=(300, 2))
+        target = rng.normal(size=300) * 10
+        weight = rng.exponential(size=300) if weighted else None
+        learner = TabFMLearner(config, binary=False, seed=seed)
+        learner.fit(matrix, target, sample_weight=weight)
+        return learner.predict(matrix[:5])
+
+    def test_several_draws_average_one_draw_per_derived_seed(self):
+        from itx.estimators.tabfm_base import DRAW_SEED_STRIDE
+
+        averaged = self._fit(TabFMConfig(weighted_draws=3), 7, weighted=True)
+        singles = [
+            self._fit(TabFMConfig(), 7 + k * DRAW_SEED_STRIDE, weighted=True) for k in range(3)
+        ]
+        assert np.allclose(averaged, np.mean(singles, axis=0))
+        # The first draw is the one-draw fit, so the committed default is unchanged.
+        assert not np.allclose(singles[0], singles[1])
+
+    def test_an_unweighted_fit_ignores_the_setting(self):
+        many = self._fit(TabFMConfig(weighted_draws=4), 7, weighted=False)
+        assert np.array_equal(many, self._fit(TabFMConfig(), 7, weighted=False))
+
+
 class TestDevice:
     def test_the_cpu_is_the_default(self):
         assert TabFMConfig().device == "cpu"
