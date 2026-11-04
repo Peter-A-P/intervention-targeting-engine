@@ -54,7 +54,7 @@ from typing import TYPE_CHECKING, Any
 import numpy as np
 
 from itx.estimators.base import BaseUpliftEstimator
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG, LearnerConfig, estimator_name
 from itx.estimators.propensity import DEFAULT_CLIP, PropensityFit, PropensityModel
 from itx.estimators.sklearn_bridge import base_learners
 
@@ -82,7 +82,7 @@ class DRLearner(BaseUpliftEstimator):
 
     def __init__(
         self,
-        config: BaseLearnerConfig = DEFAULT_CONFIG,
+        config: LearnerConfig = DEFAULT_CONFIG,
         *,
         seed: int = 0,
         folds: int = DEFAULT_FOLDS,
@@ -91,7 +91,7 @@ class DRLearner(BaseUpliftEstimator):
         """Build an unfitted DR-learner.
 
         Args:
-            config: Shared LightGBM settings, used for all three nuisance models.
+            config: Shared base-learner settings, used for all three nuisance models.
             seed: Base seed; the internal models get distinct seeds derived from it.
             folds: Cross-fitting folds.
             clip: Smallest propensity the correction is allowed to divide by. Passed to
@@ -99,6 +99,7 @@ class DRLearner(BaseUpliftEstimator):
                 so both numbers come from the same bound.
         """
         super().__init__()
+        self.name = estimator_name(type(self).name, config)
         self.config = config
         self.seed = seed
         self.folds = folds

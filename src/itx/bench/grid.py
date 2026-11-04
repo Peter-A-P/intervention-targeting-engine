@@ -91,7 +91,8 @@ from typing import TYPE_CHECKING
 
 from itx.bench.seeds import TIE_SEED
 from itx.data.splits import stratified_subsample
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, LearnerConfig
+from itx.estimators.tabfm_base import TabFMConfig
 from itx.metrics.qini import qini_coefficient
 from itx.policy.policy_value import fit_nuisances, gain_key, policy_metrics
 
@@ -119,7 +120,7 @@ GRID: tuple[BaseLearnerConfig, ...] = tuple(
 
 #: An estimator is built from a config and a seed, so one factory serves both the tuning
 #: loop and the final fit.
-type EstimatorFactory = Callable[[BaseLearnerConfig, int], BaseUpliftEstimator]
+type EstimatorFactory = Callable[[LearnerConfig, int], BaseUpliftEstimator]
 
 
 #: A candidate needs room for at least this many leaves to be worth trying, so its leaf
@@ -273,7 +274,7 @@ class Selection:
             same thing, so a bare number would not say what it was.
     """
 
-    config: BaseLearnerConfig
+    config: LearnerConfig
     score: float
     scores: tuple[float, ...]
     tuned: bool = True
@@ -281,7 +282,7 @@ class Selection:
 
     def describe(self) -> str:
         """One line naming the winning settings."""
-        if not self.tuned:
+        if not self.tuned or not isinstance(self.config, BaseLearnerConfig):
             return "not tuned, default configuration"
         return (
             f"min_child_samples={self.config.min_child_samples}, "
@@ -349,3 +350,20 @@ def select_config(
 def default_selection() -> Selection:
     """The stand-in for an estimator that has nothing to tune, such as a random ranking."""
     return Selection(config=DEFAULT_CONFIG, score=float("nan"), scores=(), tuned=False)
+
+
+def untuned_selection(config: TabFMConfig) -> Selection:
+    """The selection a TabFM-based estimator gets: its one configuration, no search.
+
+    TabFM has no hyperparameters in the sense the grid means, so its validation step is a
+    no-op rather than a search over something invented to fill the slot. The rule is named
+    ``none`` so a results file says that nothing was selected, rather than leaving a reader
+    to infer it from an absent score.
+
+    Args:
+        config: The TabFM settings the estimator runs at.
+
+    Returns:
+        An untuned selection carrying that configuration.
+    """
+    return Selection(config=config, score=float("nan"), scores=(), tuned=False, rule="none")

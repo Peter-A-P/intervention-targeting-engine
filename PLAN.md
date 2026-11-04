@@ -137,7 +137,9 @@ tests/          unit tests with synthetic data of known effect for every estimat
 ```
 
 Base learner is LightGBM everywhere so estimator differences are estimator differences,
-not learner differences. Polars for data handling, pandas only at library boundaries.
+not learner differences. Change 65 adds TabFM as a second base, but only as a whole second
+column in a separate, paired comparison (`itx bases`): no run ever mixes the two, and the
+main results table is LightGBM throughout. Polars for data handling, pandas only at library boundaries.
 
 Tests that matter: every estimator recovers a known constant effect and a known
 heterogeneous effect on synthetic data within tolerance; Qini of a perfect ranking equals
@@ -1532,3 +1534,35 @@ is past the comfortable measure. The base size goes to 18px and the line height 
 which is the standard compensation for a long measure, and the page is charts, cards and
 short paragraphs rather than long-form text. If it reads badly in use the answer is a
 narrower column, not a second measure inside a wide one: that was the defect change 63 fixed.
+
+**65. A second base learner, TabFM, in its own paired comparison** (after week 8). Section 5
+holds the base learner fixed so that the estimator column means something, and that design
+leaves one question unanswerable from this repository: does the engine under the
+meta-learners change which of them wins? Google's TabFM, a zero-shot tabular foundation
+model, is a useful second engine to ask it with, because it is as different from a tuned tree
+ensemble as an engine gets: nothing is trained on the data, the training rows are context for
+a pretrained transformer, and there is nothing for the validation grid to tune.
+
+What changed, and what did not. A configuration's type now chooses the engine:
+`OutcomeLearner`, the propensity model and the scikit-learn bridge build on TabFM when handed
+a `TabFMConfig`, so all five meta-learners can run on it whole, every internal model included.
+A learner on TabFM names its rows with a `-tabfm` suffix; on LightGBM nothing about a row, a
+file or a number changes. Dragonnet and the two baselines are untouched. The comparison is a
+separate command, `itx bases`, rather than more rows in `itx benchmark`, because it needs both
+bases' per-unit scores on the same split to give the difference its own paired interval, and
+the main results files do not keep scores. It refits the LightGBM side, which the tests show
+reproduces the main table's numbers exactly.
+
+Three rules are new and stated in `docs/estimators.md`: a context cap (16,384 rows by
+default, the size TabFM was pretrained on), drawn with a seed derived from each fit's seed and
+stratified on a binary target; sample weights, which the R-learner's final stage needs and
+TabFM does not accept, honoured by resampling the context in proportion to weight; and the
+weights pinned to one Hub revision and checked against their SHA-256 before loading, the same
+promise the dataset loaders make.
+
+TabFM is an optional extra (`foundation`), and nothing on the default install path imports it,
+because its weights are under Google's non-commercial, non-production licence
+(`tabfm-non-commercial-v1.0`; the code is Apache-2.0). The demo is unaffected: it reads
+precomputed results and never loads a model.
+
+How it was run, decided after a pilot (2026-10-31). The first IHDP and ACIC rows ran on the laptop CPU in float32, where one ACIC seed took 2 hours 24 minutes of TabFM time; a rented H100 ran the same seed 420 times faster in bfloat16. Every table is therefore from one setup, TabFM on a GPU in bfloat16 and LightGBM on the same machine's CPU, and each row records the hardware it ran on; the CPU rows were replaced rather than mixed in. IHDP, ACIC and Hillstrom run at all five seeds. Lenta, IEEE-CIS and Criteo run at seed 11 only, because past the context cap TabFM's cost grows with every row it predicts and one seed of the three is several GPU-hours; their tables say one seed, and their differences are read as a first look rather than a repeated result. `scripts/gpu-run.sh` is the run. Predictions go through TabFM in batches of 16,384 rows, a memory rule that does not change answers.

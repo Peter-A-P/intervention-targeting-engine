@@ -22,6 +22,7 @@ from itx.demo.serve import CONFIG_NAME
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
 
+    from itx.bench.bases import BaseComparisonRow
     from itx.bench.grid import Selection
     from itx.bench.runner import BenchmarkRow
     from itx.sensitivity.rosenbaum import RosenbaumBound
@@ -346,6 +347,133 @@ def _benchmark_one(
                 effect_rows, split.test, figure_dir / f"calibration-{dataset}.png"
             )
             typer.echo(f"figure: {calibration_path}")
+
+
+#: Where the base-learner comparison writes, one file per dataset holding every context size.
+DEFAULT_BASES_DIR = DEFAULT_RESULTS_DIR / "bases"
+
+
+@app.command("bases")
+def bases_command(
+    dataset: Annotated[str, typer.Option(help="Dataset key to run.")] = "ihdp",
+    learners: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated meta-learners; all five if omitted."),
+    ] = None,
+    seeds: Annotated[
+        str | None,
+        typer.Option(help="Comma-separated split seeds; the committed five if omitted."),
+    ] = None,
+    context_rows: Annotated[
+        int, typer.Option(help="TabFM context cap; the 16,384 it was pretrained on by default.")
+    ] = 16_384,
+    ensemble: Annotated[
+        int | None,
+        typer.Option(
+            help="TabFM ensemble members; the package's committed default if omitted."
+        ),
+    ] = None,
+    resamples: Annotated[
+        int | None,
+        typer.Option(
+            help="Bootstrap resamples per row; the dataset's protocol value if omitted."
+        ),
+    ] = None,
+    device: Annotated[
+        str, typer.Option(help="Torch device for TabFM: 'cpu', or 'cuda' on a GPU machine.")
+    ] = "cpu",
+    bfloat16: Annotated[
+        bool,
+        typer.Option(
+            "--bfloat16",
+            help="Run TabFM in the bfloat16 it was designed for; float32 by default, "
+            "which is faster on a CPU.",
+        ),
+    ] = False,
+    results_dir: Annotated[
+        Path, typer.Option(help="Where the per-seed JSON goes.")
+    ] = DEFAULT_BASES_DIR,
+    readme: Annotated[
+        Path, typer.Option(help="Markdown file whose bases block is regenerated.")
+    ] = DEFAULT_README,
+    resume: Annotated[
+        bool,
+        typer.Option(help="Reuse finished rows from the checkpoint and the results file."),
+    ] = False,
+    report_only: Annotated[
+        bool,
+        typer.Option("--report-only", help="Redraw the tables from the file; fit nothing."),
+    ] = False,
+) -> None:
+    """Fit the five meta-learners on LightGBM and on TabFM, and compare them pairwise.
+
+    Writes ``results/bases/<dataset>.json`` and the README block ``bases-<dataset>``. A run
+    at a second context size adds to the file rather than replacing it, which is how the
+    context-size table is built. Needs the optional 'foundation' extra; TabFM's weights are
+    licensed for non-commercial, non-production use only.
+    """
+    from itx.bench.bases import META_LEARNERS, merge, read_json, report, run_bases, write_json
+    from itx.bench.runner import resamples_for
+    from itx.bench.seeds import SEEDS
+    from itx.bench.table import update_markdown_file
+    from itx.estimators.tabfm_base import DEFAULT_TABFM, is_available
+
+    say = _printer()
+    path = results_dir / f"{dataset}.json"
+    existing = read_json(path) if path.is_file() else []
+
+    if not report_only:
+        if not is_available():
+            typer.echo("TabFM is not installed: run 'uv sync --extra foundation' first.")
+            raise typer.Exit(code=2)
+        config = DEFAULT_TABFM.with_(
+            context_rows=context_rows, device=device, float32=not bfloat16
+        )
+        if ensemble is not None:
+            config = config.with_(ensemble=ensemble)
+        names = [n.strip() for n in learners.split(",")] if learners else list(META_LEARNERS)
+        seed_values = [int(x) for x in seeds.split(",")] if seeds else list(SEEDS)
+        checkpoint = results_dir / f"{dataset}.checkpoint.json"
+        # Resuming reuses the results file as well as the checkpoint, so a dataset can be
+        # grown a seed at a time: on a CPU, one ACIC seed on TabFM is hours of work.
+        banked = read_json(checkpoint) if resume and checkpoint.is_file() else []
+        completed = merge(existing, banked) if resume else []
+        if checkpoint.is_file() and not resume:
+            say(f"note: {checkpoint} exists from an interrupted run and is being ignored.")
+
+        def bank(row: BaseComparisonRow) -> None:
+            """Append a finished row to the checkpoint, so an interruption costs one row."""
+            banked.append(row)
+            write_json(banked, checkpoint)
+
+        say(
+            f"{dataset}: {len(names)} learners x {len(seed_values)} seeds on two bases, "
+            f"TabFM context {config.context_rows:,}, ensemble {config.ensemble}, "
+            f"{config.device}, {'float32' if config.float32 else 'bfloat16'}"
+        )
+        rows = run_bases(
+            dataset,
+            learners=names,
+            seeds=seed_values,
+            tabfm=config,
+            n_resamples=resamples if resamples is not None else resamples_for(dataset),
+            progress=say,
+            completed=completed,
+            on_row=bank,
+        )
+        existing = merge(existing, rows)
+        write_json(existing, path)
+        checkpoint.unlink(missing_ok=True)
+        typer.echo(f"per-seed results: {path}")
+
+    if not existing:
+        typer.echo(f"no results at {path}; run 'itx bases --dataset {dataset}' first")
+        raise typer.Exit(code=1)
+    text = report(existing)
+    typer.echo("")
+    typer.echo(text)
+    if update_markdown_file(readme, f"bases-{dataset}", text):
+        typer.echo(f"bases block updated: {readme}")
 
 
 @app.command("report")
@@ -953,7 +1081,12 @@ def selection(
 
 def _config_label(chosen: Selection) -> str:
     """The winning settings of a selection, as ``min_child_samples/num_leaves``."""
-    return f"{chosen.config.min_child_samples}/{chosen.config.num_leaves}"
+    from itx.estimators.lightgbm_base import BaseLearnerConfig, config_label
+
+    config = chosen.config
+    if not isinstance(config, BaseLearnerConfig):
+        return config_label(config)
+    return f"{config.min_child_samples}/{config.num_leaves}"
 
 
 @app.command("allocate")

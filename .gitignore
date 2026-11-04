@@ -24,6 +24,7 @@ build/
 # resumed; it is never a result, so committing one would put a half-finished table in the
 # history and invite somebody to read it as a finished one.
 results/*.checkpoint.json
+results/bases/*.checkpoint.json
 
 # Demo build output
 demo/dist/

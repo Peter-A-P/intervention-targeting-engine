@@ -55,7 +55,7 @@ from itx.bench.table import (
 from itx.cli import app
 from itx.data import synthetic
 from itx.data.splits import stratified_split
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig
 from itx.estimators.s_learner import SLearner
 from itx.metrics.bootstrap import Estimate
 
@@ -614,6 +614,7 @@ class TestRefitSeed:
         )
         rows, _ = refit_seed("synthetic-binary", 11, selections={"s-learner": chosen})
         assert rows[0].selection is not None
+        assert isinstance(rows[0].selection.config, BaseLearnerConfig)
         assert rows[0].selection.config.min_child_samples == 200
 
     def test_it_reproduces_the_scores_a_full_run_produced(self):

@@ -40,7 +40,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from itx.estimators.base import BaseUpliftEstimator
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, OutcomeLearner
+from itx.estimators.lightgbm_base import (
+    DEFAULT_CONFIG,
+    LearnerConfig,
+    OutcomeLearner,
+    estimator_name,
+)
 from itx.estimators.propensity import DEFAULT_CLIP, PropensityFit, PropensityModel
 
 if TYPE_CHECKING:
@@ -56,7 +61,7 @@ class XLearner(BaseUpliftEstimator):
 
     def __init__(
         self,
-        config: BaseLearnerConfig = DEFAULT_CONFIG,
+        config: LearnerConfig = DEFAULT_CONFIG,
         *,
         seed: int = 0,
         clip: float = DEFAULT_CLIP,
@@ -65,12 +70,14 @@ class XLearner(BaseUpliftEstimator):
         """Build an unfitted X-learner.
 
         Args:
-            config: Shared LightGBM settings.
+            config: Shared base-learner settings. A ``TabFMConfig`` builds every internal
+                model on TabFM, and the row name says so.
             seed: Base seed. The five models inside get distinct seeds derived from it.
             clip: Propensity clipping bound.
             use_known_propensity: Use the dataset's design propensity when it has one.
         """
         super().__init__()
+        self.name = estimator_name(type(self).name, config)
         self.config = config
         self.seed = seed
         self._propensity = PropensityModel(
