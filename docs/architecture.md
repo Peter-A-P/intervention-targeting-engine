@@ -14,11 +14,12 @@ Everything starts with six public datasets. Each one is downloaded, checked agai
 checksum so you know you have exactly the file the results came from, and split into training,
 validation and test sets on five fixed seeds, so anyone who reruns it gets the same rows.
 
-Eight ways of choosing who to treat then compete on equal terms. Five are uplift models, the
-S, T, X, DR and R learners, all built on the same LightGBM base. One is Dragonnet, a neural
-network. Two are baselines: picking at random, and ranking people by risk, which is what most
-teams do today. All eight go through the same interface and the same tuning grid, so none of
-them gets an unfair advantage.
+Eight ways of choosing who to treat then compete. Five are uplift models, the S, T, X, DR and
+R learners, all built on the same LightGBM base. One is Dragonnet, a neural network. Two are
+baselines: picking at random, and ranking people by risk, which is what most teams do today.
+All eight go through the same interface. The five LightGBM learners also share one tuning
+grid, so a difference between them is a difference between methods. Dragonnet runs at its
+paper's published defaults, and the repository says what that leaves uncompared.
 
 Each ranking is scored on the held-out test set, with a 95% interval on every number. The
 policy layer then answers the question a manager actually asks: if you can only afford to
@@ -36,13 +37,12 @@ Where it lives: `itx.data`, `itx.estimators`, `itx.metrics`, `itx.policy`, `itx.
 
 ![For each dataset and each of five committed seeds the data is split, hyperparameters are chosen on the validation split from one grid, the estimator is fitted on train and scored once on test with bootstrap intervals, the seeds are averaged, and the table is written by one command; a clean-environment rerun reproduces every table at zero tolerance.](architecture/measurement.svg)
 
-A results table is only worth something if you can rebuild it yourself and get the same
-numbers. This is how each one is made.
+Anyone can rebuild each results table and get the same numbers. This is how.
 
 The datasets come in two kinds. Some are randomised experiments, where a coin flip decided who
 was treated, so group averages can be trusted. The other two, IHDP and ACIC, are simulated with
 a known effect for every person, so you can check how close a model gets for each individual
-and not just on average.
+as well as on average.
 
 For each of the five seeds, the data is split, each method's settings are chosen on the
 validation set, the model is trained, and then it ranks the test set. The test set is used
@@ -73,9 +73,9 @@ What each list buys is measured as the extra good outcomes per person in the who
 against 200 random lists. That is the number the slider moves.
 
 One cheap check tells you in advance whether ranking by risk is a trap on your data: the
-risk-decile table, which needs a single model. On ACIC, ranking by risk was ten times worse
-than random. On Criteo it matched every uplift model. Same code, opposite answers, which is why
-the check is worth running first.
+risk-decile table, which needs a single model. On ACIC, ranking by risk bought less than
+nothing at a tenth of the budget: -0.20 against random targeting's +0.26. On Criteo it matched
+every uplift model. Same code, opposite answers, which is why the check is worth running first.
 
 Where it lives: `itx.policy.cost_aware`, `itx.bench.allocate`, `itx.metrics.ground_truth` and
 `itx.metrics.risk_deciles`.

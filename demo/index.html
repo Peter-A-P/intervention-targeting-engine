@@ -4,12 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Spend It Where It Changes the Outcome: who do you treat, and what does it buy?</title>
-<meta name="description" content="Interactive results from an uplift-modelling benchmark on six datasets. Move a budget slider and see what each way of choosing who to treat actually buys. Every number is precomputed from a reproducible benchmark.">
+<meta name="description" content="Who should a limited budget treat? Eight ways of choosing, measured on six public datasets against random targeting. On one dataset ranking people by risk is the best choice; on another it is worse than doing nothing. Every number is reproducible from the repository.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Peter Parker">
 <meta property="og:url" content="https://targeting.peterparker.ca/">
 <meta property="og:title" content="Spend It Where It Changes the Outcome">
-<meta property="og:description" content="Interactive results from an uplift-modelling benchmark on six datasets. Move a budget slider and see what each way of choosing who to treat actually buys. Every number is precomputed from a reproducible benchmark.">
+<meta property="og:description" content="Who should a limited budget treat? Eight ways of choosing, measured on six public datasets against random targeting. On one dataset ranking people by risk is the best choice; on another it is worse than doing nothing. Every number is reproducible from the repository.">
 <meta property="og:image" content="https://targeting.peterparker.ca/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -21,26 +23,25 @@
 <header class="top">
   <div class="top-inner">
     <a class="brand" href="https://peterparker.ca"><span class="mono-mark" aria-hidden="true">P</span>Peter Parker</a>
-    <p class="top-nav"><a href="https://peterparker.ca/projects/intervention-targeting/">Project 01: Spend It Where It Changes the Outcome</a></p>
+    <p class="top-nav"><a href="https://github.com/Peter-A-P/intervention-targeting-engine">Project 01: Spend It Where It Changes the Outcome</a></p>
   </div>
 </header>
-<nav class="tabs" aria-label="On this page">
+<nav class="tabs" aria-label="This site">
   <div class="tabs-inner">
     <a href="#top" aria-current="true">Overview</a>
     <a href="#explainer">The idea</a>
     <a href="#compare">Every method</a>
     <a href="#slider">Move the budget</a>
     <a href="#power">Is your data enough?</a>
-    <a href="#howto">Your own data</a>
-    <a href="#takeaways">Findings</a>
-    <a href="#method">Reading the numbers</a>
+    <a href="#refuted">What did not work</a>
+    <a href="#limits">Limits</a>
     <a href="architecture.html">How it's built</a>
   </div>
 </nav>
 <main>
 
   <header class="hero" id="top">
-    <p class="eyebrow">Measured results, reproducible from one command</p>
+    <p class="eyebrow">Eight ways of choosing, measured on six datasets against random</p>
     <h1>Every budget picks some people and skips others. <span class="hl">Who should it pick?</span></h1>
     <p class="lead">
       Retention offers, outreach calls, fraud reviews, follow-up appointments. The money covers a
@@ -49,30 +50,59 @@
       worse than picking at random.</strong> This page shows both, on real data, and how to tell
       which case you are in.
     </p>
+    <p class="hero-cta"><a class="button" href="#compare">See every method against random</a></p>
     <div class="hero-points">
       <div class="point">
-        <span class="point-figure" id="hero-best">&mdash;</span>
+        <span class="point-figure" id="hero-best">...</span>
         <span class="point-unit"></span>
-        <span class="point-label">the best method here, at a 10% budget</span>
+        <span class="point-label" id="hero-best-label">the best of the eight at a 10% budget</span>
       </div>
       <div class="point">
-        <span class="point-figure" id="hero-risk">&mdash;</span>
+        <span class="point-figure" id="hero-risk">...</span>
         <span class="point-unit"></span>
-        <span class="point-label">ranking people by risk, same budget, same data</span>
+        <span class="point-label" id="hero-risk-label">ranking people by risk, same budget</span>
       </div>
       <div class="point">
-        <span class="point-figure" id="hero-random">&mdash;</span>
+        <span class="point-figure" id="hero-random">...</span>
         <span class="point-unit"></span>
-        <span class="point-label">picking at random, the floor everything must beat</span>
+        <span class="point-label">picking at random: the floor every method has to beat</span>
       </div>
     </div>
     <p class="hero-note">
       <span id="hero-context"></span> Six datasets, eight ways of choosing, one budget slider.
       Nothing is modelled in your browser: every number was computed in advance by the benchmark
-      and is checkable in the repository.
+      and can be checked in
+      <a href="https://github.com/Peter-A-P/intervention-targeting-engine">the public repository</a>.
       <a href="architecture.html">See how it's built</a>, in three diagrams.
     </p>
   </header>
+
+  <nav class="toc" aria-label="On this page">
+    <p class="eyebrow">On this page</p>
+    <ol>
+      <li><a href="#explainer">The idea in one table</a></li>
+      <li><a href="#picture">The whole idea in one picture</a></li>
+      <li><a href="#compare">Does any method beat picking at random?</a></li>
+      <li><a href="#slider">Pick a method and move the budget</a></li>
+      <li><a href="#power">Could your own data answer this at all?</a></li>
+      <li><a href="#refuted">What the data proved wrong</a></li>
+      <li><a href="#limits">What this does not do</a></li>
+      <li><a href="#takeaways">What to take from it</a></li>
+      <li><a href="#howto">Running it on your own data</a></li>
+      <li><a href="#method">How to read these numbers</a></li>
+      <li><a href="#engineering">How it is engineered</a></li>
+      <li><a href="#built">How this was built</a></li>
+    </ol>
+  </nav>
+
+  <noscript>
+    <p class="warning">
+      This page draws its charts from the benchmark's data files, so it needs JavaScript. The
+      same numbers are in the repository's README, as tables.
+    </p>
+  </noscript>
+
+  <p class="warning" id="failure" hidden></p>
 
   <section class="section" id="explainer">
     <h2>The idea in one table</h2>
@@ -97,14 +127,47 @@
       Ranking by risk sorts on the first column alone. It puts lost causes at the top, because
       they really are the highest risk, and it cannot see sleeping dogs at all. Persuadables sit
       in the middle of a risk list and get missed. <strong>Uplift modelling tries to sort on the
-      difference between the two columns instead</strong>, which is the thing you actually care
-      about and the thing you can never observe for any individual, because only one of the two
-      ever happens to them.
+      difference between the two columns instead.</strong> That difference is what the budget
+      buys, and it can never be observed for any one person, because only one of the two ever
+      happens to them.
     </p>
   </section>
 
+  <div class="part">
+    <p class="eyebrow">How it works</p>
+    <h2 class="part-title">From six public datasets to a budget decision</h2>
+    <p class="lead">
+      The rest of this page is the measurement, in the order it happens. Each part starts in
+      plain language, with a picture. Where there is more to say for someone who builds models
+      for a living, it is folded away under <strong>For the technical reader</strong>, so you can
+      skip it if you only want the idea.
+    </p>
+  </div>
+
+  <section class="section" id="picture">
+    <h2>The whole idea in one picture</h2>
+    <p class="section-lead">
+      Five steps. The order matters: the test rows are set aside before any model sees the data,
+      and every method is scored on them once, beside the two baselines.
+    </p>
+    <ol class="pipeline steps-5">
+      <li><span class="step">1</span><strong>Load</strong><span>Six public datasets, each checked against a recorded checksum.</span></li>
+      <li><span class="step">2</span><strong>Split</strong><span>Training, validation and test rows on five fixed seeds. The test rows are used once.</span></li>
+      <li><span class="step">3</span><strong>Rank</strong><span>Eight ways of choosing who to treat, through one interface.</span></li>
+      <li class="key"><span class="step">4</span><strong>Score</strong><span>What each ranking buys at a budget, with a 95% interval, against random targeting and ranking by risk.</span></li>
+      <li><span class="step">5</span><strong>Diagnose</strong><span>One outcome model says in advance whether ranking by risk will do.</span></li>
+    </ol>
+    <div class="verdict">
+      <p>
+        <strong>Ranking by risk is measured like every other method.</strong> It is scored
+        beside every uplift model on every dataset, which is how the project found it can be the
+        best choice on one dataset and worse than doing nothing on another.
+      </p>
+    </div>
+  </section>
+
   <section class="section" id="compare">
-    <h2>Every method against random targeting</h2>
+    <h2>Does any method beat picking at random?</h2>
     <p class="section-lead">
       One line per way of choosing who to treat. Higher is better. The
       <span class="inline-key random"></span><strong>red dashed line is random targeting</strong>,
@@ -128,11 +191,11 @@
     <div class="dataset-card" id="dataset-card"></div>
 
     <figure class="chart-figure">
-      <div id="chart-all" class="chart" role="img" aria-label="Policy value against budget for every ranking method"></div>
+      <div id="chart-all" class="chart" role="img" tabindex="0" aria-label="Policy value against budget for every ranking method. Use the arrow keys to move along the budget."></div>
+      <p class="readout" id="readout-all" aria-live="polite"></p>
+      <div class="legend" id="legend-all"></div>
       <figcaption id="caption-all"></figcaption>
     </figure>
-
-    <div class="legend" id="legend-all"></div>
 
     <div class="verdict" id="verdict"></div>
   </section>
@@ -161,7 +224,8 @@
     <section class="headline" id="headline" aria-live="polite"></section>
 
     <figure class="chart-figure">
-      <div id="chart" class="chart" role="img" aria-label="Policy value against budget for the selected ranking"></div>
+      <div id="chart" class="chart" role="img" tabindex="0" aria-label="Policy value against budget for the selected ranking. Use the arrow keys to move the budget."></div>
+      <p class="readout" id="readout-one" aria-live="polite"></p>
       <figcaption id="caption-one"></figcaption>
     </figure>
 
@@ -240,21 +304,108 @@
     </p>
   </section>
 
+  <section class="section" id="refuted">
+    <h2>What the data proved wrong</h2>
+    <p class="section-lead">
+      Several things the project expected turned out wrong when they were measured. Each is in
+      the repository with its evidence. A few of them:
+    </p>
+    <div class="cards notes">
+      <article class="card-note">
+        <h3>"Ranking by risk is the wrong thing to do"</h3>
+        <p>The project was built to show it. On 14 million randomised Criteo rows, risk ranking matches every uplift model.</p>
+      </article>
+      <article class="card-note">
+        <h3>Tuning every model</h3>
+        <p>The grid search took about 89% of every benchmark's compute. Four measurements over six weeks found it chose between near-ties and changed nothing a reader would act on.</p>
+      </article>
+      <article class="card-note">
+        <h3>A fraud case rigged for uplift</h3>
+        <p>Review was simulated to do least good on the riskiest transactions. Risk ranking still beat every uplift model at every budget.</p>
+      </article>
+      <article class="card-note">
+        <h3>"Churned" and "retained" gave opposite answers</h3>
+        <p>The same file, labelled two ways. The design and the outcome's direction are now required arguments with no default.</p>
+      </article>
+      <article class="card-note">
+        <h3>Five rows nobody could reproduce</h3>
+        <p>The fraud loader encoded categories differently in different processes. A rerun from a fresh copy found it, and the table was remeasured.</p>
+      </article>
+    </div>
+    <div class="assumption">
+      <p>
+        <strong>One approach is written up in full as rejected:</strong> tuning every estimator on
+        a validation grid. <a href="https://github.com/Peter-A-P/intervention-targeting-engine/blob/main/docs/rejected.md">Read it here</a>.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" id="limits">
+    <h2>What this does not do</h2>
+    <ul>
+      <li><strong>It needs an intervention that already happened to some people and not others.</strong> It cannot estimate the effect of an action nobody has taken, and the cheap diagnostic assumes who got it was decided at random.</li>
+      <li><strong>One treatment, yes or no.</strong> No continuous or multi-valued treatments, and no online allocation.</li>
+      <li><strong>The fraud case's review effect is simulated.</strong> The transactions and the fraud labels are real.</li>
+      <li><strong>Dragonnet is untuned, and on the three largest datasets it saw at most 200,000 training rows.</strong> Its column is not a like-for-like comparison with the LightGBM learners.</li>
+      <li><strong>Criteo is a 10% subsample</strong>, 1,397,958 of 13,979,592 rows. The fit on the full file is not done.</li>
+      <li><strong>The sensitivity analysis covers three of the five benchmark datasets</strong>, and none of the three could fail it.</li>
+    </ul>
+  </section>
+
+  <section class="section" id="takeaways">
+    <h2>What to take from it</h2>
+    <div class="takeaways">
+      <div class="takeaway">
+        <h3>Risk ranking is neither a trap nor safe</h3>
+        <p>
+          It depends on the data, and the difference can flip the sign of the result. Nobody can
+          guess in advance which case they are in. On ACIC it loses value; on Criteo it matches
+          every uplift model. Both results came out of the same code.
+        </p>
+      </div>
+      <div class="takeaway">
+        <h3>You can tell which case you are in, cheaply</h3>
+        <p>
+          One outcome model, before any of the expensive work. That diagnostic is the most useful
+          thing this project produced, and it was not what the project set out to build.
+        </p>
+      </div>
+      <div class="takeaway">
+        <h3>Most data cannot answer the question</h3>
+        <p>
+          Lenta has 687,029 customers in a real randomised trial and still cannot support a
+          targeting decision. Size alone is not enough, and the calculator above says so before
+          you spend the money.
+        </p>
+      </div>
+      <div class="takeaway">
+        <h3>Every number here has an interval</h3>
+        <p>
+          A result without one is treated as a defect in this codebase. That rule is what kept
+          the conclusions standing through six defects found during the build: every corrected
+          number stayed inside the range already published.
+        </p>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="howto">
-    <h2>Running this on your own data</h2>
+    <h2>Running it on your own data, in three commands</h2>
 
     <div class="cards steps">
       <div class="card">
         <h3>Check you have the right kind of data</h3>
         <p>
           You need an intervention that <strong>already happened to some people and not
-          others</strong>, and a record of what happened to both. Not a customer list. Nothing
-          here, and nothing anywhere, can tell you the effect of an action nobody has ever taken.
+          others</strong>, and a record of what happened to both: a customer list on its own is
+          not enough. Nothing here, and nothing anywhere, can tell you the effect of an action
+          nobody has ever taken.
         </p>
         <p>
           Ideally who got it was decided <strong>at random</strong>. If it was not, the numbers
-          mix what the intervention did with whatever made those people likelier to be chosen,
-          and the tool will say so rather than quietly pretending otherwise.
+          mix what the intervention did with whatever made those people likelier to be chosen.
+          Run with <code>--design observational</code>, the tool prints that caveat above its own
+          table.
         </p>
       </div>
       <div class="card">
@@ -296,65 +447,6 @@
         <p>And pass <code>--no-tune</code>. The tuning search was measured four times and bought nothing.</p>
       </div>
     </div>
-    <ul class="chips" aria-label="Built with">
-      <li>Python 3.13, typed, mypy and ruff clean</li><li>Polars</li>
-      <li>LightGBM S, T, X, DR and R learners</li><li>Dragonnet in PyTorch</li>
-      <li>Doubly robust policy value</li><li>Qini with bootstrap intervals</li>
-      <li>Rosenbaum bounds, E-values</li><li>Azure Static Web Apps</li>
-    </ul>
-  </section>
-
-  <section class="section" id="takeaways">
-    <h2>What this project found</h2>
-    <div class="takeaways">
-      <div class="takeaway">
-        <h3>Risk ranking is neither a trap nor safe</h3>
-        <p>
-          It depends on the data, the difference is worth a change of sign, and nobody can guess
-          which case they are in. On ACIC it destroys value. On Criteo it matches every
-          sophisticated method. Both results came out of the same code.
-        </p>
-      </div>
-      <div class="takeaway">
-        <h3>You can tell which case you are in, cheaply</h3>
-        <p>
-          One outcome model, before any of the expensive work. That diagnostic is the most useful
-          thing this project produced, and it was not what the project set out to build.
-        </p>
-      </div>
-      <div class="takeaway">
-        <h3>The fraud case was rigged against risk ranking, and lost</h3>
-        <p>
-          It was designed so that the highest-risk transactions are the ones where review does
-          least good. Risk ranking still beat every uplift model at every budget. A team that
-          kept its existing model and ignored this repository would be better off.
-        </p>
-      </div>
-      <div class="takeaway">
-        <h3>Most data cannot answer the question</h3>
-        <p>
-          Lenta has 687,029 customers in a real randomised trial and still cannot support a
-          targeting decision. Size alone is not enough, and the calculator above says so before
-          you spend the money.
-        </p>
-      </div>
-      <div class="takeaway">
-        <h3>Every number here has an interval</h3>
-        <p>
-          A result without one is treated as a defect in this codebase. That rule is what kept
-          the conclusions standing through six defects found during the build: every corrected
-          number stayed inside the range already published.
-        </p>
-      </div>
-      <div class="takeaway">
-        <h3>The checks caught real mistakes</h3>
-        <p>
-          Rebuilding every result from a fresh copy found a bug that made part of a table
-          impossible for anyone to reproduce. It was fixed, remeasured, and written up next to
-          the result rather than quietly corrected.
-        </p>
-      </div>
-    </div>
   </section>
 
   <section class="section" id="method">
@@ -365,9 +457,9 @@
       <p id="units-explainer"></p>
       <p>
         It is measured <strong>per person in the whole population</strong>, not per person
-        treated. That is deliberate: it lets a 5% budget and a 40% budget sit on the same axis
-        and be compared honestly. Treating 5% of people very well can still buy less in total
-        than treating 40% adequately.
+        treated. That way a 5% budget and a 40% budget sit on the same axis and can be compared
+        directly. Treating 5% of people very well can still buy less in total than treating 40%
+        adequately.
       </p>
     </details>
 
@@ -402,31 +494,81 @@
         draws, so the two sit close together and differ slightly.
       </p>
     </details>
+  </section>
 
+  <section class="section" id="engineering">
+    <h2>How it is engineered</h2>
+    <p class="section-lead">
+      The code is typed and tested, and one command rebuilds every table, so anyone can check the
+      numbers on this page against the repository.
+    </p>
+    <div class="headline">
+      <div class="stat"><span class="figure">667</span><span class="caption">automated tests, including one that runs the sample-size arithmetic on all six datasets and checks it gets every verdict right</span></div>
+      <div class="stat"><span class="figure">13,300</span><span class="caption">lines of typed Python in the package, strict type checking and linting clean in CI</span></div>
+      <div class="stat"><span class="figure">0</span><span class="caption">tolerance when every table was rebuilt from a fresh copy and compared with the published one</span></div>
+    </div>
+    <ul class="chips" aria-label="Tools and techniques">
+      <li>Python 3.13</li><li>Polars</li><li>LightGBM</li><li>PyTorch</li>
+      <li>S, T, X, DR and R learners</li><li>Dragonnet</li><li>Doubly robust policy value</li>
+      <li>Qini and AUUC</li><li>Bootstrap intervals</li><li>Rosenbaum bounds</li><li>E-values</li>
+      <li>Power analysis</li><li>mypy --strict</li><li>ruff</li><li>pytest</li><li>uv</li>
+      <li>GitHub Actions</li><li>Azure Static Web Apps</li>
+    </ul>
+    <details class="disclose">
+      <summary>For the technical reader: the choices that are easy to get wrong</summary>
+      <ul>
+        <li><strong>The test split is touched once.</strong> Settings are chosen on a validation split, and the test rows are scored only after that.</li>
+        <li><strong>Two estimates of what a budget buys, side by side.</strong> Inverse-probability weighting and a doubly robust estimator are both reported, because a disagreement between them is worth seeing.</li>
+        <li><strong>No defaults where a guess would flip the answer.</strong> <code>--design</code> and <code>--outcome-polarity</code> must be given; the same file labelled "churned" and "retained" gave opposite answers until they were.</li>
+        <li><strong>Every input is checked against a committed digest</strong>, and every table was regenerated from a fresh copy and compared at zero tolerance. That rerun is what found the fraud loader's encoding defect.</li>
+        <li><strong>The page computes nothing the benchmark could.</strong> Every figure is read from JSON written by <code>itx demo build</code>. The only arithmetic in the browser is the sample-size calculator, and a test checks it against the Python it mirrors.</li>
+      </ul>
+    </details>
+  </section>
+
+  <section class="section" id="built">
+    <h2>How this was built</h2>
+    <p>
+      I designed this project and made the calls in it: which datasets to use, how to score a
+      ranking, and what to do when a measurement came back against the plan. The call that
+      shaped it most was to treat ranking people by risk, the way this job is usually done, as a
+      baseline to measure beside every uplift model rather than as the thing to beat. It turned
+      out to be the best choice on Criteo and worse than doing nothing on ACIC, which is why
+      <code>itx diagnose</code> exists and why it is the first thing to run. The project set out
+      to show the opposite, and I kept the result. The same rule applied to my own protocol:
+      tuning every model took most of the compute, four measurements said it changed nothing a
+      reader would act on, and I dropped it.
+    </p>
+    <p>
+      I used an AI coding assistant (Claude Code) for implementation and drafting, which is now
+      standard practice in software, data science and machine learning work. Every number on this
+      page can be reproduced from
+      <a href="https://github.com/Peter-A-P/intervention-targeting-engine">the repository</a> with
+      one command, and every table there has been rebuilt from a fresh copy and matched at zero
+      tolerance.
+    </p>
     <details class="disclose">
       <summary>Glossary</summary>
       <dl class="glossary" id="glossary"></dl>
     </details>
   </section>
 
-  <footer>
-    <p class="footer-back">
-      <a href="https://peterparker.ca/projects/intervention-targeting/">Back to the project page</a>
-      on peterparker.ca, which carries the write-up, the repository and the rest of the
-      portfolio.
-    </p>
-    <p class="footer-lead">
-      Part of Spend It Where It Changes the Outcome: an uplift-modelling and budget-constrained
-      targeting toolkit with honest evaluation.
-    </p>
-    <p class="note">
-      Five LightGBM meta-learners, a PyTorch neural network, and two baselines, on six datasets.
-      Every table regenerated by one command and reproduced from a fresh clone at zero tolerance.
-      The repository carries the results tables, the confidence intervals this page abbreviates,
-      a write-up of where each method breaks, and one approach tried and rejected with evidence.
-    </p>
-  </footer>
 </main>
+
+<footer class="foot">
+  <div class="foot-inner">
+    <p>
+      Source, methods, the full results tables and the rejected approach:
+      <a href="https://github.com/Peter-A-P/intervention-targeting-engine">github.com/Peter-A-P/intervention-targeting-engine</a>.
+      The write-up and the rest of the portfolio:
+      <a href="https://peterparker.ca/projects/intervention-targeting/">peterparker.ca</a>.
+    </p>
+    <ul>
+      <li>Data: Hillstrom email campaign (Kevin Hillstrom, MineThatData); Criteo Uplift (Criteo AI Lab, CC BY-NC-SA 4.0); Lenta (via scikit-uplift, no licence stated); IHDP; ACIC 2016 (CDLA-Sharing 1.0); IEEE-CIS Fraud Detection (Kaggle). None is redistributed here.</li>
+      <li>Type: Newsreader and Inter, SIL Open Font License, served from this host</li>
+    </ul>
+  </div>
+</footer>
 <script src="content.js"></script>
 <script src="power.js"></script>
 <script src="app.js"></script>

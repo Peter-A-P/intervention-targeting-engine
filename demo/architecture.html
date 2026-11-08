@@ -5,25 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>How it's built: Spend It Where It Changes the Outcome</title>
 <meta name="description" content="How the uplift-modelling benchmark behind this demo is put together, in three diagrams: the whole system, how a results table is produced, and how a ranking becomes a budget decision.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header class="top">
   <div class="top-inner">
     <a class="brand" href="https://peterparker.ca"><span class="mono-mark" aria-hidden="true">P</span>Peter Parker</a>
-    <p class="top-nav"><a href="https://peterparker.ca/projects/intervention-targeting/">Project 01: Spend It Where It Changes the Outcome</a></p>
+    <p class="top-nav"><a href="https://github.com/Peter-A-P/intervention-targeting-engine">Project 01: Spend It Where It Changes the Outcome</a></p>
   </div>
 </header>
-<nav class="tabs" aria-label="Pages and sections">
+<nav class="tabs" aria-label="This site">
   <div class="tabs-inner">
     <a href="index.html#top">Overview</a>
     <a href="index.html#explainer">The idea</a>
     <a href="index.html#compare">Every method</a>
     <a href="index.html#slider">Move the budget</a>
     <a href="index.html#power">Is your data enough?</a>
-    <a href="index.html#howto">Your own data</a>
-    <a href="index.html#takeaways">Findings</a>
-    <a href="index.html#method">Reading the numbers</a>
+    <a href="index.html#refuted">What did not work</a>
+    <a href="index.html#limits">Limits</a>
     <a href="architecture.html" aria-current="page">How it's built</a>
   </div>
 </nav>
@@ -37,7 +38,7 @@
       table gets made, and how the demo turns a ranking into a budget decision. Select a diagram
       to open it full size.
     </p>
-    <p class="hero-note"><a href="index.html">Back to the demo</a></p>
+    <p class="hero-note"><a href="index.html">Back to the results</a></p>
   </header>
 
   <section class="section" id="system">
@@ -53,11 +54,13 @@
         the same rows.
       </p>
       <p>
-        Eight ways of choosing who to treat then compete on equal terms. Five are uplift models,
-        the S, T, X, DR and R learners, all built on the same LightGBM base. One is Dragonnet, a
-        neural network. Two are baselines: picking at random, and ranking people by risk, which is
-        what most teams do today. All eight go through the same interface and the same tuning
-        grid, so none of them gets an unfair advantage.
+        Eight ways of choosing who to treat then compete. Five are uplift models, the S, T, X, DR
+        and R learners, all built on the same LightGBM base. One is Dragonnet, a neural network.
+        Two are baselines: picking at random, and ranking people by risk, which is what most teams
+        do today. All eight go through the same interface. The five LightGBM learners also share
+        one tuning grid, so a difference between them is a difference between methods. Dragonnet
+        runs at its paper's published defaults, and the repository says what that leaves
+        uncompared.
       </p>
       <p>
         Each ranking is scored on the held-out test set, with a 95% interval on every number. The
@@ -86,14 +89,13 @@
     </figure>
     <div class="prose">
       <p>
-        A results table is only worth something if you can rebuild it yourself and get the same
-        numbers. This is how each one is made.
+        Anyone can rebuild each results table and get the same numbers. This is how.
       </p>
       <p>
         The datasets come in two kinds. Some are randomised experiments, where a coin flip decided
         who was treated, so group averages can be trusted. The other two, IHDP and ACIC, are
         simulated with a known effect for every person, so you can check how close a model gets
-        for each individual and not just on average.
+        for each individual as well as on average.
       </p>
       <p>
         For each of the five seeds, the data is split, each method's settings are chosen on the
@@ -137,9 +139,10 @@
       </p>
       <p>
         One cheap check tells you in advance whether ranking by risk is a trap on your data: the
-        risk-decile table, which needs a single model. On ACIC, ranking by risk was ten times
-        worse than random. On Criteo it matched every uplift model. Same code, opposite answers,
-        which is why the check is worth running first.
+        risk-decile table, which needs a single model. On ACIC, ranking by risk bought less than
+        nothing at a tenth of the budget: -0.20 against random targeting's +0.26. On Criteo it
+        matched every uplift model. Same code, opposite answers, which is why the check is worth
+        running first.
       </p>
       <p class="note">
         Where it lives: <code>itx.policy.cost_aware</code>, <code>itx.bench.allocate</code>,
@@ -148,18 +151,22 @@
     </div>
   </section>
 
-  <footer>
-    <p class="footer-back">
-      <a href="index.html">Back to the demo</a>, or
-      <a href="https://peterparker.ca/projects/intervention-targeting/">to the project page</a>
-      on peterparker.ca, which carries the write-up, the repository and the rest of the
-      portfolio.
-    </p>
-    <p class="note">
-      The diagrams are generated from a specification rather than drawn by hand, and the same
-      three are in the repository's <code>docs/architecture.md</code>.
-    </p>
-  </footer>
+  <p class="arch-back"><a href="index.html">Back to the results</a></p>
 </main>
+<footer class="foot">
+  <div class="foot-inner">
+    <p>
+      The diagrams are generated from a specification rather than drawn by hand, and the same
+      three are in the repository's <code>docs/architecture.md</code>. Source and every
+      measurement:
+      <a href="https://github.com/Peter-A-P/intervention-targeting-engine">github.com/Peter-A-P/intervention-targeting-engine</a>.
+      The write-up and the rest of the portfolio:
+      <a href="https://peterparker.ca/projects/intervention-targeting/">peterparker.ca</a>.
+    </p>
+    <ul>
+      <li>Type: Newsreader and Inter, SIL Open Font License, served from this host</li>
+    </ul>
+  </div>
+</footer>
 </body>
 </html>

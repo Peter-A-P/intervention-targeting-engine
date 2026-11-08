@@ -274,20 +274,39 @@ class TestTheShippedPage:
                 for target in pattern.findall(text):
                     assert "//" not in target, f"{name}: {target}"
 
-    def test_the_only_links_out_are_to_the_site_it_belongs_to(self):
-        # The page is on a subdomain of peterparker.ca and links back to it, which is the
-        # one destination it has any business sending a reader to. A link anywhere else is
+    def test_the_only_links_out_are_to_the_site_and_the_repository(self):
+        # The page is on a subdomain of peterparker.ca and links back to it, and it links to
+        # this repository, because every number on it is meant to be checked there. Those are
+        # the two destinations it has any business sending a reader to. A link anywhere else is
         # either an accident or something that should have been thought about first.
         import re
         from pathlib import Path
 
+        allowed = (
+            "https://peterparker.ca",
+            "https://github.com/Peter-A-P/intervention-targeting-engine",
+        )
         for name in ("index.html", "architecture.html"):
             page = Path("demo", name).read_text(encoding="utf-8")
             for target in re.findall(r"""<a\b[^>]*\shref\s*=\s*["']([^"']+)""", page):
                 if "//" not in target:
                     continue
-                assert target.startswith("https://peterparker.ca"), (name, target)
+                assert target.startswith(allowed), (name, target)
             assert "https://peterparker.ca" in page, f"{name} has no way back to the site"
+            assert allowed[1] in page, f"{name} has no link to the repository"
+
+    def test_the_page_says_how_it_was_built_in_the_first_person(self):
+        # The house style for the portfolio's project sites: the last section is in Peter's
+        # own voice, then the AI-assistant sentence, then the glossary.
+        import re
+        from pathlib import Path
+
+        page = Path("demo/index.html").read_text(encoding="utf-8")
+        built = page.partition('<section class="section" id="built">')[2]
+        assert built, "index.html has no How this was built section"
+        first = re.search(r"<p>\s*(\w+)", built)
+        assert first and first.group(1) == "I"
+        assert 'id="glossary"' in built
 
     def test_the_architecture_page_is_reachable_from_the_demo(self):
         # From the menu and from a text link near the top, so a reader who never scrolls

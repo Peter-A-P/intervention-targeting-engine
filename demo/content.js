@@ -179,8 +179,8 @@ const ESTIMATORS = {
     title: "DR-learner",
     short: "Doubly robust two-stage",
     what:
-      "Builds a corrected outcome for every person that stays honest if either the outcome " +
-      "model or the model of who got treated is right, then fits the effect to that.",
+      "Builds a corrected outcome for every person that still comes out right if either the " +
+      "outcome model or the model of who got treated is right, then fits the effect to that.",
     strength:
       "Two chances to be right instead of one, which matters when treatment was not random.",
     weakness: "Needs the most nuisance machinery, and is the slowest to fit here.",
@@ -192,7 +192,7 @@ const ESTIMATORS = {
     what:
       "Strips the predictable part out of both the outcome and the treatment, then looks for " +
       "the effect in what is left over.",
-    strength: "Elegant, and isolates the effect from everything the features already explain.",
+    strength: "Separates the effect from everything the features already explain.",
     weakness: "Its accuracy depends on the first-stage models being good.",
   },
   dragonnet: {
@@ -254,8 +254,8 @@ const GLOSSARY = {
     "treating nobody. Per population rather than per person treated, so budgets of different " +
     "sizes can be compared on the same axis.",
   "doubly robust":
-    "A way of estimating that outcome which stays honest if either the model of the outcome " +
-    "or the model of who got treated is right. It does not need both.",
+    "A way of estimating that outcome which still comes out right if either the model of the " +
+    "outcome or the model of who got treated is right. It does not need both.",
   "confidence interval":
     "The range the number would likely fall in if the experiment were repeated. A wide band " +
     "means the data cannot pin the answer down, and a result whose band crosses zero has not " +
@@ -267,6 +267,13 @@ const GLOSSARY = {
   "risk ranking":
     "Sorting people by how likely the outcome is and treating the top of the list. It answers " +
     "'who is most likely to churn', not 'whose mind would we change'.",
+  "meta-learner":
+    "A recipe that turns ordinary prediction models into an estimate of what an action " +
+    "changes for each person. The S, T, X, DR and R learners here are five such recipes, all " +
+    "built on LightGBM.",
+  "random targeting":
+    "Treating a share of people picked at random. It is the floor: a way of choosing that " +
+    "cannot beat it is not worth what it costs.",
   "held-out rows":
     "People the models never saw while learning. Every number here is measured on them, which " +
     "is the only way to find out whether a model learned something real.",
