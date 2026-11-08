@@ -305,7 +305,8 @@ class TestTheShippedPage:
         built = page.partition('<section class="section" id="built">')[2]
         assert built, "index.html has no How this was built section"
         first = re.search(r"<p>\s*(\w+)", built)
-        assert first and first.group(1) == "I"
+        assert first, "How this was built has no paragraph"
+        assert first.group(1) == "I"
         assert 'id="glossary"' in built
 
     def test_the_architecture_page_is_reachable_from_the_demo(self):
