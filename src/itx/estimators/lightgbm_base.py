@@ -1,9 +1,14 @@
-"""The single base learner, configured once.
+"""The base learner, configured once.
 
-Every meta-learner in this package is built out of ordinary outcome models, and they are
-all this one: LightGBM, same hyperparameters, same seed discipline (PLAN.md section 5). If
-the S-learner and the X-learner used different engines, the results table would be
-comparing engines and the estimator column would mean nothing.
+Every meta-learner in this package is built out of ordinary outcome models, and within one
+run they are all the same one: LightGBM, same hyperparameters, same seed discipline (PLAN.md
+section 5). If the S-learner and the X-learner used different engines, the results table
+would be comparing engines and the estimator column would mean nothing.
+
+A second base exists, TabFM (:mod:`itx.estimators.tabfm_base`), and it is a whole second
+column rather than a mix: an estimator handed a :class:`TabFMConfig` builds every one of its
+internal models on TabFM, and :class:`OutcomeLearner` is where that choice is made. Nothing
+outside the base-learner comparison uses it (PLAN.md change 65).
 
 The settings are deliberately conservative rather than tuned. ``deterministic`` and
 ``force_row_wise`` are on because the project's claim is that a stranger can rerun the
@@ -18,6 +23,8 @@ from typing import TYPE_CHECKING, Any
 
 import numpy as np
 from lightgbm import LGBMClassifier, LGBMRegressor
+
+from itx.estimators.tabfm_base import TabFMConfig, TabFMLearner
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -97,9 +104,56 @@ class BaseLearnerConfig:
 
 DEFAULT_CONFIG = BaseLearnerConfig()
 
+#: Either base learner's configuration. The type of the config is the choice of engine.
+type LearnerConfig = BaseLearnerConfig | TabFMConfig
+
+
+def base_name(config: LearnerConfig) -> str:
+    """The engine a configuration builds on, as it is written in tables and file names.
+
+    Args:
+        config: A base-learner configuration.
+
+    Returns:
+        ``"lightgbm"`` or ``"tabfm"``.
+    """
+    return "tabfm" if isinstance(config, TabFMConfig) else "lightgbm"
+
+
+def config_label(config: LearnerConfig) -> str:
+    """A short description of a configuration, for tables and logs.
+
+    Args:
+        config: A base-learner configuration.
+
+    Returns:
+        ``"min_child_samples=20, num_leaves=31"`` for LightGBM, or the TabFM context cap and
+        ensemble size.
+    """
+    if isinstance(config, TabFMConfig):
+        return f"tabfm, context_rows={config.context_rows}, ensemble={config.ensemble}"
+    return f"min_child_samples={config.min_child_samples}, num_leaves={config.num_leaves}"
+
+
+def estimator_name(name: str, config: LearnerConfig) -> str:
+    """An estimator's row name: unchanged on LightGBM, suffixed on any other base.
+
+    Unchanged on LightGBM so that every results file written before the second base existed
+    still names its rows correctly.
+
+    Args:
+        name: The estimator's own name, such as ``"s-learner"``.
+        config: The base it was built on.
+
+    Returns:
+        ``"s-learner"`` or ``"s-learner-tabfm"``.
+    """
+    base = base_name(config)
+    return name if base == "lightgbm" else f"{name}-{base}"
+
 
 class OutcomeLearner:
-    """One LightGBM model of the outcome, regression or probability.
+    """One model of the outcome, regression or probability, on whichever base it is given.
 
     Binary outcomes are modelled as probabilities and continuous ones by regression, so a
     predicted uplift is always on the same scale as the outcome itself: a change in the
@@ -108,7 +162,7 @@ class OutcomeLearner:
 
     def __init__(
         self,
-        config: BaseLearnerConfig = DEFAULT_CONFIG,
+        config: LearnerConfig = DEFAULT_CONFIG,
         *,
         binary: bool,
         seed: int = 0,
@@ -116,7 +170,8 @@ class OutcomeLearner:
         """Build an unfitted learner.
 
         Args:
-            config: Shared LightGBM settings.
+            config: Shared base-learner settings. A :class:`TabFMConfig` makes this a
+                TabFM model; anything else is LightGBM.
             binary: True to model a probability, False to regress.
             seed: Seed for this model. Distinct models inside one estimator get distinct
                 seeds so their errors are not identical by construction.
@@ -124,10 +179,11 @@ class OutcomeLearner:
         self.config = config
         self.binary = binary
         self.seed = seed
-        kwargs = config.to_kwargs(seed)
-        self._model: LGBMClassifier | LGBMRegressor = (
-            LGBMClassifier(**kwargs) if binary else LGBMRegressor(**kwargs)
-        )
+        self._model: LGBMClassifier | LGBMRegressor | None = None
+        self._tabfm: TabFMLearner | None = None
+        if isinstance(config, BaseLearnerConfig):
+            kwargs = config.to_kwargs(seed)
+            self._model = LGBMClassifier(**kwargs) if binary else LGBMRegressor(**kwargs)
         self._single_class: float | None = None
         self._fitted = False
         self.feature_names: tuple[str, ...] = ()
@@ -161,7 +217,13 @@ class OutcomeLearner:
         if self.binary and len(np.unique(target)) < 2:
             self._single_class = float(target[0]) if target.size else 0.0
             return
-        self._model.fit(matrix, target, categorical_feature=list(categorical))
+        if isinstance(self.config, TabFMConfig):
+            self._tabfm = TabFMLearner(
+                self.config, binary=self.binary, seed=self.seed, categorical=categorical
+            )
+            self._tabfm.fit(matrix, target)
+        elif self._model is not None:
+            self._model.fit(matrix, target, categorical_feature=list(categorical))
         self._fitted = True
 
     def predict(self, matrix: FloatArray) -> FloatArray:
@@ -175,6 +237,11 @@ class OutcomeLearner:
         """
         if self._single_class is not None:
             return np.full(matrix.shape[0], self._single_class, dtype=np.float64)
+        if self._tabfm is not None:
+            return self._tabfm.predict(matrix)
+        if self._model is None:
+            msg = "outcome learner: fit before predicting"
+            raise RuntimeError(msg)
         if self.binary:
             probabilities: FloatArray = np.asarray(
                 self._model.predict_proba(matrix), dtype=np.float64
@@ -185,5 +252,12 @@ class OutcomeLearner:
 
     @property
     def booster_(self) -> Any:  # noqa: ANN401
-        """The underlying LightGBM booster, for feature-importance inspection."""
+        """The underlying LightGBM booster, for feature-importance inspection.
+
+        Raises:
+            TypeError: On a TabFM learner, which has no trees to inspect.
+        """
+        if self._model is None:
+            msg = "only a LightGBM learner has a booster; TabFM has no trees to inspect"
+            raise TypeError(msg)
         return self._model.booster_

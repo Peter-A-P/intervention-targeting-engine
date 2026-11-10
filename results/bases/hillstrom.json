@@ -1,0 +1,2077 @@
+[
+  {
+    "dataset": "hillstrom",
+    "learner": "s-learner",
+    "seed": 11,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=200, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 4.902,
+      "lightgbm_fit": 0.488,
+      "lightgbm_predict": 0.035,
+      "tabfm_fit": 12.55,
+      "tabfm_predict": 4.567
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0040979289713225404,
+        "low": 0.0019034661856437997,
+        "high": 0.006058536596567782,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.003704072626715937,
+        "low": 0.001551763905774055,
+        "high": 0.005680028972277476,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.0003938563446066034,
+        "low": -0.0016466217635057374,
+        "high": 0.0008497285962590359,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2603252832195334,
+        "low": 0.20024538454395657,
+        "high": 0.3213392722099867,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.2554497283570085,
+        "low": 0.19354376014832045,
+        "high": 0.31899781256247406,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.004875554862524889,
+        "low": -0.026677617036119934,
+        "high": 0.0154764230951921,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.006499385949216343,
+        "low": 0.0018072556602618303,
+        "high": 0.01119462412986009,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.007645743384016725,
+        "low": 0.002851426938630884,
+        "high": 0.012596283301044111,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.0011463574348003812,
+        "low": -0.003457493204898235,
+        "high": 0.006278101695402467,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "t-learner",
+    "seed": 11,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=200, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 7.479,
+      "lightgbm_fit": 0.749,
+      "lightgbm_predict": 0.044,
+      "tabfm_fit": 10.063,
+      "tabfm_predict": 3.482
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0029357584332447458,
+        "low": 0.0009006765126397418,
+        "high": 0.005082983935581678,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.003748721588105717,
+        "low": 0.001574767570723674,
+        "high": 0.005829455558209412,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0008129631548609711,
+        "low": -0.0011641525142661528,
+        "high": 0.0028470012829682214,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.24185933297786116,
+        "low": 0.1806674253780072,
+        "high": 0.3035961194515569,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.25661059696475497,
+        "low": 0.1954132558419989,
+        "high": 0.32248985204092256,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.014751263986893803,
+        "low": -0.01941909027352048,
+        "high": 0.05008987912601927,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.00624968606125213,
+        "low": 0.0009573616916911006,
+        "high": 0.011021014893681885,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.007188933378918321,
+        "low": 0.002537556258151508,
+        "high": 0.01219043812938744,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.0009392473176661909,
+        "low": -0.004452978693856099,
+        "high": 0.006859639458342036,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "x-learner",
+    "seed": 11,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=200, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 13.376,
+      "lightgbm_fit": 1.297,
+      "lightgbm_predict": 0.039,
+      "tabfm_fit": 14.844,
+      "tabfm_predict": 3.455
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.003022981722787206,
+        "low": 0.0009296282462314423,
+        "high": 0.005103055766196066,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0033774951269841223,
+        "low": 0.0011731344272592993,
+        "high": 0.0054106012759552674,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.00035451340419691627,
+        "low": -0.0013644130124425716,
+        "high": 0.00223444845141882,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2429681252135118,
+        "low": 0.1830439337912237,
+        "high": 0.30538999564976194,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.25016665041025593,
+        "low": 0.19099711580998444,
+        "high": 0.31393310378166667,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.007198525196744132,
+        "low": -0.022387318685131486,
+        "high": 0.038657444174044854,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.0048806266743427525,
+        "low": -7.597413584432506e-05,
+        "high": 0.009117808080883059,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.009539024484351406,
+        "low": 0.004712207126362439,
+        "high": 0.01451645489428969,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.004658397810008654,
+        "low": -0.0005896280677956343,
+        "high": 0.010166298605730437,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "dr-learner",
+    "seed": 11,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=200, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 63.536,
+      "lightgbm_fit": 6.652,
+      "lightgbm_predict": 0.018,
+      "tabfm_fit": 65.983,
+      "tabfm_predict": 2.278
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.003106443787539638,
+        "low": 0.001101979701791379,
+        "high": 0.005165314119464587,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.003183368686310783,
+        "low": 0.0010029618724679468,
+        "high": 0.005192598992518725,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 7.69248987711451e-05,
+        "low": -0.0021897741684879144,
+        "high": 0.002273762450086572,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2447919010597967,
+        "low": 0.18460667098755884,
+        "high": 0.3065067701935394,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.24712378818240444,
+        "low": 0.18596660191186876,
+        "high": 0.3130226986271442,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.0023318871226077342,
+        "low": -0.035703803782073544,
+        "high": 0.03851952918281804,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.005314101681309841,
+        "low": 0.0009190815284006524,
+        "high": 0.01053587760153531,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.007736134883419399,
+        "low": 0.0023331567375883618,
+        "high": 0.012684425584079022,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.002422033202109558,
+        "low": -0.0038324001081425614,
+        "high": 0.008448760374414378,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "r-learner",
+    "seed": 11,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=5, num_leaves=31",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 23.699,
+      "lightgbm_fit": 2.02,
+      "lightgbm_predict": 0.016,
+      "tabfm_fit": 15.072,
+      "tabfm_predict": 2.261
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0025483830822628298,
+        "low": 0.00042921320006333445,
+        "high": 0.004757575611259183,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": -0.0002298933377472192,
+        "low": -0.002331728404397489,
+        "high": 0.00188707176659521,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.002778276420010049,
+        "low": -0.005337234487658548,
+        "high": -0.0001398216809532427,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.23685365944811332,
+        "low": 0.17412161359335857,
+        "high": 0.29944537653748343,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.1916435734380325,
+        "low": 0.12768405826809293,
+        "high": 0.26299238104601064,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.04521008601008081,
+        "low": -0.08883994241110912,
+        "high": -6.151664015704445e-05,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.005417416631986146,
+        "low": 0.00029919859998087036,
+        "high": 0.010812958317037463,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.004586885732049273,
+        "low": -0.0008065518532059208,
+        "high": 0.010142147663426205,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.0008305308999368727,
+        "low": -0.00717005573071594,
+        "high": 0.0056744541485413925,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "s-learner",
+    "seed": 23,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=5, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 4.862,
+      "lightgbm_fit": 0.465,
+      "lightgbm_predict": 0.026,
+      "tabfm_fit": 12.602,
+      "tabfm_predict": 4.646
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.004318304971680084,
+        "low": 0.0020804746018348794,
+        "high": 0.006654723980532287,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.00419709227178963,
+        "low": 0.0022170520141121,
+        "high": 0.006485292997013847,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.00012121269989045363,
+        "low": -0.0014700888636990789,
+        "high": 0.0012418358003349476,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.26471159930373916,
+        "low": 0.20357251696608925,
+        "high": 0.32305214438048574,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.26283221964794673,
+        "low": 0.1978203150746424,
+        "high": 0.32502556617141626,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.0018793796557924347,
+        "low": -0.024374961693240056,
+        "high": 0.02011933723067176,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.00829900011990738,
+        "low": 0.003823605456323225,
+        "high": 0.012843896931517673,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.01073990701113194,
+        "low": 0.00601565460880395,
+        "high": 0.015433667532950442,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.002440906891224561,
+        "low": -0.002487116349748196,
+        "high": 0.007300136726310143,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "t-learner",
+    "seed": 23,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=20, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 7.389,
+      "lightgbm_fit": 0.707,
+      "lightgbm_predict": 0.029,
+      "tabfm_fit": 10.153,
+      "tabfm_predict": 3.489
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.003448075778235877,
+        "low": 0.0013754695408601672,
+        "high": 0.005602863185475357,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0037872658006025354,
+        "low": 0.0015157436648579716,
+        "high": 0.006039821334414754,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0003391900223666585,
+        "low": -0.0016137562998335352,
+        "high": 0.002283603704735173,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.25046044680044577,
+        "low": 0.19026360719451252,
+        "high": 0.30777474840067176,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.25656957287046883,
+        "low": 0.19693168593774726,
+        "high": 0.3152083038131354,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.006109126070023063,
+        "low": -0.02672333330050257,
+        "high": 0.038373422507317706,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.013103086668283713,
+        "low": 0.00830270111248651,
+        "high": 0.018034520058934994,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.007096897125568558,
+        "low": 0.0017240971115180062,
+        "high": 0.012033831907264467,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.006006189542715155,
+        "low": -0.011602216007811668,
+        "high": -0.0008888543646834352,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "x-learner",
+    "seed": 23,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=20, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 13.654,
+      "lightgbm_fit": 1.203,
+      "lightgbm_predict": 0.024,
+      "tabfm_fit": 14.954,
+      "tabfm_predict": 3.485
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0035076947395243935,
+        "low": 0.0014472227698476804,
+        "high": 0.005657103877928105,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.004066153136686361,
+        "low": 0.001830183765416126,
+        "high": 0.006343832422731491,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0005584583971619678,
+        "low": -0.0011929870248231678,
+        "high": 0.002471970584048196,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2517762237497304,
+        "low": 0.19295752831563032,
+        "high": 0.3109289335057428,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.26049781507956377,
+        "low": 0.2004471004289285,
+        "high": 0.3177466167803428,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.008721591329833356,
+        "low": -0.020553144428816908,
+        "high": 0.041489154588530065,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.012019769384796033,
+        "low": 0.007394567513035833,
+        "high": 0.016989859895038182,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.007861684488057012,
+        "low": 0.0029889323968222263,
+        "high": 0.012659265685161068,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.004158084896739021,
+        "low": -0.01014882558819669,
+        "high": 0.0014663355361195225,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "dr-learner",
+    "seed": 23,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=5, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 62.154,
+      "lightgbm_fit": 5.916,
+      "lightgbm_predict": 0.011,
+      "tabfm_fit": 65.938,
+      "tabfm_predict": 2.271
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.00305915883513822,
+        "low": 0.0009290960587253565,
+        "high": 0.005396239122569643,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.004704046123893047,
+        "low": 0.0027130021075689663,
+        "high": 0.006888536354116378,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0016448872887548267,
+        "low": -0.000587271533974641,
+        "high": 0.003942359032922848,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.24498618577535552,
+        "low": 0.1853638927964444,
+        "high": 0.3064149506075581,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.2710682335908523,
+        "low": 0.20564195614818784,
+        "high": 0.3338455686155412,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.02608204781549678,
+        "low": -0.011405528513530449,
+        "high": 0.06517987941318046,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.0101343547253582,
+        "low": 0.005190549623553647,
+        "high": 0.01558179122177318,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.010943454982048965,
+        "low": 0.0057535495162416034,
+        "high": 0.015736711487527973,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.0008091002566907642,
+        "low": -0.005609380037546783,
+        "high": 0.0072526724561551015,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "r-learner",
+    "seed": 23,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 14.645,
+      "lightgbm_fit": 1.526,
+      "lightgbm_predict": 0.013,
+      "tabfm_fit": 14.909,
+      "tabfm_predict": 2.268
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0027850738162907944,
+        "low": 0.0006454080400892927,
+        "high": 0.005052781035668971,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0021964176645463476,
+        "low": 9.128662736644258e-05,
+        "high": 0.004316199037651171,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.0005886561517444468,
+        "low": -0.003313984488946201,
+        "high": 0.002029072514415558,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2399656667453159,
+        "low": 0.18240739983130852,
+        "high": 0.29846121375140044,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.23061926904826824,
+        "low": 0.16839649614991148,
+        "high": 0.28944853889750244,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.009346397697047648,
+        "low": -0.05587533257228888,
+        "high": 0.0358389761415677,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.009977312272525102,
+        "low": 0.005134099955223454,
+        "high": 0.015081096855101008,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.0072516304414000496,
+        "low": 0.0019468731890676775,
+        "high": 0.011273082638678766,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.0027256818311250522,
+        "low": -0.009303231170657178,
+        "high": 0.003176163754197268,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "s-learner",
+    "seed": 37,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=5, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 4.882,
+      "lightgbm_fit": 0.49,
+      "lightgbm_predict": 0.026,
+      "tabfm_fit": 12.263,
+      "tabfm_predict": 4.605
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.00486835787259325,
+        "low": 0.002624302555853104,
+        "high": 0.007042891141202263,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0050105003912682845,
+        "low": 0.002938824127112767,
+        "high": 0.0070199397928876845,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.00014214251867503483,
+        "low": -0.0011445283631837551,
+        "high": 0.0014919643501603783,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.27330987464856366,
+        "low": 0.21065671634584762,
+        "high": 0.3344303915658611,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.27691863752395396,
+        "low": 0.21086143067683227,
+        "high": 0.3345922056557659,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.0036087628753903034,
+        "low": -0.018093367748242297,
+        "high": 0.026066486913318553,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.010202596880982946,
+        "low": 0.004887119724862463,
+        "high": 0.015092180337025664,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.008318900471347368,
+        "low": 0.003474334002201429,
+        "high": 0.013086257646760626,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.0018836964096355779,
+        "low": -0.00806294870672401,
+        "high": 0.004141802640309737,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "t-learner",
+    "seed": 37,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 7.493,
+      "lightgbm_fit": 0.686,
+      "lightgbm_predict": 0.034,
+      "tabfm_fit": 10.038,
+      "tabfm_predict": 3.496
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.003202372816506904,
+        "low": 0.0008637786587952817,
+        "high": 0.005460272683159988,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.005304944252559974,
+        "low": 0.003154093740151203,
+        "high": 0.007482103066214283,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0021025714360530696,
+        "low": 7.442104901761233e-05,
+        "high": 0.00412627890973135,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.24573214487760267,
+        "low": 0.17956106575695358,
+        "high": 0.3045720907139176,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.2807750886475275,
+        "low": 0.21424166438031894,
+        "high": 0.3421973334452342,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.03504294376992481,
+        "low": 0.0018745491816104997,
+        "high": 0.06819824695063437,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.008361926479882745,
+        "low": 0.0038743299013161625,
+        "high": 0.014146053009330637,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.012173910937513941,
+        "low": 0.007121756008234894,
+        "high": 0.01757541201511526,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.003811984457631196,
+        "low": -0.002781721992723062,
+        "high": 0.008965163628123355,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "x-learner",
+    "seed": 37,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 13.294,
+      "lightgbm_fit": 1.223,
+      "lightgbm_predict": 0.029,
+      "tabfm_fit": 14.942,
+      "tabfm_predict": 3.481
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0037908631816735636,
+        "low": 0.0015544933555450568,
+        "high": 0.00594550644647955,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.004886483846388194,
+        "low": 0.002699932587879583,
+        "high": 0.007057693275045697,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0010956206647146308,
+        "low": -0.0007606824142504545,
+        "high": 0.0028610859615278835,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2562732247094346,
+        "low": 0.19235631588860622,
+        "high": 0.3167682529560725,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.2752150781750214,
+        "low": 0.20737200536144693,
+        "high": 0.33310090121358477,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.0189418534655868,
+        "low": -0.013148844014873465,
+        "high": 0.04956442795997427,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.007486819944669629,
+        "low": 0.0023975808188925634,
+        "high": 0.012152597613139469,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.008412993563563651,
+        "low": 0.003183148890309477,
+        "high": 0.013103918266087512,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.0009261736188940226,
+        "low": -0.004739609860305139,
+        "high": 0.006122407614055964,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "dr-learner",
+    "seed": 37,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 61.538,
+      "lightgbm_fit": 6.316,
+      "lightgbm_predict": 0.015,
+      "tabfm_fit": 65.909,
+      "tabfm_predict": 2.279
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0035882051972174027,
+        "low": 0.0014224262651593843,
+        "high": 0.0058856649066840695,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0051549625704370074,
+        "low": 0.003145432045594083,
+        "high": 0.007056266195160201,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0015667573732196047,
+        "low": -0.0006127195165068772,
+        "high": 0.003734750730994224,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2525416826072152,
+        "low": 0.18629849476118968,
+        "high": 0.3140271599530665,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.279175883137233,
+        "low": 0.21347518270600124,
+        "high": 0.3377987271181971,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.026634200530017804,
+        "low": -0.010971168351621919,
+        "high": 0.06407566365107266,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.01028538342421197,
+        "low": 0.004854129160966172,
+        "high": 0.015193680590012063,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.007762603839473392,
+        "low": 0.0022639515199706565,
+        "high": 0.01281820572604889,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.002522779584738578,
+        "low": -0.008412603719681897,
+        "high": 0.0035428554676998113,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "r-learner",
+    "seed": 37,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 14.068,
+      "lightgbm_fit": 1.434,
+      "lightgbm_predict": 0.013,
+      "tabfm_fit": 14.873,
+      "tabfm_predict": 2.275
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0038795192264895126,
+        "low": 0.0016745673630794338,
+        "high": 0.006138956760198774,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0019085682474533922,
+        "low": -0.00023710967143841422,
+        "high": 0.004074825268702837,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.0019709509790361204,
+        "low": -0.004472513848771051,
+        "high": 0.0005644657871153371,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2578404922582292,
+        "low": 0.19520806704055074,
+        "high": 0.3175571120691645,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.22646970264671085,
+        "low": 0.15652965170883354,
+        "high": 0.2872871778028161,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.031370789611518346,
+        "low": -0.07384875730575478,
+        "high": 0.01151590883830523,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.011264824183697985,
+        "low": 0.005577983750490616,
+        "high": 0.016447287499129902,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.008488073007699666,
+        "low": 0.0032826558937000742,
+        "high": 0.01366931569951549,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.0027767511759983193,
+        "low": -0.009147614513940795,
+        "high": 0.0037266024428513167,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "s-learner",
+    "seed": 53,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=5, num_leaves=31",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 4.824,
+      "lightgbm_fit": 0.626,
+      "lightgbm_predict": 0.035,
+      "tabfm_fit": 12.225,
+      "tabfm_predict": 4.598
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0034368672590266193,
+        "low": 0.0013943811425573165,
+        "high": 0.005505500601494239,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.004338503831371963,
+        "low": 0.002499651407328178,
+        "high": 0.006356762735175703,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0009016365723453438,
+        "low": -0.0006609958247104611,
+        "high": 0.002429641519678107,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2505216067259192,
+        "low": 0.18478540181182265,
+        "high": 0.31311712511271267,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.2668927971767198,
+        "low": 0.19866541533916698,
+        "high": 0.32764450058199723,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.0163711904508006,
+        "low": -0.009841079126504868,
+        "high": 0.04279404898941736,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.008942419178010929,
+        "low": 0.003698816568798253,
+        "high": 0.013973731865439909,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.008040291956756799,
+        "low": 0.0027031800058857107,
+        "high": 0.01282925641763115,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.0009021272212541304,
+        "low": -0.007291345843500864,
+        "high": 0.004771225521428271,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "t-learner",
+    "seed": 53,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=20, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 7.243,
+      "lightgbm_fit": 0.613,
+      "lightgbm_predict": 0.028,
+      "tabfm_fit": 10.026,
+      "tabfm_predict": 3.483
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0031832882007161497,
+        "low": 0.000980555031488654,
+        "high": 0.00541593994081947,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.004237758747713186,
+        "low": 0.0022164389674628926,
+        "high": 0.006598213478024833,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0010544705469970363,
+        "low": -0.001131501352465513,
+        "high": 0.003299307943175451,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.24602883373816217,
+        "low": 0.17540209535035295,
+        "high": 0.3062072182111714,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.26502033301362926,
+        "low": 0.20022540131241406,
+        "high": 0.32683387877122355,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.01899149927546709,
+        "low": -0.01784242595690356,
+        "high": 0.05682520602359062,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.008376196544555275,
+        "low": 0.002258401404952353,
+        "high": 0.013307834182176657,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.009153861293689376,
+        "low": 0.003792739601206806,
+        "high": 0.014691070035403417,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.0007776647491341011,
+        "low": -0.005038805174952015,
+        "high": 0.006902935665223087,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "x-learner",
+    "seed": 53,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=5, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 13.182,
+      "lightgbm_fit": 1.203,
+      "lightgbm_predict": 0.021,
+      "tabfm_fit": 14.757,
+      "tabfm_predict": 3.486
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.003543974418002553,
+        "low": 0.0014347387734288605,
+        "high": 0.005826899964817746,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.004064395398877848,
+        "low": 0.0019457766125690024,
+        "high": 0.006350501834269854,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0005204209808752948,
+        "low": -0.0014448157608903623,
+        "high": 0.002362267461230003,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.25232887504151835,
+        "low": 0.18507623359981662,
+        "high": 0.313368555503093,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.26283665143422097,
+        "low": 0.1974590113778516,
+        "high": 0.3256580988022198,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.010507776392702617,
+        "low": -0.02263457938267398,
+        "high": 0.04156827871799379,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.008095367794819062,
+        "low": 0.0033174379216837206,
+        "high": 0.013442088710326953,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.00851973992555017,
+        "low": 0.0026774688747130864,
+        "high": 0.01386629159118667,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.0004243721307311075,
+        "low": -0.005944867804114,
+        "high": 0.006366612764737276,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "dr-learner",
+    "seed": 53,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 60.937,
+      "lightgbm_fit": 5.929,
+      "lightgbm_predict": 0.014,
+      "tabfm_fit": 65.911,
+      "tabfm_predict": 2.269
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.002998657788232448,
+        "low": 0.0008843088516725938,
+        "high": 0.005303122441156308,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0034510235936712763,
+        "low": 0.001579651413158497,
+        "high": 0.005714625653463562,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0004523658054388282,
+        "low": -0.0017704653521918381,
+        "high": 0.0027708452005935193,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.24302673790719978,
+        "low": 0.17280286500282854,
+        "high": 0.30720203055654144,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.25236273751956556,
+        "low": 0.18602414506094997,
+        "high": 0.31431410973927765,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.00933599961236578,
+        "low": -0.028965217597291548,
+        "high": 0.048242052549652074,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.006665212080486247,
+        "low": 0.0016591733802421176,
+        "high": 0.012058346642491771,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.006935896713073505,
+        "low": 0.001200220590411201,
+        "high": 0.012852529236250434,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.00027068463258725795,
+        "low": -0.005781483589230753,
+        "high": 0.006304867939324973,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "r-learner",
+    "seed": 53,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=20, num_leaves=31",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 14.175,
+      "lightgbm_fit": 2.006,
+      "lightgbm_predict": 0.017,
+      "tabfm_fit": 15.047,
+      "tabfm_predict": 2.253
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0031296217819393544,
+        "low": 0.0009473111703752316,
+        "high": 0.00526966326246929,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0010795419618721408,
+        "low": -0.001227330543446736,
+        "high": 0.003413905895136694,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.0020500798200672136,
+        "low": -0.0047595942816463736,
+        "high": 0.0007528136084462159,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2446740078966633,
+        "low": 0.1795092058738451,
+        "high": 0.30481142617066687,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.21176255186452028,
+        "low": 0.15007045247549222,
+        "high": 0.2734976819940615,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.032911456032143016,
+        "low": -0.0799519481153448,
+        "high": 0.014366069600387738,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.007582624639951712,
+        "low": 0.0027821392424583475,
+        "high": 0.01285823749437697,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.006122905099299414,
+        "low": 0.0013021048285862683,
+        "high": 0.011911588374629328,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.001459719540652298,
+        "low": -0.007664316295015881,
+        "high": 0.005073054575863223,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "s-learner",
+    "seed": 71,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=5, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 4.975,
+      "lightgbm_fit": 0.448,
+      "lightgbm_predict": 0.025,
+      "tabfm_fit": 12.354,
+      "tabfm_predict": 4.631
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0037410228736366995,
+        "low": 0.0016755504783023377,
+        "high": 0.005787820443950745,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.003637819304151,
+        "low": 0.0016712107825307583,
+        "high": 0.005635788040380967,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.00010320356948569955,
+        "low": -0.0012092333011617905,
+        "high": 0.0010275291676165033,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.25564986389887967,
+        "low": 0.19286313410783745,
+        "high": 0.3128800269983342,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.25410124885228785,
+        "low": 0.19021749519806566,
+        "high": 0.31379868530572763,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.001548615046591817,
+        "low": -0.01947338851568664,
+        "high": 0.01760657166259114,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.010110515807376692,
+        "low": 0.005470065180551385,
+        "high": 0.014443548794025237,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.005462381011777407,
+        "low": 0.0011981757559436455,
+        "high": 0.010177946429612282,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.004648134795599285,
+        "low": -0.009396782872679659,
+        "high": 0.00023983091475468784,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "t-learner",
+    "seed": 71,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=200, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 7.571,
+      "lightgbm_fit": 0.764,
+      "lightgbm_predict": 0.042,
+      "tabfm_fit": 10.254,
+      "tabfm_predict": 3.484
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.002647277219868051,
+        "low": 0.0005486032870613566,
+        "high": 0.004859238404731587,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.003983942989670034,
+        "low": 0.0019393733639045546,
+        "high": 0.006163694385604687,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0013366657698019833,
+        "low": -0.0005646157953311204,
+        "high": 0.0033351991350245606,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.23680797645432416,
+        "low": 0.17578313289489797,
+        "high": 0.30131413553550157,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.2592776679018187,
+        "low": 0.19383120041400478,
+        "high": 0.31962774434103813,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.022469691447494555,
+        "low": -0.00872643039861526,
+        "high": 0.05518296905584014,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.011841008297992233,
+        "low": 0.006922081233835393,
+        "high": 0.016848546946251132,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.010652494412973803,
+        "low": 0.006020744254345188,
+        "high": 0.015715180871532463,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.0011885138850184305,
+        "low": -0.006013136461542295,
+        "high": 0.004499251264918311,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "x-learner",
+    "seed": 71,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=20, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 13.638,
+      "lightgbm_fit": 1.172,
+      "lightgbm_predict": 0.026,
+      "tabfm_fit": 14.994,
+      "tabfm_predict": 3.479
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0018017610765361028,
+        "low": -0.00018361323003068545,
+        "high": 0.003898000719378897,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.004099201126585716,
+        "low": 0.0022307502933044693,
+        "high": 0.006305772750957777,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0022974400500496133,
+        "low": 0.0006669573027736564,
+        "high": 0.004056232586770179,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.2227655224820439,
+        "low": 0.16027444075843442,
+        "high": 0.286105306918585,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.26166105864435146,
+        "low": 0.19784275135660062,
+        "high": 0.32168644474091557,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.038895536162307565,
+        "low": 0.011806670444874908,
+        "high": 0.06863874054541834,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.007383990157121328,
+        "low": 0.0027947375976198597,
+        "high": 0.012287735193302894,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.00878469755908129,
+        "low": 0.004398737609580951,
+        "high": 0.013738636218145882,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.0014007074019599611,
+        "low": -0.0036757866067607258,
+        "high": 0.0066067968981502875,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "dr-learner",
+    "seed": 71,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=60, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 62.571,
+      "lightgbm_fit": 6.325,
+      "lightgbm_predict": 0.017,
+      "tabfm_fit": 66.075,
+      "tabfm_predict": 2.259
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0014029901101886809,
+        "low": -0.00072912764973109,
+        "high": 0.0036680393588955033,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0041089245094932305,
+        "low": 0.002005848789293751,
+        "high": 0.006364271848300942,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": 0.0027059343993045496,
+        "low": 0.0006157454553138546,
+        "high": 0.004965225458362944,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.21573728036076045,
+        "low": 0.149480743444509,
+        "high": 0.28109946991344337,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.2628371651717204,
+        "low": 0.20012493409644444,
+        "high": 0.3255268417896428,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": 0.04709988481095995,
+        "low": 0.012482843737564652,
+        "high": 0.08413026323840274,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.010104614189324857,
+        "low": 0.005140876661409092,
+        "high": 0.014712372482955925,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.012450363245494011,
+        "low": 0.0073815931797604544,
+        "high": 0.017518583754349625,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": 0.002345749056169154,
+        "low": -0.0030782988885334765,
+        "high": 0.008658381409488908,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  },
+  {
+    "dataset": "hillstrom",
+    "learner": "r-learner",
+    "seed": 71,
+    "context_rows": 16384,
+    "ensemble": 1,
+    "n_train": 25615,
+    "n_test": 8539,
+    "lightgbm_config": "min_child_samples=200, num_leaves=15",
+    "hardware": "NVIDIA H100 NVL, bfloat16",
+    "seconds": {
+      "lightgbm_select": 14.33,
+      "lightgbm_fit": 1.585,
+      "lightgbm_predict": 0.017,
+      "tabfm_fit": 15.012,
+      "tabfm_predict": 2.264
+    },
+    "metrics": {
+      "lightgbm:qini": {
+        "value": 0.0020759143240254713,
+        "low": -7.802470143117986e-05,
+        "high": 0.004291849060490225,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:qini": {
+        "value": 0.0014132390263133267,
+        "low": -0.0006612215418313428,
+        "high": 0.003564099530682045,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:qini": {
+        "value": -0.0006626752977121446,
+        "low": -0.003267702038924399,
+        "high": 0.002051516623176071,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:auuc": {
+        "value": 0.22724840797416873,
+        "low": 0.16618071246591784,
+        "high": 0.2879781686201924,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:auuc": {
+        "value": 0.21660593487861748,
+        "low": 0.15186180914892963,
+        "high": 0.2776717794507153,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:auuc": {
+        "value": -0.010642473095551247,
+        "low": -0.05390912703961285,
+        "high": 0.03537845610156766,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "lightgbm:gain_dr@10%": {
+        "value": 0.011578617794360034,
+        "low": 0.006589332277341322,
+        "high": 0.016673805651465232,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "tabfm:gain_dr@10%": {
+        "value": 0.009801376779323702,
+        "low": 0.004819606331694547,
+        "high": 0.015216864844726135,
+        "level": 0.95,
+        "n_resamples": 1000
+      },
+      "delta:gain_dr@10%": {
+        "value": -0.0017772410150363321,
+        "low": -0.007610986520698639,
+        "high": 0.0049550862034990735,
+        "level": 0.95,
+        "n_resamples": 1000
+      }
+    }
+  }
+]

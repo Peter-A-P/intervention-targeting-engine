@@ -22,7 +22,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from itx.estimators.base import BaseUpliftEstimator
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, OutcomeLearner
+from itx.estimators.lightgbm_base import (
+    DEFAULT_CONFIG,
+    LearnerConfig,
+    OutcomeLearner,
+    estimator_name,
+)
 
 if TYPE_CHECKING:
     import polars as pl
@@ -35,11 +40,12 @@ class TLearner(BaseUpliftEstimator):
 
     name = "t-learner"
 
-    def __init__(self, config: BaseLearnerConfig = DEFAULT_CONFIG, *, seed: int = 0) -> None:
+    def __init__(self, config: LearnerConfig = DEFAULT_CONFIG, *, seed: int = 0) -> None:
         """Build an unfitted T-learner.
 
         Args:
-            config: Shared LightGBM settings.
+            config: Shared base-learner settings. A ``TabFMConfig`` builds every internal
+                model on TabFM, and the row name says so.
             seed: Seed for the arm models. The two get different seeds, derived from this
                 one, so their errors are not identical by construction: two models fitted
                 with the same seed on disjoint rows would still share the same column and
@@ -47,6 +53,7 @@ class TLearner(BaseUpliftEstimator):
                 noise in a way that flatters the estimator.
         """
         super().__init__()
+        self.name = estimator_name(type(self).name, config)
         self.config = config
         self.seed = seed
         self._treated: OutcomeLearner | None = None

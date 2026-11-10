@@ -19,7 +19,12 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from itx.estimators.base import BaseUpliftEstimator, add_treatment_column
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, OutcomeLearner
+from itx.estimators.lightgbm_base import (
+    DEFAULT_CONFIG,
+    LearnerConfig,
+    OutcomeLearner,
+    estimator_name,
+)
 
 if TYPE_CHECKING:
     import polars as pl
@@ -34,14 +39,16 @@ class SLearner(BaseUpliftEstimator):
 
     name = "s-learner"
 
-    def __init__(self, config: BaseLearnerConfig = DEFAULT_CONFIG, *, seed: int = 0) -> None:
+    def __init__(self, config: LearnerConfig = DEFAULT_CONFIG, *, seed: int = 0) -> None:
         """Build an unfitted S-learner.
 
         Args:
-            config: Shared LightGBM settings.
+            config: Shared base-learner settings. A ``TabFMConfig`` builds every internal
+                model on TabFM, and the row name says so.
             seed: Seed for the single outcome model.
         """
         super().__init__()
+        self.name = estimator_name(type(self).name, config)
         self.config = config
         self.seed = seed
         self._learner: OutcomeLearner | None = None

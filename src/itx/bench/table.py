@@ -23,7 +23,7 @@ import numpy as np
 
 from itx.bench.grid import OPERATING_BUDGET, Selection
 from itx.bench.runner import BenchmarkRow, group_by_estimator, metric_names
-from itx.estimators.lightgbm_base import DEFAULT_CONFIG
+from itx.estimators.lightgbm_base import DEFAULT_CONFIG, BaseLearnerConfig, config_label
 from itx.metrics.bootstrap import Estimate, bootstrap_over
 from itx.policy.policy_value import share_gap_key
 
@@ -227,7 +227,11 @@ def selected_configurations(rows: Sequence[BenchmarkRow]) -> str:
     """
     chosen: dict[str, Counter[str]] = {}
     for row in rows:
-        if row.selection is None or not row.selection.tuned:
+        if (
+            row.selection is None
+            or not row.selection.tuned
+            or not isinstance(row.selection.config, BaseLearnerConfig)
+        ):
             continue
         label = (
             f"min_child_samples={row.selection.config.min_child_samples}, "
@@ -262,7 +266,9 @@ def write_json(rows: Sequence[BenchmarkRow], path: Path) -> None:
             "n_test": row.n_test,
             "fit_seconds": round(row.fit_seconds, 3),
             "selection": None
-            if row.selection is None or not row.selection.tuned
+            if row.selection is None
+            or not row.selection.tuned
+            or not isinstance(row.selection.config, BaseLearnerConfig)
             else {
                 "min_child_samples": row.selection.config.min_child_samples,
                 "num_leaves": row.selection.config.num_leaves,
@@ -449,10 +455,7 @@ def _selection_label(selection: Selection | None) -> str:
     """A short, comparable description of a chosen configuration."""
     if selection is None:
         return "no tuning"
-    return (
-        f"min_child_samples={selection.config.min_child_samples}, "
-        f"num_leaves={selection.config.num_leaves}"
-    )
+    return config_label(selection.config)
 
 
 MARKER_START = "<!-- itx:table:{name} -->"
